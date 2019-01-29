@@ -147,7 +147,7 @@ class WebHookTest(TembaTest):
             self.assertIn("Event delivered successfully", result.message)
             self.assertIn("not JSON", result.message)
             self.assertEqual(200, result.status_code)
-            self.assertEqual("Hello World", result.body)
+            self.assertEqual("Hello World", result.response)
 
             self.assertTrue(mock.called)
             args = mock.call_args_list[0][0]
@@ -194,7 +194,7 @@ class WebHookTest(TembaTest):
         self.setupChannel()
 
         with patch("requests.Session.send") as mock:
-            mock.return_value = MockResponse(200, "")
+            mock.return_value = MockResponse(200, "response body")
 
             # trigger an event
             WebHookEvent.trigger_channel_alarm(sync_event)
@@ -207,7 +207,7 @@ class WebHookTest(TembaTest):
             result = WebHookResult.objects.get()
             self.assertIn("Event delivered successfully", result.message)
             self.assertEqual(200, result.status_code)
-            self.assertEqual("", result.body)
+            self.assertEqual("response body", result.response)
 
             self.assertTrue(mock.called)
             args = mock.call_args_list[0][0]
@@ -291,6 +291,8 @@ class WebHookTest(TembaTest):
             event.created_on = five_hours_ago
             event.save()
 
+            WebHookResult.objects.all().update(created_on=five_hours_ago)
+
             with override_settings(SUCCESS_LOGS_TRIM_TIME=0):
                 trim_webhook_event_task()
                 self.assertTrue(WebHookEvent.objects.all())
@@ -313,6 +315,8 @@ class WebHookTest(TembaTest):
             event.created_on = five_hours_ago
             event.status = FAILED
             event.save()
+
+            WebHookResult.objects.all().update(status_code=401, created_on=five_hours_ago)
 
             with override_settings(ALL_LOGS_TRIM_TIME=0):
                 trim_webhook_event_task()
@@ -381,12 +385,13 @@ class WebHookTest(TembaTest):
             # what if they send weird json back?
             self.release(WebHookEvent.objects.all())
 
-        # add ad manager back in
+        # add admin back in
         self.org.administrators.add(self.admin)
         self.admin.set_org(self.org)
 
         with patch("requests.Session.send") as mock:
             mock.return_value = MockResponse(200, "Hello World")
+            WebHookResult.objects.all().delete()
 
             # trigger an event
             WebHookEvent.trigger_sms_event(WebHookEvent.TYPE_SMS_RECEIVED, sms, now)
@@ -407,6 +412,7 @@ class WebHookTest(TembaTest):
 
         with patch("requests.Session.send") as mock:
             mock.side_effect = [MockResponse(500, "I am error")]
+            WebHookResult.objects.all().delete()
 
             # trigger an event
             WebHookEvent.trigger_sms_event(WebHookEvent.TYPE_SMS_RECEIVED, sms, now)
@@ -433,6 +439,7 @@ class WebHookTest(TembaTest):
             # valid json, but not our format
             bad_json = '{ "thrift_shops": ["Goodwill", "Value Village"] }'
             mock.return_value = MockResponse(200, bad_json)
+            WebHookResult.objects.all().delete()
 
             WebHookEvent.trigger_sms_event(WebHookEvent.TYPE_SMS_RECEIVED, sms, now)
             event = WebHookEvent.objects.get()
@@ -447,12 +454,13 @@ class WebHookTest(TembaTest):
             self.assertIn("Event delivered successfully", result.message)
             self.assertIn("ignoring", result.message)
             self.assertEqual(200, result.status_code)
-            self.assertEqual(bad_json, result.body)
+            self.assertEqual(bad_json, result.response)
 
             self.release(WebHookEvent.objects.all())
 
         with patch("requests.Session.send") as mock:
             mock.return_value = MockResponse(200, '{ "phone": "+250788123123", "text": "I am success" }')
+            WebHookResult.objects.all().delete()
 
             WebHookEvent.trigger_sms_event(WebHookEvent.TYPE_SMS_RECEIVED, sms, now)
             event = WebHookEvent.objects.get()
@@ -491,6 +499,7 @@ class WebHookTest(TembaTest):
 
         with patch("requests.Session.send") as mock:
             mock.return_value = MockResponse(500, "I am error")
+            WebHookResult.objects.all().delete()
 
             next_attempt_earliest = timezone.now() + timedelta(minutes=4)
             next_attempt_latest = timezone.now() + timedelta(minutes=6)
@@ -506,7 +515,7 @@ class WebHookTest(TembaTest):
             result = WebHookResult.objects.get()
             self.assertIn("Error", result.message)
             self.assertEqual(500, result.status_code)
-            self.assertEqual("I am error", result.body)
+            self.assertEqual("I am error", result.response)
 
             # make sure things become failures after three retries
             event.try_count = 2
@@ -522,9 +531,9 @@ class WebHookTest(TembaTest):
             result = WebHookResult.objects.get()
             self.assertIn("Error", result.message)
             self.assertEqual(500, result.status_code)
-            self.assertEqual("I am error", result.body)
+            self.assertEqual("I am error", result.response)
             self.assertEqual("http://fake.com/webhook.php", result.url)
-            self.assertTrue(result.data.find("pop+some+tags") > 0)
+            self.assertTrue(result.request.find("pop+some+tags") > 0)
 
             # check out our api log
             response = self.client.get(reverse("api.log"))
@@ -552,6 +561,8 @@ class WebHookTest(TembaTest):
 
         with patch("requests.Session.send") as mock:
             mock.return_value = MockResponse(200, "Boom")
+            WebHookResult.objects.all().delete()
+
             WebHookEvent.trigger_sms_event(WebHookEvent.TYPE_SMS_RECEIVED, sms, now)
             event = WebHookEvent.objects.get()
 

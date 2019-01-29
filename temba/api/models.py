@@ -609,9 +609,6 @@ class WebHookEvent(SmartModel):
         return result
 
     def release(self):
-        for result in self.results.all():
-            result.release()
-
         self.delete()
 
     def __str__(self):  # pragma: needs cover
@@ -623,28 +620,30 @@ class WebHookResult(SmartModel):
     Represents the result of trying to deliver an event to a web hook
     """
 
-    event = models.ForeignKey(
-        WebHookEvent,
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
         on_delete=models.PROTECT,
-        related_name="results",
-        help_text="The event that this result is tied to",
+        related_name="%(app_label)s_%(class)s_creations",
+        help_text="The user which originally created this item",
     )
+
+    modified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_modifications",
+        help_text="The user which last modified this item",
+    )
+
     url = models.TextField(null=True, blank=True, help_text="The URL the event was delivered to")
-    data = models.TextField(null=True, blank=True, help_text="The data that was posted to the webhook")
     request = models.TextField(null=True, blank=True, help_text="The request that was posted to the webhook")
     status_code = models.IntegerField(help_text="The HTTP status as returned by the web hook")
     message = models.CharField(max_length=255, help_text="A message describing the result, error messages go here")
-    body = models.TextField(
+    response = models.TextField(
         null=True, blank=True, help_text="The body of the HTTP response as returned by the web hook"
     )
     request_time = models.IntegerField(null=True, help_text=_("Time it took to process this request"))
-    contact = models.ForeignKey(
-        "contacts.Contact",
-        on_delete=models.PROTECT,
-        null=True,
-        related_name="webhook_results",
-        help_text="The contact that generated this result",
-    )
 
     @classmethod
     def record_result(cls, event, result):
@@ -666,13 +665,11 @@ class WebHookResult(SmartModel):
         request_time = result.get("request_time", None)
 
         cls.objects.create(
-            event=event,
             url=result["url"],
-            request=result.get("request"),  # flow webhooks won't have 'request'
-            data=result["data"],
+            request=result.get("request"),
             message=message,
             status_code=result.get("status_code", 503),
-            body=result.get("body", None),
+            response=result.get("body", None),
             request_time=request_time,
             created_by=api_user,
             modified_by=api_user,
