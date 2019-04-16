@@ -1,3 +1,15 @@
+v4.22.22
+----------
+ * Fix issue with pagination when editing custom fields
+
+v4.22.21
+----------
+ * Add new page for contact field management
+
+v4.22.20
+----------
+ * add management command to reactivate fb channels
+
 v4.22.19
 ----------
  * api for templates, add access token and fb user id to claim, sync with facebook endpoint
