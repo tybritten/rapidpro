@@ -1575,14 +1575,10 @@ class OrgTest(TembaTest):
         gift_topup.save(update_fields=["expires_on"])
         self.org.apply_topups()
 
-        with self.assertNumQueries(2):
-            self.assertTrue(self.org.is_nearing_expiration())
-
         with self.assertNumQueries(5):
             self.assertEqual(15, self.org.get_low_credits_threshold())
 
-        with self.assertNumQueries(2):
-            self.assertTrue(self.org.is_nearing_expiration())
+        with self.assertNumQueries(0):
             self.assertEqual(15, self.org.get_low_credits_threshold())
 
         # some credits expires but more credits will remain active
@@ -1592,14 +1588,10 @@ class OrgTest(TembaTest):
         later_active_topup.save(update_fields=["expires_on"])
         self.org.apply_topups()
 
-        with self.assertNumQueries(1):
-            self.assertFalse(self.org.is_nearing_expiration())
-
         with self.assertNumQueries(6):
             self.assertEqual(45, self.org.get_low_credits_threshold())
 
-        with self.assertNumQueries(1):
-            self.assertFalse(self.org.is_nearing_expiration())
+        with self.assertNumQueries(0):
             self.assertEqual(45, self.org.get_low_credits_threshold())
 
         # no expiring credits
@@ -1607,14 +1599,10 @@ class OrgTest(TembaTest):
         gift_topup.save(update_fields=["expires_on"])
         self.org.clear_credit_cache()
 
-        with self.assertNumQueries(1):
-            self.assertFalse(self.org.is_nearing_expiration())
-
         with self.assertNumQueries(6):
             self.assertEqual(45, self.org.get_low_credits_threshold())
 
-        with self.assertNumQueries(1):
-            self.assertFalse(self.org.is_nearing_expiration())
+        with self.assertNumQueries(0):
             self.assertEqual(45, self.org.get_low_credits_threshold())
 
         # do not consider expired topup
@@ -1622,14 +1610,10 @@ class OrgTest(TembaTest):
         gift_topup.save(update_fields=["expires_on"])
         self.org.clear_credit_cache()
 
-        with self.assertNumQueries(1):
-            self.assertFalse(self.org.is_nearing_expiration())
-
         with self.assertNumQueries(5):
             self.assertEqual(30, self.org.get_low_credits_threshold())
 
-        with self.assertNumQueries(1):
-            self.assertFalse(self.org.is_nearing_expiration())
+        with self.assertNumQueries(0):
             self.assertEqual(30, self.org.get_low_credits_threshold())
 
         TopUp.objects.all().update(is_active=False)
