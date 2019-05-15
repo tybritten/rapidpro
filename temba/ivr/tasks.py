@@ -123,6 +123,6 @@ def task_enqueue_call_events():
         ChannelLog.log_ivr_interaction(call, "Call queued internally", HttpEvent(method="INTERNAL", url=None))
 
         call.status = IVRCall.QUEUED
-        call.save(update_fields=("status",))
+        call.save(update_fields=("status", "modified_on"))
 
         start_call_task.apply_async(kwargs={"call_pk": call.id})
