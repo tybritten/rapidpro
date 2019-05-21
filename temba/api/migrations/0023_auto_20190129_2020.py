@@ -9,7 +9,7 @@ def populate_org_id(apps, schema_editor):
 
     for res in WebHookResult.objects.all().select_related("event"):
         res.org_id = res.event.org_id
-        res.save(update_fields=["org_id"])
+        res.save(update_fields=("org_id",))
 
 
 class Migration(migrations.Migration):

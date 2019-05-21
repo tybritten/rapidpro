@@ -55,7 +55,7 @@ from temba.utils.email import is_valid_address
 from temba.utils.http import http_headers
 from temba.utils.text import random_string
 from temba.utils.timezones import TimeZoneFormField
-from temba.utils.views import NonAtomicMixin
+from temba.utils.views import NonAtomicMixin, UpdateFieldsSaveMixin
 
 from .models import (
     ACCOUNT_SID,
@@ -727,7 +727,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return non_single_buckets, singles
 
-    class TwilioConnect(ModalMixin, InferOrgMixin, OrgPermsMixin, SmartFormView):
+    class TwilioConnect(UpdateFieldsSaveMixin, ModalMixin, InferOrgMixin, OrgPermsMixin, SmartFormView):
         class TwilioConnectForm(forms.Form):
             account_sid = forms.CharField(help_text=_("Your Twilio Account SID"))
             account_token = forms.CharField(help_text=_("Your Twilio Account Token"))
@@ -768,7 +768,6 @@ class OrgCRUDL(SmartCRUDL):
 
             org = self.get_object()
             org.connect_twilio(account_sid, account_token, self.request.user)
-            org.save()
 
             return HttpResponseRedirect(self.get_success_url())
 
@@ -810,7 +809,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return context
 
-    class NexmoAccount(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class NexmoAccount(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         success_message = ""
 
         class NexmoKeys(forms.ModelForm):
@@ -920,8 +919,6 @@ class OrgCRUDL(SmartCRUDL):
 
             org.connect_nexmo(api_key, api_secret, self.request.user)
 
-            org.save()
-
             return HttpResponseRedirect(self.get_success_url())
 
     class PlivoConnect(ModalMixin, InferOrgMixin, OrgPermsMixin, SmartFormView):
@@ -965,7 +962,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return HttpResponseRedirect(self.get_success_url())
 
-    class SmtpServer(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class SmtpServer(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         success_message = ""
 
         class SmtpConfig(forms.ModelForm):
@@ -1170,7 +1167,7 @@ class OrgCRUDL(SmartCRUDL):
         def get_created_by(self, obj):  # pragma: needs cover
             return "%s %s - %s" % (obj.created_by.first_name, obj.created_by.last_name, obj.created_by.email)
 
-    class Update(SmartUpdateView):
+    class Update(UpdateFieldsSaveMixin, SmartUpdateView):
         fields = ("name", "brand", "parent", "is_anon", "flow_server_enabled")
 
         class OrgUpdateForm(forms.ModelForm):
@@ -1272,7 +1269,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return super().post_save(obj)
 
-    class Accounts(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Accounts(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class PasswordForm(forms.ModelForm):
             surveyor_password = forms.CharField(max_length=128)
 
@@ -1294,7 +1291,7 @@ class OrgCRUDL(SmartCRUDL):
         title = "User Accounts"
         fields = ("surveyor_password",)
 
-    class ManageAccounts(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class ManageAccounts(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class AccountsForm(forms.ModelForm):
             invite_emails = forms.CharField(label=_("Invite people to your organization"), required=False)
             invite_group = forms.ChoiceField(
@@ -1679,7 +1676,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return HttpResponseRedirect(self.get_success_url())
 
-    class CreateLogin(SmartUpdateView):
+    class CreateLogin(UpdateFieldsSaveMixin, SmartUpdateView):
         title = ""
         form_class = OrgSignupForm
         fields = ("first_name", "last_name", "email", "password")
@@ -2080,7 +2077,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return obj
 
-    class Resthooks(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Resthooks(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class ResthookForm(forms.ModelForm):
             resthook = forms.SlugField(
                 required=False, label=_("New Event"), help_text="Enter a name for your event. ex: new-registration"
@@ -2157,7 +2154,7 @@ class OrgCRUDL(SmartCRUDL):
             context["failed_webhooks"] = WebHookResult.get_recent_errored(self.request.user.get_org()).exists()
             return context
 
-    class Webhook(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Webhook(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class WebhookForm(forms.ModelForm):
             webhook_url = forms.URLField(required=False, label=_("Webhook URL"), help_text="")
             headers = forms.CharField(required=False)
@@ -2237,7 +2234,7 @@ class OrgCRUDL(SmartCRUDL):
             context["failed_webhooks"] = WebHookResult.get_recent_errored(self.request.user.get_org()).exists()
             return context
 
-    class Chatbase(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Chatbase(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class ChatbaseForm(forms.ModelForm):
             agent_name = forms.CharField(
                 max_length=255, label=_("Agent Name"), required=False, help_text="Enter your Chatbase Agent's name"
@@ -2432,7 +2429,7 @@ class OrgCRUDL(SmartCRUDL):
             # show archives
             formax.add_section("archives", reverse("archives.archive_message"), icon="icon-box", action="link")
 
-    class TransferToAccount(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class TransferToAccount(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
 
         success_message = ""
 
@@ -2511,7 +2508,7 @@ class OrgCRUDL(SmartCRUDL):
                 org.refresh_transferto_account_currency()
                 return super().form_valid(form)
 
-    class TwilioAccount(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class TwilioAccount(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
 
         success_message = ""
 
@@ -2584,7 +2581,7 @@ class OrgCRUDL(SmartCRUDL):
                 org.connect_twilio(account_sid, account_token, user)
                 return super().form_valid(form)
 
-    class Edit(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Edit(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class OrgForm(forms.ModelForm):
             name = forms.CharField(max_length=128, label=_("The name of your organization"), help_text="")
             timezone = TimeZoneFormField(label=_("Your organization's timezone"), help_text="")
@@ -2697,7 +2694,7 @@ class OrgCRUDL(SmartCRUDL):
             response["Temba-Success"] = self.get_success_url()
             return response
 
-    class Country(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Country(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class CountryForm(forms.ModelForm):
             country = forms.ModelChoiceField(
                 Org.get_possible_countries(),
@@ -2717,7 +2714,7 @@ class OrgCRUDL(SmartCRUDL):
             self.org = self.derive_org()
             return self.request.user.has_perm("orgs.org_country") or self.has_org_perm("orgs.org_country")
 
-    class Languages(InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Languages(UpdateFieldsSaveMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class LanguagesForm(forms.ModelForm):
             primary_lang = forms.CharField(
                 required=False,

@@ -24,7 +24,7 @@ def update_expiration(run):
         run.child_context = None
         run.parent_context = None
         run.save(
-            update_fields=[
+            update_fields=(
                 "expires_on",
                 "is_active",
                 "exited_on",
@@ -32,11 +32,11 @@ def update_expiration(run):
                 "modified_on",
                 "child_context",
                 "parent_context",
-            ]
+            )
         )
     else:
         # save our updated fields
-        run.save(update_fields=["expires_on", "modified_on"])
+        run.save(update_fields=("expires_on", "modified_on"))
 
 
 def fix_ivr_and_ussd_runs_expiration_date(FlowRun):
