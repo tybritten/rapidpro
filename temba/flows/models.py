@@ -2327,7 +2327,8 @@ class Flow(RequireUpdateFieldsMixin, AddModifiedOnMixin, TembaModel):
                         "version_number",
                         "entry_uuid",
                         "entry_type",
-                    ))
+                    )
+                )
 
                 # clear property cache
                 self.clear_props_cache()
