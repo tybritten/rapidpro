@@ -36,7 +36,16 @@ from temba import mailroom
 from temba.archives.models import Archive
 from temba.channels.models import Channel
 from temba.classifiers.models import Classifier
-from temba.contacts.models import TEL_SCHEME, WHATSAPP_SCHEME, Contact, ContactField, ContactGroup, ContactURN
+from temba.contacts.models import (
+    FACEBOOK_SCHEME,
+    TEL_SCHEME,
+    WHATSAPP_SCHEME,
+    Contact,
+    ContactField,
+    ContactGroup,
+    ContactURN,
+)
+from temba.contacts.omnibox import omnibox_deserialize
 from temba.flows.legacy.expressions import get_function_listing
 from temba.flows.models import Flow, FlowRevision, FlowRun, FlowRunCount, FlowSession
 from temba.flows.tasks import export_flow_results_task
@@ -398,14 +407,6 @@ class FlowCRUDL(SmartCRUDL):
                 ),
             )
 
-            editor_version = forms.TypedChoiceField(
-                help_text=_("If you are unsure, use the new editor"),
-                choices=((0, "New Editor"), (1, "Previous Editor")),
-                initial=0,
-                required=False,
-                coerce=int,
-            )
-
             def __init__(self, user, branding, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.user = user
@@ -428,7 +429,7 @@ class FlowCRUDL(SmartCRUDL):
 
             class Meta:
                 model = Flow
-                fields = ("name", "keyword_triggers", "flow_type", "base_language", "editor_version")
+                fields = ("name", "keyword_triggers", "flow_type", "base_language")
 
         form_class = FlowCreateForm
         success_url = "uuid@flows.flow_editor"
@@ -470,9 +471,6 @@ class FlowCRUDL(SmartCRUDL):
                 # ivr expires after 5 minutes of inactivity
                 expires_after_minutes = 5
 
-            # new editor is 0
-            use_new_editor = self.form.cleaned_data.get("editor_version", 0) == 0
-
             self.object = Flow.create(
                 org,
                 self.request.user,
@@ -481,7 +479,7 @@ class FlowCRUDL(SmartCRUDL):
                 expires_after_minutes=expires_after_minutes,
                 base_language=obj.base_language,
                 create_revision=True,
-                use_new_editor=use_new_editor,
+                use_new_editor=True,
             )
 
         def post_save(self, obj):
@@ -1191,6 +1189,10 @@ class FlowCRUDL(SmartCRUDL):
 
             feature_filters = []
 
+            facebook_channel = flow.org.get_channel_for_role(Channel.ROLE_SEND, scheme=FACEBOOK_SCHEME)
+            if facebook_channel is not None:
+                feature_filters.append("facebook")
+
             whatsapp_channel = flow.org.get_channel_for_role(Channel.ROLE_SEND, scheme=WHATSAPP_SCHEME)
             if whatsapp_channel is not None:
                 feature_filters.append("whatsapp")
@@ -1812,7 +1814,14 @@ class FlowCRUDL(SmartCRUDL):
                 label=_("Contacts & Groups"),
                 required=False,
                 help_text=_("These contacts will be added to the flow, sending the first message if appropriate."),
-                widget=OmniboxChoice(attrs={"placeholder": _("Recipients, enter contacts or groups")}),
+                widget=OmniboxChoice(
+                    attrs={
+                        "placeholder": _("Recipients, enter contacts or groups"),
+                        "groups": True,
+                        "contacts": True,
+                        "widget_only": True,
+                    }
+                ),
             )
 
             restart_participants = forms.BooleanField(
@@ -1830,7 +1839,9 @@ class FlowCRUDL(SmartCRUDL):
             )
 
             start_type = forms.ChoiceField(
-                widget=SelectWidget(attrs={"placeholder": _("Select contacts or groups to start in the flow")}),
+                widget=SelectWidget(
+                    attrs={"placeholder": _("Select contacts or groups to start in the flow"), "widget_only": True}
+                ),
                 choices=(
                     ("select", _("Enter contacts and groups to start below")),
                     ("query", _("Search for contacts to start")),
@@ -1868,15 +1879,7 @@ class FlowCRUDL(SmartCRUDL):
                 if start_type == "select" and not starting:  # pragma: needs cover
                     raise ValidationError(_("You must specify at least one contact or one group to start a flow."))
 
-                # convert to groups and contacts
-                org = self.user.get_org()
-                group_ids = [item["id"] for item in starting if item["type"] == "group"]
-                contact_ids = [item["id"] for item in starting if item["type"] == "contact"]
-
-                return {
-                    "groups": ContactGroup.all_groups.filter(uuid__in=group_ids, org=org, is_active=True),
-                    "contacts": Contact.objects.filter(uuid__in=contact_ids, org=org, is_active=True),
-                }
+                return omnibox_deserialize(self.user.get_org(), starting)
 
             def clean(self):
 
@@ -1909,12 +1912,29 @@ class FlowCRUDL(SmartCRUDL):
         submit_button_name = _("Add Contacts to Flow")
         success_url = "uuid@flows.flow_editor"
 
+        def has_facebook_topic(self, flow):
+            definition = flow.get_current_revision().get_definition_json()
+            for node in definition.get("nodes", []):
+                for action in node.get("actions", []):
+                    if action.get("type", "") == "send_msg" and action.get("topic", ""):
+                        return True
+
         def get_context_data(self, *args, **kwargs):
             context = super().get_context_data(*args, **kwargs)
             flow = self.get_object()
             org = flow.org
 
             warnings = []
+
+            # facebook channels need to warn if no topic is set
+            facebook_channel = org.get_channel_for_role(Channel.ROLE_SEND, scheme=FACEBOOK_SCHEME)
+            if facebook_channel:
+                if not self.has_facebook_topic(flow):
+                    warnings.append(
+                        _(
+                            "This flow does not specify a Facebook topic. You may still start this flow but Facebook contacts who have not sent an incoming message in the last 24 hours may not receive it."
+                        )
+                    )
 
             # if we have a whatsapp channel
             whatsapp_channel = org.get_channel_for_role(Channel.ROLE_SEND, scheme=WHATSAPP_SCHEME)
