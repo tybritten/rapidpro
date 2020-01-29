@@ -1,8 +1,6 @@
 import copy
-import subprocess
-import time
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import PropertyMock, patch
 
@@ -10,14 +8,13 @@ import pytz
 from openpyxl import load_workbook
 from smartmin.csv_imports.models import ImportTask
 from smartmin.models import SmartImportRowError
-from smartmin.tests import SmartminTestMixin, _CRUDLTest
+from smartmin.tests import _CRUDLTest
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.db import connection
 from django.db.models import Value as DbValue
 from django.db.models.functions import Concat, Substr
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -32,6 +29,7 @@ from temba.contacts.views import ContactListView
 from temba.flows.models import Flow, FlowRun
 from temba.ivr.models import IVRCall
 from temba.locations.models import AdminBoundary
+from temba.mailroom import MailroomException
 from temba.msgs.models import Broadcast, Label, Msg, SystemLabel
 from temba.orgs.models import Org
 from temba.schedules.models import Schedule
@@ -39,8 +37,7 @@ from temba.tests import AnonymousOrg, ESMockWithScroll, ESMockWithScrollMultiple
 from temba.tests.engine import MockSessionWriter
 from temba.triggers.models import Trigger
 from temba.utils import json
-from temba.utils.dates import datetime_to_ms, datetime_to_str
-from temba.utils.es import ES
+from temba.utils.dates import datetime_to_ms
 from temba.values.constants import Value
 
 from .models import (
@@ -153,9 +150,14 @@ class ContactCRUDLTest(TembaTestMixin, _CRUDLTest):
             ],
         )
 
-        with patch("temba.utils.es.ES") as mock_ES:
-            mock_ES.search.return_value = {"_hits": [{"id": self.frank.id}]}
-            mock_ES.count.return_value = {"count": 1}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.frank.id],
+                "total": 1,
+                "query": "age = 18",
+                "fields": ["age"],
+            }
 
             response = self._do_test_view("list", query_string="search=age+%3D+18")
             self.assertEqual(list(response.context["object_list"]), [self.frank])
@@ -164,8 +166,14 @@ class ContactCRUDLTest(TembaTestMixin, _CRUDLTest):
             self.assertIsNone(response.context["search_error"])
             self.assertEqual(list(response.context["contact_fields"].values_list("label", flat=True)), ["Home", "Age"])
 
-        with patch("temba.utils.es.ES") as mock_ES:
-            mock_ES.count.return_value = {"count": 10020}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.frank.id],
+                "total": 10020,
+                "query": "age = 18",
+                "fields": ["age"],
+            }
 
             # we return up to 10000 contacts when searching with ES, so last page is 200
             url = f'{reverse("contacts.contact_list")}?{"search=age+%3D+18&page=200"}'
@@ -179,9 +187,14 @@ class ContactCRUDLTest(TembaTestMixin, _CRUDLTest):
 
             self.assertEqual(response.status_code, 404)
 
-        with patch("temba.utils.es.ES") as mock_ES:
-            mock_ES.search.return_value = {"_hits": [{"id": self.joe.id}]}
-            mock_ES.count.return_value = {"count": 1}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.joe.id],
+                "total": 1,
+                "query": 'age > 18 AND home = "Kigali"',
+                "fields": ["age", "home"],
+            }
 
             response = self._do_test_view("list", query_string='search=age+>+18+and+home+%3D+"Kigali"')
             self.assertEqual(list(response.context["object_list"]), [self.joe])
@@ -189,9 +202,14 @@ class ContactCRUDLTest(TembaTestMixin, _CRUDLTest):
             self.assertEqual(response.context["save_dynamic_search"], True)
             self.assertIsNone(response.context["search_error"])
 
-        with patch("temba.utils.es.ES") as mock_ES:
-            mock_ES.search.return_value = {"_hits": [{"id": self.joe.id}]}
-            mock_ES.count.return_value = {"count": 1}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.joe.id],
+                "total": 1,
+                "query": 'name ~ "Joe"',
+                "fields": ["name"],
+            }
 
             response = self._do_test_view("list", query_string="search=Joe")
             self.assertEqual(list(response.context["object_list"]), [self.joe])
@@ -200,9 +218,14 @@ class ContactCRUDLTest(TembaTestMixin, _CRUDLTest):
             self.assertIsNone(response.context["search_error"])
 
         with AnonymousOrg(self.org):
-            with patch("temba.utils.es.ES") as mock_ES:
-                mock_ES.search.return_value = {"_hits": [{"id": self.joe.id}]}
-                mock_ES.count.return_value = {"count": 1}
+            with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+                instance = mock_mr.return_value
+                instance.contact_search.return_value = {
+                    "contact_ids": [self.joe.id],
+                    "total": 1,
+                    "query": f"id = {self.joe.id}",
+                    "fields": ["id"],
+                }
 
                 response = self._do_test_view("list", query_string=f"search={self.joe.id}")
                 self.assertEqual(list(response.context["object_list"]), [self.joe])
@@ -211,9 +234,15 @@ class ContactCRUDLTest(TembaTestMixin, _CRUDLTest):
                 self.assertEqual(response.context["save_dynamic_search"], False)
 
         # try with invalid search string
-        response = self._do_test_view("list", query_string="search=(((")
-        self.assertEqual(list(response.context["object_list"]), [])
-        self.assertEqual(response.context["search_error"], "Search query contains an error")
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.side_effect = MailroomException(
+                "", "", {"error": "Search query contains an error"}
+            )
+
+            response = self._do_test_view("list", query_string="search=(((")
+            self.assertEqual(list(response.context["object_list"]), [])
+            self.assertEqual(response.context["search_error"], "Search query contains an error")
 
     def testRead(self):
         self.joe, urn_obj = Contact.get_or_create(self.org, "tel:123", user=self.user, name="Joe")
@@ -1156,7 +1185,7 @@ class ContactTest(TembaTest):
         self.assertEqual(2, len(contact.fields))
 
         # first try a regular release and make sure our urns are anonymized
-        contact.release(self.admin, immediately=False)
+        contact.release(self.admin, full=False)
         self.assertEqual(2, contact.urns.all().count())
         for urn in contact.urns.all():
             uuid.UUID(urn.path, version=4)
@@ -1872,6 +1901,12 @@ class ContactTest(TembaTest):
             )
         )
 
+        # values can contain quotes
+        self.joe.set_field(self.admin, "gender", 'M"F')
+        self.assertTrue(evaluate_query(self.org, r'gender = "M\"F"', contact_json=self.joe.as_search_json()))
+        self.assertFalse(evaluate_query(self.org, r'gender != "M\"F"', contact_json=self.joe.as_search_json()))
+        self.joe.set_field(self.admin, "gender", "male")
+
         # non-existent field or attribute
         self.assertRaises(
             SearchException, evaluate_query, self.org, "credits > 10", contact_json=self.joe.as_search_json()
@@ -2123,6 +2158,10 @@ class ContactTest(TembaTest):
 
         query = parse_query("email ~ user@example.com")
         self.assertEqual(query.as_text(), 'email ~ "user@example.com"')
+
+        # escaped quotes
+        query = parse_query(r'name ~ "O\"Learly"')
+        self.assertEqual(query.as_text(), r'name ~ "O"Learly"')
 
     def test_contact_elastic_search(self):
         gender = ContactField.get_or_create(self.org, self.admin, "gender", "Gender", value_type=Value.TYPE_TEXT)
@@ -3804,8 +3843,9 @@ class ContactTest(TembaTest):
             .set_contact_name("Joe")
             .set_contact_name("")
             .set_result("Color", "red", "Red", "it's red")
-            .send_email("joe@nyaruka.com", "Test", "Hello there Joe")
-            .wait()
+            .send_email(["joe@nyaruka.com"], "Test", "Hello there Joe")
+            .error("unable to send email")
+            .fail("this is a failure")
             .save()
         )
 
@@ -3825,7 +3865,12 @@ class ContactTest(TembaTest):
         self.assertContains(response, "Name updated to <b>Joe</b>")
         self.assertContains(response, "Name cleared")
         self.assertContains(response, "Run result <b>Color</b> updated to <b>red</b> with category <b>Red</b>")
-        self.assertContains(response, "Email sent with subject <b>Test</b>")
+        self.assertContains(
+            response,
+            "Email sent to\n        \n          <b>joe@nyaruka.com</b>\n        \n        with subject\n        <b>Test</b>",
+        )
+        self.assertContains(response, "unable to send email")
+        self.assertContains(response, "this is a failure")
 
     def test_campaign_event_time(self):
 
@@ -3938,10 +3983,12 @@ class ContactTest(TembaTest):
         self.assertEqual(history_icon(item), '<span class="glyph icon-bubble-notification"></span>')
 
         msg.status = "S"
-        self.assertEqual(history_icon(item), '<span class="glyph icon-bullhorn"></span>')
+        with patch("temba.msgs.models.Broadcast.get_message_count") as mock_get_message_count:
+            mock_get_message_count.return_value = 2
+            self.assertEqual(history_icon(item), '<span class="glyph icon-bullhorn"></span>')
 
-        msg.broadcast.recipient_count = None
-        self.assertEqual(history_icon(item), '<span class="glyph icon-bubble-right"></span>')
+            mock_get_message_count.return_value = 0
+            self.assertEqual(history_icon(item), '<span class="glyph icon-bubble-right"></span>')
 
         item = {"type": "flow_entered", "obj": run}
         self.assertEqual(history_icon(item), '<span class="glyph icon-tree-2"></span>')
@@ -3955,7 +4002,7 @@ class ContactTest(TembaTest):
         self.assertEqual(history_icon(item), '<span class="glyph icon-checkmark"></span>')
 
         run.exit_type = FlowRun.EXIT_TYPE_INTERRUPTED
-        self.assertEqual(history_icon(item), '<span class="glyph icon-warning"></span>')
+        self.assertEqual(history_icon(item), '<span class="glyph icon-cancel-circle"></span>')
 
         run.exit_type = FlowRun.EXIT_TYPE_EXPIRED
         self.assertEqual(history_icon(item), '<span class="glyph icon-clock"></span>')
@@ -4255,13 +4302,15 @@ class ContactTest(TembaTest):
     def test_contacts_search(self):
         search_url = reverse("contacts.contact_search")
         self.login(self.admin)
-        with patch("temba.utils.es.ES") as mock_ES:
 
-            from elasticsearch_dsl.utils import AttrList
-
-            hits = AttrList([{"id": self.frank.id}])
-            hits.total = 1
-            mock_ES.search.return_value = {"_hits": hits}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.frank.id],
+                "total": 1,
+                "query": 'name ~ "Frank"',
+                "fields": ["name"],
+            }
 
             response = self.client.get(search_url + "?search=Frank")
             self.assertEqual(200, response.status_code)
@@ -4287,11 +4336,24 @@ class ContactTest(TembaTest):
             results = response.json()
             self.assertEqual(0, results["total"])
 
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.side_effect = MailroomException("", "", {"error": "parse exception"})
+
             # bogus query
             response = self.client.get(search_url + '?search=name="notclosed')
             results = response.json()
-            self.assertEqual('Search query contains an error at: "', results["error"])
+            self.assertEqual("parse exception", results["error"])
             self.assertEqual(0, results["total"])
+
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.frank.id],
+                "total": 1,
+                "query": "age > 32",
+                "fields": ["age"],
+            }
 
             # if we query a field, it should show up in our field dict
             age = self.create_field("age", "Age", Value.TYPE_NUMBER)
@@ -4463,10 +4525,14 @@ class ContactTest(TembaTest):
         response = self.client.get(blocked_url)
         self.assertEqual(list(response.context["object_list"]), [self.billy, self.joe])
 
-        # can search blocked contacts from this page
-        with patch("temba.utils.es.ES") as mock_ES:
-            mock_ES.search.return_value = {"_hits": [{"id": self.joe.id}]}
-            mock_ES.count.return_value = {"count": 1}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.joe.id],
+                "total": 1,
+                "query": "name ~ Joe",
+                "fields": ["name"],
+            }
 
             response = self.client.get(blocked_url + "?search=Joe")
             self.assertEqual(list(response.context["object_list"]), [self.joe])
@@ -5300,7 +5366,7 @@ class ContactTest(TembaTest):
                         line=3,
                         error="Missing any valid URNs; at least one among URN:tel, "
                         "URN:facebook, URN:twitter, URN:twitterid, URN:viber, URN:line, URN:telegram, URN:mailto, "
-                        "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp should be provided or a Contact UUID",
+                        "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp, URN:freshchat should be provided or a Contact UUID",
                     ),
                     dict(line=4, error="Invalid Phone number 12345"),
                 ],
@@ -5320,7 +5386,7 @@ class ContactTest(TembaTest):
                         line=3,
                         error="Missing any valid URNs; at least one among URN:tel, "
                         "URN:facebook, URN:twitter, URN:twitterid, URN:viber, URN:line, URN:telegram, URN:mailto, "
-                        "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp should be provided or a Contact UUID",
+                        "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp, URN:freshchat should be provided or a Contact UUID",
                     ),
                     dict(line=4, error="Invalid URN: abcdef"),
                 ],
@@ -5413,7 +5479,7 @@ class ContactTest(TembaTest):
                             line=3,
                             error="Missing any valid URNs; at least one among URN:tel, "
                             "URN:facebook, URN:twitter, URN:twitterid, URN:viber, URN:line, URN:telegram, URN:mailto, "
-                            "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp should be provided or a Contact UUID",
+                            "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp, URN:freshchat should be provided or a Contact UUID",
                         )
                     ],
                 ),
@@ -5495,7 +5561,7 @@ class ContactTest(TembaTest):
                             line=3,
                             error="Missing any valid URNs; at least one among URN:tel, "
                             "URN:facebook, URN:twitter, URN:twitterid, URN:viber, URN:line, URN:telegram, URN:mailto, "
-                            "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp should be provided or a Contact UUID",
+                            "URN:ext, URN:jiochat, URN:wechat, URN:fcm, URN:whatsapp, URN:freshchat should be provided or a Contact UUID",
                         )
                     ],
                 ),
@@ -5648,7 +5714,7 @@ class ContactTest(TembaTest):
             "csv_file",
             'The file you provided is missing a required header. At least one of "URN:tel", "URN:facebook", '
             '"URN:twitter", "URN:twitterid", "URN:viber", "URN:line", "URN:telegram", "URN:mailto", "URN:ext", '
-            '"URN:jiochat", "URN:wechat", "URN:fcm", "URN:whatsapp" or "Contact UUID" should be included.',
+            '"URN:jiochat", "URN:wechat", "URN:fcm", "URN:whatsapp", "URN:freshchat" or "Contact UUID" should be included.',
         )
 
         csv_file = open("%s/test_imports/sample_contacts_missing_name_phone_headers.xls" % settings.MEDIA_ROOT, "rb")
@@ -5660,7 +5726,7 @@ class ContactTest(TembaTest):
             "csv_file",
             'The file you provided is missing a required header. At least one of "URN:tel", "URN:facebook", '
             '"URN:twitter", "URN:twitterid", "URN:viber", "URN:line", "URN:telegram", "URN:mailto", "URN:ext", '
-            '"URN:jiochat", "URN:wechat", "URN:fcm", "URN:whatsapp" or "Contact UUID" should be included.',
+            '"URN:jiochat", "URN:wechat", "URN:fcm", "URN:whatsapp", "URN:freshchat" or "Contact UUID" should be included.',
         )
 
         csv_file = open(
@@ -5860,7 +5926,7 @@ class ContactTest(TembaTest):
         post_data["column_country_label"] = "}{i$t0rY"  # supports only numbers, letters, hyphens
 
         response = self.client.post(customize_url, post_data, follow=True)
-        self.assertFormError(response, "form", None, "Field names can only contain letters, numbers, hypens")
+        self.assertFormError(response, "form", None, "Can only contain letters, numbers and hypens.")
 
         post_data["column_country_label"] = "Whatevaar"  # reset invalid label value with a valid one
         post_data["column_joined_label"] = "District"
@@ -6832,6 +6898,7 @@ class ContactFieldTest(TembaTest):
     def test_make_key(self):
         self.assertEqual("first_name", ContactField.make_key("First Name"))
         self.assertEqual("second_name", ContactField.make_key("Second   Name  "))
+        self.assertEqual("caf", ContactField.make_key("café"))
         self.assertEqual(
             "323_ffsn_slfs_ksflskfs_fk_anfaddgas",
             ContactField.make_key("  ^%$# %$$ $##323 ffsn slfs ksflskfs!!!! fk$%%%$$$anfaDDGAS ))))))))) "),
@@ -6931,7 +6998,7 @@ class ContactFieldTest(TembaTest):
             self.assertIsNotNone(response.context["task"])
 
         # no group specified, so will default to 'All Contacts'
-        with self.assertNumQueries(47):
+        with self.assertNumQueries(48):
             export = request_export()
             self.assertExcelSheet(
                 export[0],
@@ -6984,7 +7051,7 @@ class ContactFieldTest(TembaTest):
         # change the order of the fields
         self.contactfield_2.priority = 15
         self.contactfield_2.save()
-        with self.assertNumQueries(47):
+        with self.assertNumQueries(48):
             export = request_export()
             self.assertExcelSheet(
                 export[0],
@@ -7042,7 +7109,7 @@ class ContactFieldTest(TembaTest):
         ContactURN.create(self.org, contact, "tel:+12062233445")
 
         # but should have additional Twitter and phone columns
-        with self.assertNumQueries(47):
+        with self.assertNumQueries(48):
             export = request_export()
             self.assertExcelSheet(
                 export[0],
@@ -7127,7 +7194,7 @@ class ContactFieldTest(TembaTest):
         assertImportExportedFile()
 
         # export a specified group of contacts (only Ben and Adam are in the group)
-        with self.assertNumQueries(48):
+        with self.assertNumQueries(49):
             self.assertExcelSheet(
                 request_export("?g=%s" % group.uuid)[0],
                 [
@@ -7192,7 +7259,7 @@ class ContactFieldTest(TembaTest):
                 log_info_threshold.return_value = 1
 
                 with ESMockWithScroll(data=mock_es_data):
-                    with self.assertNumQueries(47):
+                    with self.assertNumQueries(48):
                         self.assertExcelSheet(
                             request_export("?s=name+has+adam+or+name+has+deng")[0],
                             [
@@ -7251,7 +7318,7 @@ class ContactFieldTest(TembaTest):
         # export a search within a specified group of contacts
         mock_es_data = [{"_type": "_doc", "_index": "dummy_index", "_source": {"id": contact.id}}]
         with ESMockWithScroll(data=mock_es_data):
-            with self.assertNumQueries(48):
+            with self.assertNumQueries(49):
                 self.assertExcelSheet(
                     request_export("?g=%s&s=Hagg" % group.uuid)[0],
                     [
@@ -7441,19 +7508,24 @@ class ContactFieldTest(TembaTest):
         url = reverse("contacts.contact_list")
         self.login(self.admin)
 
-        with patch("temba.utils.es.ES") as mock_ES:
-            mock_ES.search.return_value = {"_hits": [{"id": self.joe.id}]}
-            mock_ES.count.return_value = {"count": 1}
+        with patch("temba.mailroom.client.MailroomClient") as mock_mr:
+            instance = mock_mr.return_value
+            instance.contact_search.return_value = {
+                "contact_ids": [self.joe.id],
+                "total": 1,
+                "query": "",
+                "fields": ["age"],
+            }
 
-            response = self.client.get("%s?sort_on=%s" % (url, str(self.contactfield_1.uuid)))
+            response = self.client.get("%s?sort_on=%s" % (url, str(self.contactfield_1.key)))
 
-            self.assertEqual(response.context["sort_field"], str(self.contactfield_1.uuid))
+            self.assertEqual(response.context["sort_field"], str(self.contactfield_1.key))
             self.assertEqual(response.context["sort_direction"], "asc")
             self.assertTrue("search" not in response.context)
 
-            response = self.client.get("%s?sort_on=-%s" % (url, str(self.contactfield_1.uuid)))
+            response = self.client.get("%s?sort_on=-%s" % (url, str(self.contactfield_1.key)))
 
-            self.assertEqual(response.context["sort_field"], str(self.contactfield_1.uuid))
+            self.assertEqual(response.context["sort_field"], str(self.contactfield_1.key))
             self.assertEqual(response.context["sort_direction"], "desc")
             self.assertTrue("search" not in response.context)
 
@@ -7563,7 +7635,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(create_cf_url, post_data)
 
         # field cannot be created because there is an active field 'First'
-        self.assertFormError(response, "form", None, "Field names must be unique. 'First' is duplicated")
+        self.assertFormError(response, "form", None, "Must be unique.")
 
         # then we hide the field
         ContactField.hide_field(self.org, self.admin, key="first")
@@ -7600,7 +7672,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(create_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field names can only contain letters, numbers and hypens")
+        self.assertFormError(response, "form", None, "Can only contain letters, numbers and hypens.")
         self.assertFormError(response, "form", "value_type", "This field is required.")
 
         # a form with an invalid label
@@ -7609,7 +7681,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(create_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field names can only contain letters, numbers and hypens")
+        self.assertFormError(response, "form", None, "Can only contain letters, numbers and hypens.")
 
         # a form trying to create a field that already exists
         post_data = {"label": "First"}
@@ -7617,7 +7689,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(create_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field names must be unique. 'First' is duplicated")
+        self.assertFormError(response, "form", None, "Must be unique.")
 
         # a form creating a field that does not have a valid key
         post_data = {"label": "modified by"}
@@ -7625,7 +7697,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(create_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field name 'modified by' is a reserved word")
+        self.assertFormError(response, "form", None, "Can't be a reserved word")
 
         with override_settings(MAX_ACTIVE_CONTACTFIELDS_PER_ORG=2):
             # a valid form, but ORG has reached max active fields limit
@@ -7634,9 +7706,7 @@ class ContactFieldTest(TembaTest):
             response = self.client.post(create_cf_url, post_data)
 
             self.assertEqual(response.status_code, 200)
-            self.assertFormError(
-                response, "form", None, "Cannot create a new Contact Field, maximum allowed per org: 2"
-            )
+            self.assertFormError(response, "form", None, "Cannot create a new field as limit is 2.")
 
         # value_type not supported
         post_data = {"label": "teefilter", "value_type": "J"}
@@ -7706,7 +7776,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(update_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field names can only contain letters, numbers and hypens")
+        self.assertFormError(response, "form", None, "Can only contain letters, numbers and hypens.")
         self.assertFormError(response, "form", "value_type", "This field is required.")
 
         # a form with an invalid label
@@ -7715,7 +7785,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(update_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field names can only contain letters, numbers and hypens")
+        self.assertFormError(response, "form", None, "Can only contain letters, numbers and hypens.")
 
         # a form trying to create a field that already exists
         post_data = {"label": "Second"}
@@ -7723,7 +7793,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(update_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field names must be unique. 'Second' is duplicated")
+        self.assertFormError(response, "form", None, "Must be unique.")
 
         # a form creating a field that does not have a valid key
         post_data = {"label": "modified by"}
@@ -7731,7 +7801,7 @@ class ContactFieldTest(TembaTest):
         response = self.client.post(update_cf_url, post_data)
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", None, "Field name 'modified by' is a reserved word")
+        self.assertFormError(response, "form", None, "Can't be a reserved word")
 
         # value_type not supported
         post_data = {"label": "teefilter", "value_type": "J"}
@@ -7946,7 +8016,7 @@ class ContactFieldTest(TembaTest):
 
         response_json = response.json()
 
-        self.assertEqual(len(response_json), 47)
+        self.assertEqual(len(response_json), 48)
         self.assertEqual(response_json[0]["label"], "Full name")
         self.assertEqual(response_json[0]["key"], "name")
         self.assertEqual(response_json[1]["label"], "Phone number")
@@ -7975,22 +8045,24 @@ class ContactFieldTest(TembaTest):
         self.assertEqual(response_json[12]["key"], "fcm")
         self.assertEqual(response_json[13]["label"], "WhatsApp identifier")
         self.assertEqual(response_json[13]["key"], "whatsapp")
-        self.assertEqual(response_json[14]["label"], "Groups")
-        self.assertEqual(response_json[14]["key"], "groups")
-        self.assertEqual(response_json[15]["label"], "First")
-        self.assertEqual(response_json[15]["key"], "first")
-        self.assertEqual(response_json[16]["label"], "label0")
-        self.assertEqual(response_json[16]["key"], "key0")
+        self.assertEqual(response_json[14]["label"], "Freshchat identifier")
+        self.assertEqual(response_json[14]["key"], "freshchat")
+        self.assertEqual(response_json[15]["label"], "Groups")
+        self.assertEqual(response_json[15]["key"], "groups")
+        self.assertEqual(response_json[16]["label"], "First")
+        self.assertEqual(response_json[16]["key"], "first")
+        self.assertEqual(response_json[17]["label"], "label0")
+        self.assertEqual(response_json[17]["key"], "key0")
 
         ContactField.user_fields.filter(org=self.org, key="key0").update(label="AAAA")
 
         response = self.client.get(contact_field_json_url)
         response_json = response.json()
 
-        self.assertEqual(response_json[15]["label"], "AAAA")
-        self.assertEqual(response_json[15]["key"], "key0")
-        self.assertEqual(response_json[16]["label"], "First")
-        self.assertEqual(response_json[16]["key"], "first")
+        self.assertEqual(response_json[16]["label"], "AAAA")
+        self.assertEqual(response_json[16]["key"], "key0")
+        self.assertEqual(response_json[17]["label"], "First")
+        self.assertEqual(response_json[17]["key"], "first")
 
 
 class URNTest(TembaTest):
@@ -8012,6 +8084,16 @@ class URNTest(TembaTest):
         self.assertEqual("whatsapp:12065551212", URN.from_whatsapp("12065551212"))
         self.assertTrue(URN.validate("whatsapp:12065551212"))
         self.assertFalse(URN.validate("whatsapp:+12065551212"))
+
+    def test_freshchat_urn(self):
+        self.assertEqual(
+            "freshchat:c0534f78-b6e9-4f79-8853-11cedfc1f35b/c0534f78-b6e9-4f79-8853-11cedfc1f35b",
+            URN.from_freshchat("c0534f78-b6e9-4f79-8853-11cedfc1f35b/c0534f78-b6e9-4f79-8853-11cedfc1f35b"),
+        )
+        self.assertTrue(
+            URN.validate("freshchat:c0534f78-b6e9-4f79-8853-11cedfc1f35b/c0534f78-b6e9-4f79-8853-11cedfc1f35b")
+        )
+        self.assertFalse(URN.validate("freshchat:+12065551212"))
 
     def test_from_parts(self):
 
@@ -8142,251 +8224,3 @@ class PhoneNumberTest(TestCase):
         self.assertEqual(is_phonenumber("AMAZONS"), (False, None))
         self.assertEqual(is_phonenumber('name = "Jack"'), (False, None))
         self.assertEqual(is_phonenumber('(social = "234-432-324")'), (False, None))
-
-
-class ESIntegrationTest(TembaTestMixin, SmartminTestMixin, TransactionTestCase):
-    def test_ES_contacts_index(self):
-        self.create_anonymous_user()
-        self.admin = self.create_user("Administrator")
-        self.user = self.admin
-
-        self.country = AdminBoundary.create(osm_id="171496", name="Rwanda", level=0)
-        self.state1 = AdminBoundary.create(osm_id="1708283", name="Kigali City", level=1, parent=self.country)
-        self.state2 = AdminBoundary.create(osm_id="171591", name="Eastern Province", level=1, parent=self.country)
-        self.district1 = AdminBoundary.create(osm_id="1711131", name="Gatsibo", level=2, parent=self.state2)
-        self.district2 = AdminBoundary.create(osm_id="1711163", name="Kayônza", level=2, parent=self.state2)
-        self.district3 = AdminBoundary.create(osm_id="3963734", name="Nyarugenge", level=2, parent=self.state1)
-        self.district4 = AdminBoundary.create(osm_id="1711142", name="Rwamagana", level=2, parent=self.state2)
-        self.ward1 = AdminBoundary.create(osm_id="171113181", name="Kageyo", level=3, parent=self.district1)
-        self.ward2 = AdminBoundary.create(osm_id="171116381", name="Kabare", level=3, parent=self.district2)
-        self.ward3 = AdminBoundary.create(osm_id="171114281", name="Bukure", level=3, parent=self.district4)
-
-        self.org = Org.objects.create(
-            name="Temba",
-            timezone=pytz.timezone("Africa/Kigali"),
-            country=self.country,
-            brand=settings.DEFAULT_BRAND,
-            created_by=self.admin,
-            modified_by=self.admin,
-        )
-
-        self.org.initialize(topup_size=1000)
-        self.admin.set_org(self.org)
-        self.org.administrators.add(self.admin)
-
-        self.client.login(username=self.admin.username, password=self.admin.username)
-
-        age = ContactField.get_or_create(self.org, self.admin, "age", "Age", value_type="N")
-        ContactField.get_or_create(self.org, self.admin, "join_date", "Join Date", value_type="D")
-        ContactField.get_or_create(self.org, self.admin, "state", "Home State", value_type="S")
-        ContactField.get_or_create(self.org, self.admin, "home", "Home District", value_type="I")
-        ward = ContactField.get_or_create(self.org, self.admin, "ward", "Home Ward", value_type="W")
-        ContactField.get_or_create(self.org, self.admin, "profession", "Profession", value_type="T")
-        ContactField.get_or_create(self.org, self.admin, "isureporter", "Is UReporter", value_type="T")
-        ContactField.get_or_create(self.org, self.admin, "hasbirth", "Has Birth", value_type="T")
-
-        names = ["Trey", "Mike", "Paige", "Fish", "", None]
-        districts = ["Gatsibo", "Kayônza", "Rwamagana", None]
-        wards = ["Kageyo", "Kabara", "Bukure", None]
-        date_format = self.org.get_datetime_formats()[0]
-
-        # reset contact ids so we don't get unexpected collisions with phone numbers
-        with connection.cursor() as cursor:
-            cursor.execute("""SELECT setval(pg_get_serial_sequence('"contacts_contact"','id'), 900)""")
-
-        # create some contacts
-        for i in range(90):
-            name = names[i % len(names)]
-
-            number = "0188382%s" % str(i).zfill(3)
-            twitter = ("tweep_%d" % (i + 1)) if (i % 3 == 0) else None  # 1 in 3 have twitter URN
-            contact = self.create_contact(name=name, number=number, twitter=twitter)
-            join_date = datetime_to_str(date(2014, 1, 1) + timezone.timedelta(days=i), date_format, tz=pytz.utc)
-
-            # some field data so we can do some querying
-            contact.set_field(self.admin, "age", str(i + 10))
-            contact.set_field(self.admin, "join_date", str(join_date))
-            contact.set_field(self.admin, "state", "Eastern Province")
-            contact.set_field(self.admin, "home", districts[i % len(districts)])
-            contact.set_field(self.admin, "ward", wards[i % len(wards)])
-
-            contact.set_field(self.admin, "isureporter", "yes" if i % 2 == 0 else "no" if i % 3 == 0 else None)
-            contact.set_field(self.admin, "hasbirth", "no")
-
-            if i % 3 == 0:
-                contact.set_field(self.admin, "profession", "Farmer")  # only some contacts have any value for this
-
-        def q(query):
-            search_object, _ = contact_es_search(self.org, query, None)
-            return search_object.source(fields=("id",)).using(ES).count()
-
-        db_config = settings.DATABASES["default"]
-        database_url = (
-            f"postgres://{db_config['USER']}:{db_config['PASSWORD']}@{db_config['HOST']}:{db_config['PORT']}/"
-            f"{db_config['NAME']}?sslmode=disable"
-        )
-
-        result = subprocess.run(
-            ["./rp-indexer", "-elastic-url", settings.ELASTICSEARCH_URL, "-db", database_url, "-rebuild"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        self.assertEqual(result.returncode, 0, "Command failed: %s\n\n%s" % (result.stdout, result.stderr))
-
-        # give ES some time to publish the results
-        time.sleep(5)
-
-        self.assertEqual(q("trey"), 15)
-        self.assertEqual(q("MIKE"), 15)
-        self.assertEqual(q("  paige  "), 15)
-        self.assertEqual(q("0188382011"), 1)
-        self.assertEqual(q("trey 0188382"), 15)
-
-        # name as property
-        self.assertEqual(q('name is "trey"'), 15)
-        self.assertEqual(q("name is mike"), 15)
-        self.assertEqual(q("name = paige"), 15)
-        self.assertEqual(q('name != ""'), 60)
-        self.assertEqual(q('NAME = ""'), 30)
-        self.assertEqual(q("name ~ Mi"), 15)
-        self.assertEqual(q('name != "Mike"'), 75)
-
-        # URN as property
-        self.assertEqual(q("tel is +250188382011"), 1)
-        self.assertEqual(q("tel has 0188382011"), 1)
-        self.assertEqual(q("twitter = tweep_13"), 1)
-        self.assertEqual(q('twitter = ""'), 60)
-        self.assertEqual(q('twitter != ""'), 30)
-        self.assertEqual(q("TWITTER has tweep"), 30)
-
-        # contact field as property
-        self.assertEqual(q("age > 30"), 69)
-        self.assertEqual(q("age >= 30"), 70)
-        self.assertEqual(q("age > 30 and age <= 40"), 10)
-        self.assertEqual(q("AGE < 20"), 10)
-        self.assertEqual(q('age != ""'), 90)
-        self.assertEqual(q('age = ""'), 0)
-
-        self.assertEqual(q("join_date = 1-1-14"), 1)
-        self.assertEqual(q("join_date < 30/1/2014"), 29)
-        self.assertEqual(q("join_date <= 30/1/2014"), 30)
-        self.assertEqual(q("join_date > 30/1/2014"), 60)
-        self.assertEqual(q("join_date >= 30/1/2014"), 61)
-        self.assertEqual(q('join_date != ""'), 90)
-        self.assertEqual(q('join_date = ""'), 0)
-
-        self.assertEqual(q('state is "Eastern Province"'), 90)
-        self.assertEqual(q("HOME is Kayônza"), 23)
-        self.assertEqual(q("ward is kageyo"), 23)
-        self.assertEqual(q("ward != kageyo"), 67)  # includes objects with empty ward
-
-        self.assertEqual(q('home is ""'), 22)
-        self.assertEqual(q('profession = ""'), 60)
-        self.assertEqual(q('profession is ""'), 60)
-        self.assertEqual(q('profession != ""'), 30)
-
-        # contact fields beginning with 'is' or 'has'
-        self.assertEqual(q('isureporter = "yes"'), 45)
-        self.assertEqual(q("isureporter = yes"), 45)
-        self.assertEqual(q("isureporter = no"), 15)
-        self.assertEqual(q("isureporter != no"), 75)  # includes objects with empty isureporter
-
-        self.assertEqual(q('hasbirth = "no"'), 90)
-        self.assertEqual(q("hasbirth = no"), 90)
-        self.assertEqual(q("hasbirth = yes"), 0)
-
-        # boolean combinations
-        self.assertEqual(q("name is trey or name is mike"), 30)
-        self.assertEqual(q("name is trey and age < 20"), 2)
-        self.assertEqual(q('(home is gatsibo or home is "Rwamagana")'), 45)
-        self.assertEqual(q('(home is gatsibo or home is "Rwamagana") and name is trey'), 15)
-        self.assertEqual(q('name is MIKE and profession = ""'), 15)
-        self.assertEqual(q("profession = doctor or profession = farmer"), 30)  # same field
-        self.assertEqual(q("age = 20 or age = 21"), 2)
-        self.assertEqual(q("join_date = 30/1/2014 or join_date = 31/1/2014"), 2)
-
-        # create contact with no phone number, we'll try searching for it by id
-        contact = self.create_contact(name="Id Contact")
-
-        # a new contact was created, execute the rp-indexer again
-        result = subprocess.run(
-            ["./rp-indexer", "-elastic-url", settings.ELASTICSEARCH_URL, "-db", database_url, "-rebuild"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        self.assertEqual(result.returncode, 0, "Command failed: %s\n\n%s" % (result.stdout, result.stderr))
-
-        # give ES some time to publish the results
-        time.sleep(5)
-
-        # NOTE: when this fails with `AssertionError: 90 != 0`, check if contact phone numbers might match
-        # NOTE: for example id=2507, tel=250788382011 ... will match
-        # non-anon orgs can't search by id (because they never see ids), but they match on tel
-        self.assertEqual(q("%d" % contact.pk), 0)
-
-        with AnonymousOrg(self.org):
-            # still allow name and field searches
-            self.assertEqual(q("trey"), 15)
-            self.assertEqual(q("name is mike"), 15)
-            self.assertEqual(q("age > 30"), 69)
-
-            # don't allow matching on URNs
-            self.assertEqual(q("0188382011"), 0)
-            self.assertEqual(q("tel is +250188382011"), 0)
-            self.assertEqual(q("twitter has tweep"), 0)
-            self.assertEqual(q('twitter = ""'), 0)
-
-            # anon orgs can search by id, with or without zero padding
-            self.assertEqual(q("%d" % contact.pk), 1)
-            self.assertEqual(q("%010d" % contact.pk), 1)
-
-        # invalid queries
-        self.assertRaises(SearchException, q, "((")
-        self.assertRaises(SearchException, q, 'name = "trey')  # unterminated string literal
-        self.assertRaises(SearchException, q, "name > trey")  # unrecognized non-field operator   # ValueError
-        self.assertRaises(SearchException, q, "profession > trey")  # unrecognized text-field operator   # ValueError
-        self.assertRaises(SearchException, q, "age has 4")  # unrecognized decimal-field operator   # ValueError
-        self.assertRaises(SearchException, q, "age = x")  # unparseable decimal-field comparison
-        self.assertRaises(
-            SearchException, q, "join_date has 30/1/2014"
-        )  # unrecognized date-field operator   # ValueError
-        self.assertRaises(SearchException, q, "join_date > xxxxx")  # unparseable date-field comparison
-        self.assertRaises(SearchException, q, "home > kigali")  # unrecognized location-field operator
-        self.assertRaises(SearchException, q, "credits > 10")  # non-existent field or attribute
-        self.assertRaises(SearchException, q, "tel < +250188382011")  # unsupported comparator for a URN   # ValueError
-        self.assertRaises(SearchException, q, 'tel < ""')  # unsupported comparator for an empty string
-        self.assertRaises(SearchException, q, "data=“not empty”")  # unicode “,” are not accepted characters
-
-        # test contact_search_list
-        url = reverse("contacts.contact_list")
-        self.login(self.admin)
-
-        response = self.client.get("%s?sort_on=%s" % (url, "created_on"))
-        self.assertEqual(response.context["contacts"][0].name, "Trey")  # first contact in the set
-        self.assertEqual(response.context["contacts"][0].fields[str(age.uuid)], {"text": "10", "number": "10"})
-
-        response = self.client.get("%s?sort_on=-%s" % (url, "created_on"))
-        self.assertEqual(response.context["contacts"][0].name, "Id Contact")  # last contact in the set
-        self.assertEqual(response.context["contacts"][0].fields, None)
-
-        response = self.client.get("%s?sort_on=-%s" % (url, str(ward.uuid)))
-        self.assertEqual(
-            response.context["contacts"][0].fields[str(ward.uuid)],
-            {
-                "district": "Rwanda > Eastern Province > Gatsibo",
-                "state": "Rwanda > Eastern Province",
-                "text": "Kageyo",
-                "ward": "Rwanda > Eastern Province > Gatsibo > Kageyo",
-            },
-        )
-
-        response = self.client.get("%s?sort_on=%s" % (url, str(ward.uuid)))
-        self.assertEqual(
-            response.context["contacts"][0].fields[str(ward.uuid)],
-            {
-                "district": "Rwanda > Eastern Province > Rwamagana",
-                "state": "Rwanda > Eastern Province",
-                "text": "Bukure",
-                "ward": "Rwanda > Eastern Province > Rwamagana > Bukure",
-            },
-        )
