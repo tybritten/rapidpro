@@ -1,3 +1,7 @@
+v9.3.140 (2024-12-19)
+-------------------------
+ * Remove system check that MAILROOM_URL is set
+
 v9.3.139 (2024-12-16)
 -------------------------
  * Remove no longer used waiting_exits from flow inspection
