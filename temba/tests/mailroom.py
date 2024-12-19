@@ -300,9 +300,12 @@ class TestClient(MailroomClient):
         if self.mocks._flow_inspect:
             return self.mocks._flow_inspect.pop(0)
 
-        # fall back to the real client - note that this why mailroom has to be running during tests
-        # and is something we might want to change in the future
-        return super().flow_inspect(org, definition)
+        return {
+            "dependencies": [],
+            "issues": [],
+            "results": [],
+            "parent_refs": [],
+        }
 
     @_client_method
     def flow_start_preview(self, org, flow, include, exclude):
