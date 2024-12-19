@@ -207,8 +207,10 @@ class ContactGroupCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(404, response.status_code)
 
     def test_usages(self):
-        flow = self.get_flow("dependencies", name="Dependencies")
-        group = ContactGroup.objects.get(name="Cat Facts")
+        group = self.create_group("Cat Facts")
+
+        flow = self.create_flow("Flow")
+        flow.group_dependencies.add(group)
 
         campaign1 = Campaign.create(self.org, self.admin, "Planting Reminders", group)
         campaign2 = Campaign.create(self.org, self.admin, "Deleted", group)

@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from temba.archives.models import Archive
 from temba.contacts.models import Contact, ContactURN
-from temba.flows.models import Flow, FlowRun, ResultsExport
+from temba.flows.models import FlowRun, ResultsExport
 from temba.orgs.models import Export
 from temba.tests import TembaTest, mock_mailroom
 from temba.tests.engine import MockSessionWriter
@@ -72,15 +72,21 @@ class ResultsExportTest(TembaTest):
         color_other = flow_nodes[3]
         orange_reply = flow_nodes[1]
 
-        # add a spec for a hidden result to this flow
-        flow.metadata[Flow.METADATA_RESULTS].append(
+        flow.metadata["results"] = [
+            {
+                "key": "color",
+                "name": "Color",
+                "categories": ["Orange", "Blue", "Other", "Nothing"],
+                "node_uuids": [color_split["uuid"]],
+            },
             {
                 "key": "_color_classification",
                 "name": "_Color Classification",
                 "categories": ["Success", "Skipped", "Failure"],
-                "node_uuids": [color_split["uuid"]],
-            }
-        )
+                "node_uuids": ["773698ef-d512-477b-a404-437a2aa5b1c9"],
+            },
+        ]
+        flow.save(update_fields=("metadata",))
 
         age = self.create_field("age", "Age")
         devs = self.create_group("Devs", [self.contact])

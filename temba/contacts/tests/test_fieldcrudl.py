@@ -265,12 +265,12 @@ class ContactFieldCRUDLTest(TembaTest, CRUDLTestMixin):
 
     @mock_mailroom
     def test_usages(self, mr_mocks):
-        flow = self.get_flow("dependencies", name="Dependencies")
-        field = ContactField.user_fields.filter(is_active=True, org=self.org, key="favorite_cat").get()
-        field.value_type = ContactField.TYPE_DATETIME
-        field.save(update_fields=("value_type",))
+        field = self.create_field("joined", "Joined", value_type="D")
 
-        group = self.create_group("Farmers", query='favorite_cat != ""')
+        flow = self.create_flow("Flow")
+        flow.field_dependencies.add(field)
+
+        group = self.create_group("Farmers", query='joined != ""')
         campaign = Campaign.create(self.org, self.admin, "Planting Reminders", group)
 
         # create flow events

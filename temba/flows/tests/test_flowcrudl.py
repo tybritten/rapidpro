@@ -1132,9 +1132,8 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.channel.save()
 
         # clear dependencies, this will cause our flow to look like it isn't using templates
-        metadata = flow.metadata
-        flow.metadata = {}
-        flow.save(update_fields=["metadata"])
+        flow.metadata["dependencies"] = []
+        flow.save(update_fields=("metadata",))
 
         mr_mocks.flow_start_preview(query="age > 30", total=2)
         response = self.client.post(
@@ -1152,9 +1151,11 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
             ],
         )
 
-        # restore our dependency
-        flow.metadata = metadata
-        flow.save(update_fields=["metadata"])
+        # make it look like we are using a template, but it doesn't exist
+        flow.metadata["dependencies"] = [
+            {"type": "template", "uuid": "f712e05c-bbed-40f1-b3d9-671bb9b60775", "name": "affirmation"}
+        ]
+        flow.save(update_fields=("metadata",))
 
         # template doesn't exit, will be warned
         mr_mocks.flow_start_preview(query="age > 30", total=2)
