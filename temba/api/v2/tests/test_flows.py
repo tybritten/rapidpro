@@ -17,7 +17,7 @@ class FlowsEndpointTest(APITest):
         self.assertDeleteNotAllowed(endpoint_url)
 
         survey = self.get_flow("media_survey")
-        color = self.get_flow("color")
+        color = self.get_flow("color_v13")
         archived = self.get_flow("favorites")
         archived.archive(self.admin)
 
@@ -76,16 +76,16 @@ class FlowsEndpointTest(APITest):
                 },
                 {
                     "uuid": color.uuid,
-                    "name": "Color Flow",
+                    "name": "Colors",
                     "type": "message",
                     "archived": False,
                     "labels": [{"uuid": str(reporting.uuid), "name": "Reporting"}],
-                    "expires": 10080,
+                    "expires": 720,
                     "runs": {"active": 0, "waiting": 0, "completed": 1, "interrupted": 0, "expired": 0, "failed": 0},
                     "results": [
                         {
                             "key": "color",
-                            "name": "color",
+                            "name": "Color",
                             "categories": ["Orange", "Blue", "Other", "Nothing"],
                             "node_uuids": [matchers.UUID4String()],
                         }
