@@ -296,6 +296,11 @@ class TestClient(MailroomClient):
         return results
 
     @_client_method
+    def flow_clone(self, definition: dict, dependency_mapping):
+        # we replace UUIDs in production to ensure uniqueness but for tests it's nicer to know the UUIDs
+        return definition
+
+    @_client_method
     def flow_inspect(self, org, definition: dict):
         if self.mocks._flow_inspect:
             return self.mocks._flow_inspect.pop(0)
