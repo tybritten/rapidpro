@@ -1248,7 +1248,7 @@ class BulkExportTest(TembaTest):
         # try a file which can be migrated forwards
         response = self.client.post(
             create_url,
-            {"file": open("%s/test_flows/favorites_v4.json" % settings.MEDIA_ROOT, "rb")},
+            {"file": open("%s/test_flows/legacy/migrations/favorites_v4.json" % settings.MEDIA_ROOT, "rb")},
         )
         self.assertEqual(302, response.status_code)
 
@@ -1381,7 +1381,7 @@ class BulkExportTest(TembaTest):
         # final call is after new flows and dependencies have been committed so mailroom can see them
         mr_mocks.flow_inspect(dependencies=[{"key": "age", "name": "", "type": "field", "missing": False}])
 
-        self.import_file("test_flows/color.json")
+        self.import_file("test_flows/color_v13.json")
 
         flow = Flow.objects.get()
 
@@ -1826,9 +1826,7 @@ class BulkExportTest(TembaTest):
         self.assertNotContains(response, "Register Patient")
 
     def test_prevent_flow_type_changes(self):
-        flow1 = self.get_flow("favorites")
-        flow1.name = "Background"
-        flow1.save(update_fields=("name",))
+        flow1 = self.create_flow("Background")
 
         flow2 = self.get_flow("background")  # contains a flow called Background
 

@@ -539,32 +539,23 @@ class ResultsExportTest(TembaTest):
                 self.org.timezone,
             )
 
-    def test_broadcast_only_flow(self):
-        flow = self.get_flow("send_only_v13")
-        send_node = flow.get_definition()["nodes"][0]
+    def test_flow_without_results(self):
+        flow = self.create_flow("Test")
         today = timezone.now().astimezone(self.org.timezone).date()
 
-        for contact in [self.contact, self.contact2, self.contact3]:
-            (
-                MockSessionWriter(contact, flow)
-                .visit(send_node)
-                .send_msg("This is the first message.", self.channel)
-                .send_msg("This is the second message.", self.channel)
-                .complete()
-                .save()
-            ).session.runs.get()
-
         for contact in [self.contact, self.contact2]:
-            (
-                MockSessionWriter(contact, flow)
-                .visit(send_node)
-                .send_msg("This is the first message.", self.channel)
-                .send_msg("This is the second message.", self.channel)
-                .complete()
-                .save()
-            ).session.runs.get()
+            flow.runs.create(
+                org=contact.org,
+                contact=contact,
+                status=FlowRun.STATUS_COMPLETED,
+                path=[],
+                results={},
+                created_on=timezone.now(),
+                modified_on=timezone.now(),
+                exited_on=timezone.now(),
+            )
 
-        contact1_run1, contact2_run1, contact3_run1, contact1_run2, contact2_run2 = FlowRun.objects.order_by("id")
+        contact1_run1, contact2_run1 = flow.runs.order_by("id")
 
         with self.assertNumQueries(17):
             workbook = self._export(flow, start_date=today - timedelta(days=7), end_date=today)
@@ -574,7 +565,7 @@ class ResultsExportTest(TembaTest):
         (sheet_runs,) = workbook.worksheets
 
         # check runs sheet...
-        self.assertEqual(6, len(list(sheet_runs.rows)))  # header + 5 runs
+        self.assertEqual(3, len(list(sheet_runs.rows)))  # header + 2 runs
         self.assertEqual(8, len(list(sheet_runs.columns)))
 
         self.assertExcelRow(
@@ -610,51 +601,6 @@ class ResultsExportTest(TembaTest):
                 contact2_run1.modified_on,
                 contact2_run1.exited_on,
                 contact2_run1.uuid,
-            ],
-            tz,
-        )
-        self.assertExcelRow(
-            sheet_runs,
-            3,
-            [
-                contact3_run1.contact.uuid,
-                "Norbert",
-                "tel",
-                "+250788123456",
-                contact3_run1.created_on,
-                contact3_run1.modified_on,
-                contact3_run1.exited_on,
-                contact3_run1.uuid,
-            ],
-            tz,
-        )
-        self.assertExcelRow(
-            sheet_runs,
-            4,
-            [
-                contact1_run2.contact.uuid,
-                "Eric",
-                "tel",
-                "+250788382382",
-                contact1_run2.created_on,
-                contact1_run2.modified_on,
-                contact1_run2.exited_on,
-                contact1_run2.uuid,
-            ],
-            tz,
-        )
-        self.assertExcelRow(
-            sheet_runs,
-            5,
-            [
-                contact2_run2.contact.uuid,
-                "Nic",
-                "tel",
-                "+250788383383",
-                contact2_run2.created_on,
-                contact2_run2.modified_on,
-                contact2_run2.exited_on,
-                contact2_run2.uuid,
             ],
             tz,
         )
