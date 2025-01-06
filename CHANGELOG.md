@@ -1,3 +1,9 @@
+v9.3.141 (2025-01-06)
+-------------------------
+ * Fix CI builds for latest poetry
+ * Add MsgFolder to eventually replace SystemLabel
+ * A lot of test cleanup
+
 v9.3.140 (2024-12-19)
 -------------------------
  * Remove system check that MAILROOM_URL is set
