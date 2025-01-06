@@ -861,7 +861,8 @@ class MsgFolder(Enum):
         self.archive_query = archive_query
 
     def get_queryset(self, org):
-        return org.msgs.filter(**self.query)
+        # we don't use org.msgs here because it causes problems when the API is using different db connections
+        return Msg.objects.filter(org=org, **self.query)
 
     def get_archive_query(self) -> dict:
         return self.archive_query.copy()
