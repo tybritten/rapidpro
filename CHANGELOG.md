@@ -1,3 +1,7 @@
+v9.3.142 (2025-01-06)
+-------------------------
+ * Fix API messages endpoint when using readonly db connection
+
 v9.3.141 (2025-01-06)
 -------------------------
  * Fix CI builds for latest poetry
