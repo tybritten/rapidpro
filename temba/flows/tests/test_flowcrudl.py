@@ -1,5 +1,6 @@
 import io
 from datetime import date, datetime, timedelta, timezone as tzone
+from decimal import Decimal
 from unittest.mock import patch
 
 from django_redis import get_redis_connection
@@ -15,7 +16,9 @@ from temba.orgs.models import Export
 from temba.templates.models import TemplateTranslation
 from temba.tests import CRUDLTestMixin, TembaTest, matchers, mock_mailroom
 from temba.tests.base import get_contact_search
+from temba.tests.requests import MockJsonResponse
 from temba.triggers.models import Trigger
+from temba.utils import json
 from temba.utils.uuid import uuid4
 from temba.utils.views.mixins import TEMBA_MENU_SELECTION
 
@@ -676,8 +679,8 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual("Amazing Flow", flow.get_definition()["name"])
 
         # make a flow that looks like a legacy flow
-        flow = self.get_flow("color_v11")
-        original_def = self.load_json("test_flows/color_v11.json")["flows"][0]
+        flow = self.get_flow("legacy/color_v11")
+        original_def = self.load_json("test_flows/legacy/color_v11.json")["flows"][0]
 
         flow.version_number = "11.12"
         flow.save(update_fields=("version_number",))
@@ -703,11 +706,11 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual("Amazing Flow 2", flow.get_definition()["metadata"]["name"])
 
     def test_revisions(self):
-        flow = self.get_flow("color_v11")
+        flow = self.get_flow("legacy/color_v11")
 
         revisions_url = reverse("flows.flow_revisions", args=[flow.uuid])
 
-        original_def = self.load_json("test_flows/color_v11.json")["flows"][0]
+        original_def = self.load_json("test_flows/legacy/color_v11.json")["flows"][0]
 
         # rewind definition to legacy spec
         revision = flow.revisions.get()
@@ -1329,7 +1332,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual('name ~ "frank"', start.query)
 
     def test_copy_view(self):
-        flow = self.get_flow("color")
+        flow = self.get_flow("color_v13")
 
         self.login(self.admin)
 
@@ -1861,6 +1864,108 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
             },
             export.config,
         )
+
+    def test_simulate(self):
+        flow = self.create_flow("Test")
+
+        # create our payload
+        payload = dict(version=2, trigger={}, flow={})
+
+        self.login(self.admin)
+        simulate_url = reverse("flows.flow_simulate", args=[flow.pk])
+
+        with override_settings(MAILROOM_AUTH_TOKEN="sesame", MAILROOM_URL="https://mailroom.temba.io"):
+            with patch("requests.post") as mock_post:
+                mock_post.return_value = MockJsonResponse(400, {"session": {}})
+                response = self.client.post(simulate_url, json.dumps(payload), content_type="application/json")
+                self.assertEqual(500, response.status_code)
+
+            # start a flow
+            with patch("requests.post") as mock_post:
+                mock_post.return_value = MockJsonResponse(200, {"session": {}})
+                response = self.client.post(simulate_url, json.dumps(payload), content_type="application/json")
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({}, response.json()["session"])
+
+                actual_url = mock_post.call_args_list[0][0][0]
+                actual_payload = json.loads(mock_post.call_args_list[0][1]["data"])
+                actual_headers = mock_post.call_args_list[0][1]["headers"]
+
+                self.assertEqual(actual_url, "https://mailroom.temba.io/mr/sim/start")
+                self.assertEqual(actual_payload["org_id"], flow.org_id)
+                self.assertEqual(actual_payload["trigger"]["environment"]["date_format"], "DD-MM-YYYY")
+                self.assertEqual(len(actual_payload["assets"]["channels"]), 1)  # fake channel
+                self.assertEqual(len(actual_payload["flows"]), 1)
+                self.assertEqual(actual_headers["Authorization"], "Token sesame")
+                self.assertEqual(actual_headers["Content-Type"], "application/json")
+
+            # try a resume
+            payload = {
+                "version": 2,
+                "session": {"contact": {"fields": {"age": Decimal("39")}}},
+                "resume": {},
+                "flow": {},
+            }
+
+            with patch("requests.post") as mock_post:
+                mock_post.return_value = MockJsonResponse(400, {"session": {}})
+                response = self.client.post(simulate_url, json.dumps(payload), content_type="application/json")
+                self.assertEqual(500, response.status_code)
+
+            with patch("requests.post") as mock_post:
+                mock_post.return_value = MockJsonResponse(200, {"session": {}})
+                response = self.client.post(simulate_url, json.dumps(payload), content_type="application/json")
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({}, response.json()["session"])
+
+                actual_url = mock_post.call_args_list[0][0][0]
+                actual_payload = json.loads(mock_post.call_args_list[0][1]["data"])
+                actual_headers = mock_post.call_args_list[0][1]["headers"]
+
+                self.assertEqual(actual_url, "https://mailroom.temba.io/mr/sim/resume")
+                self.assertEqual(actual_payload["org_id"], flow.org_id)
+                self.assertEqual(actual_payload["resume"]["environment"]["date_format"], "DD-MM-YYYY")
+                self.assertEqual(len(actual_payload["assets"]["channels"]), 1)  # fake channel
+                self.assertEqual(len(actual_payload["flows"]), 1)
+                self.assertEqual(actual_headers["Authorization"], "Token sesame")
+                self.assertEqual(actual_headers["Content-Type"], "application/json")
+
+    def test_simulate_voice(self):
+        flow = self.create_flow("Test", flow_type=Flow.TYPE_VOICE)
+
+        self.login(self.admin)
+        simulate_url = reverse("flows.flow_simulate", args=[flow.id])
+
+        with override_settings(MAILROOM_AUTH_TOKEN="sesame", MAILROOM_URL="https://mailroom.temba.io"):
+            with patch("requests.post") as mock_post:
+                mock_post.return_value = MockJsonResponse(200, {"session": {}})
+                response = self.client.post(
+                    simulate_url, {"version": 2, "trigger": {}, "flow": {}}, content_type="application/json"
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json(), {"session": {}})
+
+                # since this is an IVR flow, the session trigger will have a connection
+                self.assertEqual(
+                    {
+                        "call": {
+                            "channel": {"uuid": "440099cf-200c-4d45-a8e7-4a564f4a0e8b", "name": "Test Channel"},
+                            "urn": "tel:+12065551212",
+                        },
+                        "environment": {
+                            "date_format": "DD-MM-YYYY",
+                            "time_format": "tt:mm",
+                            "timezone": "Africa/Kigali",
+                            "allowed_languages": ["eng", "kin"],
+                            "default_country": "RW",
+                            "redaction_policy": "none",
+                            "input_collation": "default",
+                        },
+                        "user": {"email": "admin@textit.com", "name": "Andy"},
+                    },
+                    json.loads(mock_post.call_args[1]["data"])["trigger"],
+                )
 
     def test_export_and_download_translation(self):
         self.org.set_flow_languages(self.admin, ["spa"])

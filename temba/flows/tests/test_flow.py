@@ -299,31 +299,6 @@ class FlowTest(TembaTest, CRUDLTestMixin):
         copy2 = flow2.clone(self.admin)
         self.assertEqual("Copy of abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabc", copy2.name)
 
-    def test_copy_group_split_no_name(self):
-        flow = self.get_flow("group_split_no_name")
-        flow_def = flow.get_definition()
-
-        copy = flow.clone(self.admin)
-        copy_def = copy.get_definition()
-
-        self.assertEqual(len(copy_def["nodes"]), 1)
-        self.assertEqual(len(copy_def["nodes"][0]["router"]["cases"]), 1)
-        self.assertEqual(
-            copy_def["nodes"][0]["router"]["cases"][0],
-            {
-                "uuid": matchers.UUID4String(),
-                "type": "has_group",
-                "arguments": [matchers.UUID4String()],
-                "category_uuid": matchers.UUID4String(),
-            },
-        )
-
-        # check that the original and the copy reference the same group
-        self.assertEqual(
-            flow_def["nodes"][0]["router"]["cases"][0]["arguments"],
-            copy_def["nodes"][0]["router"]["cases"][0]["arguments"],
-        )
-
     def test_get_activity(self):
         flow1 = self.create_flow("Test 1")
         flow2 = self.create_flow("Test 2")
