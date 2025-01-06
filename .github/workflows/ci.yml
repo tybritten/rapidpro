@@ -64,7 +64,7 @@ jobs:
 
       - name: Initialize environment
         run: |
-          poetry install
+          poetry install --no-root
           yarn install
           sudo yarn global add less
           ln -s ${{ github.workspace }}/temba/settings.py.dev ${{ github.workspace }}/temba/settings.py
