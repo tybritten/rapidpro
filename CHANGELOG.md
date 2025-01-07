@@ -1,3 +1,7 @@
+v10.0.1 (2025-01-07)
+-------------------------
+ * Read MAILROOM_AUTH_TOKEN from env in dev settings
+
 v10.0.0 (2025-01-06)
 -------------------------
  * Add placeholder migration files for squashed migrations
