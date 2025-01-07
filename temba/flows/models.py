@@ -1470,9 +1470,31 @@ class FlowActivityCount(BaseScopedCount):
         ]
 
 
+class FlowResultCount(BaseSquashableCount):
+    """
+    Maintains counts for categories across results in a flow.
+    """
+
+    squash_over = ("flow_id", "result", "category")
+
+    flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="result_counts")
+    result = models.CharField(max_length=64)
+    category = models.CharField(max_length=64)
+
+    class Meta:
+        indexes = [
+            # for squashing task
+            models.Index(
+                name="flowresultcount_unsquashed",
+                fields=("flow", "result", "category"),
+                condition=Q(is_squashed=False),
+            ),
+        ]
+
+
 class FlowCategoryCount(BaseSquashableCount):
     """
-    Maintains counts for categories across all possible results in a flow
+    TODO: replace by FlowResultCount
     """
 
     squash_over = ("flow_id", "node_uuid", "result_key", "result_name", "category_name")
