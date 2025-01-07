@@ -1,5 +1,6 @@
 # RapidPro
 
+[![tag](https://img.shields.io/github/tag/nyaruka/rapidpro.svg)](https://github.com/nyaruka/rapidpro/releases)
 [![Build Status](https://github.com/nyaruka/rapidpro/workflows/CI/badge.svg)](https://github.com/nyaruka/rapidpro/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/nyaruka/rapidpro/branch/main/graph/badge.svg)](https://codecov.io/gh/nyaruka/rapidpro)
 
