@@ -66,10 +66,6 @@
 
     .spa-footer {}
 
-    temba-contact-tickets {
-      margin-bottom: -0.5em;
-    }
-
     .chat-pane .empty {
       position: absolute;
       opacity: 0;
@@ -146,11 +142,6 @@
         max-height: 7em;
       }
 
-      temba-contact-tickets {
-        flex-grow: 1;
-        flex-shrink: 1;
-      }
-
       temba-contact-name-fetch {
         display: none;
       }
@@ -187,9 +178,10 @@
     function handleMessageSent(evt) {
       var ticket = evt.detail.msg.ticket;
       if (ticket) {
+
         // auto assign tickets when a message is sent
-        var contactTickets = document.querySelector("temba-contact-tickets");
-        var assigned = contactTickets.handleTicketAssignment(ticket, "{{user.email}}");
+        const chat = document.querySelector("temba-contact-chat");
+        var assigned = chat.assignTicket("{{user.email}}");
 
         // if we performed assignment, track our sent message
         if (assigned) {
@@ -199,9 +191,7 @@
     }
 
     function handleTicketEditComplete() {
-      // refresh our ticket details
-      var contactTickets = document.querySelector("temba-contact-tickets");
-      contactTickets.refresh();
+
     }
 
     function handleTicketsMenuChanged(menuItem) {
@@ -247,7 +237,6 @@
 
     function updateTicketList() {
       var tickets = document.querySelector("temba-ticket-list");
-      var contactTickets = document.querySelector("temba-contact-tickets");
       var chat = document.querySelector("temba-contact-chat");
 
       // components can load before the document is ready,
@@ -303,7 +292,6 @@
       const ticketUI = document.querySelector('.ticket-ui');
 
       var contactHeader = document.querySelector("temba-contact-name-fetch");
-      var contactTickets = document.querySelector("temba-contact-tickets");
       var notepad = document.querySelector("temba-contact-notepad");
       var chat = document.querySelector("temba-contact-chat");
       var empty = document.querySelector(".chat-pane .empty");
@@ -320,9 +308,6 @@
         chat.contact = contact.uuid;
         chat.currentTicket = contact.ticket;
         notepad.contact = contact.uuid;
-
-        contactTickets.ticket = contact.ticket.uuid;
-        contactTickets.contact = contact.uuid;
         contactHeader.contact = contact.uuid;
         fields.forEach(function(contactFields) {
           contactFields.contact = contact.uuid;
@@ -355,8 +340,6 @@
         chat.contact = null;
         chat.currentTicket = null;
         chat.currentContact = null;
-        contactTickets.contact = null;
-        contactTickets.ticket = null;
         contactHeader.contact = null;
         notepad.contact = null;
       }
@@ -423,8 +406,6 @@
     }
 
     function handleTicketAssigned() {
-      var contactTickets = document.querySelector("temba-contact-tickets");
-      contactTickets.refresh();
       var chat = document.querySelector("temba-contact-chat");
       chat.refresh();
     }
@@ -434,19 +415,16 @@
       chat.refresh();
     }
 
-
-
     function handleTicketUpdated(event) {
-      if (event.detail.data) {
-        var ticket = event.detail.data[0];
+      var tickets = document.querySelector("temba-ticket-list");
+      var chat = document.querySelector("temba-contact-chat");
 
-        if (ticket && event.detail.previous && ticket.uuid == event.detail.previous[0].uuid) {
-          var previous = event.detail.previous[0];
+      if (event.detail.ticket) {
+        const ticket = event.detail.ticket;
+        const previous = event.detail.previous;
+        if (ticket && previous && ticket.uuid == previous.uuid) {
           var menu = document.querySelector('temba-menu');
           var statusSelect = document.querySelector('temba-select[name="ticket-status"]');
-          var tickets = document.querySelector("temba-ticket-list");
-          var contactTickets = document.querySelector("temba-contact-tickets");
-          var chat = document.querySelector("temba-contact-chat");
 
           // current agent took a ticket
           if (messageSent && ticket.assignee && ticket.assignee.email == '{{request.user.email}}') {
@@ -470,8 +448,6 @@
             chat.contactUUID = null;
             chat.currentTicket = null;
             chat.currentContact = null;
-            contactTickets.ticket = null;
-            contactTickets.contact = null;
             focusNext = ticket.uuid;
             statusSelect.setSelection("open");
           }
@@ -487,6 +463,10 @@
           tickets.refresh();
           chat.refresh();
           refreshMenu();
+
+          var contentMenu = document.querySelector("#default-content-menu");
+          contentMenu.refresh();
+
         }
       }
     }
@@ -623,8 +603,6 @@
             <div class="flex-grow"></div>
             {% include "spa_page_menu.html" %}
           </div>
-          <temba-contact-tickets agent="{{ request.user.email }}" -temba-refreshed="handleTicketUpdated" class="mb-1">
-          </temba-contact-tickets>
         </div>
         <temba-tabs -temba-context-changed="handleTabChanged"
                     index="{{ request.GET.tab }}"
@@ -634,6 +612,7 @@
             <div style="border-top-right-radius: var(--curvature);" class="flex flex-grow flex-col overflow-y-auto">
               <temba-contact-chat agent="{{ request.user.email }}"
                                   monitor="true"
+                                  -temba-ticket-updated="handleTicketUpdated"
                                   -temba-message-sent="handleMessageSent"
                                   -temba-interrupt="handleInterruptContact"
                                   {% if org_perms.contacts.contact_interrupt %}showInterrupt{% endif %}
