@@ -53,7 +53,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(str(ticket.uuid), response.context["nextUUID"])
 
         # we have a specific ticket so we should show context menu for it
-        self.assertContentMenu(deep_link, self.admin, ["Edit", "Add Note", "Start Flow"])
+        self.assertContentMenu(deep_link, self.admin, ["Add Note", "Start Flow"])
 
         with self.assertNumQueries(11):
             self.client.get(deep_link)
@@ -96,7 +96,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(str(ticket.uuid), response.context["uuid"])
 
         # and again we have a specific ticket so we should show context menu for it
-        self.assertContentMenu(deep_link, self.admin, ["Edit", "Add Note", "Start Flow"])
+        self.assertContentMenu(deep_link, self.admin, ["Add Note", "Start Flow"])
 
         # non-existent topic should give a 404
         bad_topic_link = f"{list_url}{uuid4()}/open/{ticket.uuid}/"
@@ -115,7 +115,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
         self.contact.current_flow = flow
         self.contact.save()
         deep_link = f"{list_url}all/open/{str(ticket.uuid)}/"
-        self.assertContentMenu(deep_link, self.admin, ["Edit", "Add Note"])
+        self.assertContentMenu(deep_link, self.admin, ["Add Note"])
 
         # closed our tickets don't get extra menu options
         ticket.status = Ticket.STATUS_CLOSED
