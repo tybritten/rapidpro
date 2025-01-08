@@ -1,3 +1,8 @@
+v10.1.1 (2025-01-08)
+-------------------------
+ * Update pyproject.toml for poetry 2
+ * Add support for yearly schedules
+
 v10.1.0 (2025-01-08)
 -------------------------
  * Add new ticket bar
