@@ -1,12 +1,3 @@
-v10.0.3 (2025-01-08)
--------------------------
- * Encode email addresses on user lookup
-
-v10.0.2 (2025-01-08)
--------------------------
- * Add new assignment bar
- * Replace placeholder migrations with squashed migrations
-
 v10.0.1 (2025-01-07)
 -------------------------
  * Read MAILROOM_AUTH_TOKEN from env in dev settings
