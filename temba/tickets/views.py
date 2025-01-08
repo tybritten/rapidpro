@@ -300,15 +300,6 @@ class TicketCRUDL(SmartCRUDL):
             folder, status, ticket, in_page = self.tickets_path
 
             if ticket and ticket.status == Ticket.STATUS_OPEN:
-                if self.has_org_perm("tickets.ticket_update"):
-                    menu.add_modax(
-                        _("Edit"),
-                        "edit-ticket",
-                        f"{reverse('tickets.ticket_update', args=[ticket.uuid])}",
-                        title=_("Edit Ticket"),
-                        on_submit="handleTicketEditComplete()",
-                    )
-
                 if self.has_org_perm("tickets.ticket_note"):
                     menu.add_modax(
                         _("Add Note"),

@@ -32,6 +32,7 @@ html {
   --color-secondary-light: rgba(var(--secondary-rgb), 0.3);
   --color-primary-dark: rgb(var(--primary-rgb));
   --color-secondary-dark: rgb(var(--secondary-rgb));
+  --color-message: #3c92dd;
   --color-focus: #a4cafe;
   --color-widget-bg: #fff;
   --color-widget-bg-focused: #fff;
@@ -75,6 +76,7 @@ html {
   --color-warning-border: rgb(251, 246, 176);
   --color-error: rgb(var(--error-rgb));
   --color-alert: rgb(var(--error-rgb));
+  --color-success: #3ca96a;
   --icon-color: var(--text-color);
   --icon-color-circle: rgb(240, 240, 240);
   --icon-color-circle-hover: rgba(245, 245, 245, 0.8);
