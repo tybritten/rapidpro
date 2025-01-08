@@ -46,9 +46,9 @@ class TicketTest(TembaTest):
         self.assertEqual([call(self.org, self.admin, [ticket], topic)], mr_mocks.calls["ticket_change_topic"])
 
         # test bulk closing
-        Ticket.bulk_close(self.org, self.admin, [ticket], force=True)
+        Ticket.bulk_close(self.org, self.admin, [ticket])
 
-        self.assertEqual([call(self.org, self.admin, [ticket], force=True)], mr_mocks.calls["ticket_close"])
+        self.assertEqual([call(self.org, self.admin, [ticket])], mr_mocks.calls["ticket_close"])
 
         # test bulk re-opening
         Ticket.bulk_reopen(self.org, self.admin, [ticket])

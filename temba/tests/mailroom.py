@@ -390,10 +390,13 @@ class TestClient(MailroomClient):
     @_client_method
     def ticket_assign(self, org, user, tickets, assignee):
         now = timezone.now()
-        tickets = Ticket.objects.filter(org=org, id__in=[t.id for t in tickets]).exclude(assignee=assignee)
-        tickets.update(assignee=assignee, modified_on=now, last_activity_on=now)
+        tickets = list(Ticket.objects.filter(org=org, id__in=[t.id for t in tickets]).exclude(assignee=assignee))
 
         for ticket in tickets:
+            ticket.assignee = assignee
+            ticket.modified_on = now
+            ticket.last_activity_on = now
+            ticket.save(update_fields=("assignee", "modified_on", "last_activity_on"))
             ticket.events.create(
                 org=org,
                 contact=ticket.contact,
@@ -407,10 +410,12 @@ class TestClient(MailroomClient):
     @_client_method
     def ticket_add_note(self, org, user, tickets, note: str):
         now = timezone.now()
-        tickets = Ticket.objects.filter(org=org, id__in=[t.id for t in tickets])
-        tickets.update(modified_on=now, last_activity_on=now)
+        tickets = list(Ticket.objects.filter(org=org, id__in=[t.id for t in tickets]))
 
         for ticket in tickets:
+            ticket.modified_on = now
+            ticket.last_activity_on = now
+            ticket.save(update_fields=("modified_on", "last_activity_on"))
             ticket.events.create(
                 org=org,
                 contact=ticket.contact,
@@ -424,10 +429,13 @@ class TestClient(MailroomClient):
     @_client_method
     def ticket_change_topic(self, org, user, tickets, topic):
         now = timezone.now()
-        tickets = Ticket.objects.filter(org=org, id__in=[t.id for t in tickets]).exclude(topic=topic)
-        tickets.update(topic=topic, modified_on=now, last_activity_on=now)
+        tickets = list(Ticket.objects.filter(org=org, id__in=[t.id for t in tickets]).exclude(topic=topic))
 
         for ticket in tickets:
+            ticket.topic = topic
+            ticket.modified_on = now
+            ticket.last_activity_on = now
+            ticket.save(update_fields=("topic", "modified_on", "last_activity_on"))
             ticket.events.create(
                 org=org,
                 contact=ticket.contact,
@@ -439,21 +447,25 @@ class TestClient(MailroomClient):
         return {"changed_ids": [t.id for t in tickets]}
 
     @_client_method
-    def ticket_close(self, org, user, tickets, force: bool):
-        tickets = Ticket.objects.filter(org=org, id__in=[t.id for t in tickets], status=Ticket.STATUS_OPEN)
-        tickets.update(status=Ticket.STATUS_CLOSED, closed_on=timezone.now())
+    def ticket_close(self, org, user, tickets):
+        tickets = list(Ticket.objects.filter(org=org, id__in=[t.id for t in tickets], status=Ticket.STATUS_OPEN))
 
         for ticket in tickets:
+            ticket.status = Ticket.STATUS_CLOSED
+            ticket.closed_on = timezone.now()
+            ticket.save(update_fields=("status", "closed_on"))
             ticket.events.create(org=org, contact=ticket.contact, event_type=TicketEvent.TYPE_CLOSED, created_by=user)
 
         return {"changed_ids": [t.id for t in tickets]}
 
     @_client_method
     def ticket_reopen(self, org, user, tickets):
-        tickets = Ticket.objects.filter(org=org, id__in=[t.id for t in tickets], status=Ticket.STATUS_CLOSED)
-        tickets.update(status=Ticket.STATUS_OPEN, closed_on=None)
+        tickets = list(Ticket.objects.filter(org=org, id__in=[t.id for t in tickets], status=Ticket.STATUS_CLOSED))
 
         for ticket in tickets:
+            ticket.status = Ticket.STATUS_OPEN
+            ticket.closed_on = None
+            ticket.save(update_fields=("status", "closed_on"))
             ticket.events.create(org=org, contact=ticket.contact, event_type=TicketEvent.TYPE_REOPENED, created_by=user)
 
         return {"changed_ids": [t.id for t in tickets]}
