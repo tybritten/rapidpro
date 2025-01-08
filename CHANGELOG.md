@@ -1,3 +1,7 @@
+v10.1.0 (2025-01-08)
+-------------------------
+ * Add new ticket bar
+
 v10.0.1 (2025-01-07)
 -------------------------
  * Read MAILROOM_AUTH_TOKEN from env in dev settings
