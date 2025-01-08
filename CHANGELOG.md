@@ -1,3 +1,7 @@
+v10.0.3 (2025-01-08)
+-------------------------
+ * Encode email addresses on user lookup
+
 v10.0.2 (2025-01-08)
 -------------------------
  * Add new assignment bar
