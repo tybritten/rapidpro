@@ -714,18 +714,13 @@ class MailroomClientTest(TembaTest):
         ticket2 = self.create_ticket(bob)
 
         mock_post.return_value = MockJsonResponse(200, {"changed_ids": [ticket1.id]})
-        response = self.client.ticket_close(self.org, self.admin, [ticket1, ticket2], force=True)
+        response = self.client.ticket_close(self.org, self.admin, [ticket1, ticket2])
 
         self.assertEqual({"changed_ids": [ticket1.id]}, response)
         mock_post.assert_called_once_with(
             "http://localhost:8090/mr/ticket/close",
             headers={"User-Agent": "Temba", "Authorization": "Token sesame"},
-            json={
-                "org_id": self.org.id,
-                "user_id": self.admin.id,
-                "ticket_ids": [ticket1.id, ticket2.id],
-                "force": True,
-            },
+            json={"org_id": self.org.id, "user_id": self.admin.id, "ticket_ids": [ticket1.id, ticket2.id]},
         )
 
     @patch("requests.post")
