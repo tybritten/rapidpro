@@ -22,12 +22,6 @@
                     "last_name": "McEditor"
                 },
                 {
-                    "email": "viewer1@textit.com",
-                    "role": "V",
-                    "first_name": "Veronica",
-                    "last_name": "Views"
-                },
-                {
                     "email": "agent1@textit.com",
                     "role": "T",
                     "first_name": "Ann",
