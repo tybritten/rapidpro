@@ -296,20 +296,19 @@ class FieldsTest(APITest):
         self.assert_field(
             fields.UserField(source="test"),
             submissions={
-                "VIEWER@TEXTIT.COM": self.user,
+                "AGENT@TEXTIT.COM": self.agent,
                 "admin@textit.com": self.admin,
                 self.editor.email: serializers.ValidationError,  # deleted
                 self.admin2.email: serializers.ValidationError,  # not in org
             },
             representations={
-                self.user: {"email": "viewer@textit.com", "name": ""},
+                self.agent: {"email": "agent@textit.com", "name": "Agnes"},
                 self.editor: {"email": "editor@textit.com", "name": "Ed McEdits"},
             },
         )
         self.assert_field(
-            fields.UserField(source="test", assignable_only=True),
+            fields.UserField(source="test"),
             submissions={
-                self.user.email: serializers.ValidationError,  # not assignable
                 self.admin.email: self.admin,
                 self.agent.email: self.agent,
             },
