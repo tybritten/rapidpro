@@ -1,3 +1,9 @@
+v10.1.2 (2025-01-09)
+-------------------------
+ * Remove no longer needed viewer warning
+ * Ticket bulk actions endpoint should report failures like message bulk actions endpoint
+ * Add data migration to remove viewers from workspaces
+
 v10.1.1 (2025-01-08)
 -------------------------
  * Update pyproject.toml for poetry 2
