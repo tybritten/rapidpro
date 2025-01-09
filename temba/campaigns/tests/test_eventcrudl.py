@@ -40,7 +40,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
         read_url = reverse("campaigns.campaignevent_read", args=[event.campaign.uuid, event.id])
 
         self.assertRequestDisallowed(read_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(read_url, [self.user, self.editor, self.admin], context_object=event)
+        response = self.assertReadFetch(read_url, [self.editor, self.admin], context_object=event)
 
         self.assertContains(response, "Welcomes")
         self.assertContains(response, "1 week after")
@@ -89,7 +89,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
             "message_start_mode",
         ]
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
 
         response = self.assertCreateFetch(create_url, [self.editor, self.admin], form_fields=non_lang_fields + ["eng"])
         self.assertEqual(3, len(response.context["form"].fields["message_start_mode"].choices))

@@ -9,6 +9,7 @@ from django.test.utils import override_settings
 from django.urls import reverse
 
 from temba import mailroom
+from temba.campaigns.models import Campaign, CampaignEvent
 from temba.contacts.models import URN
 from temba.flows.models import Flow, FlowLabel, FlowStart, FlowUserConflictException, ResultsExport
 from temba.msgs.models import SystemLabel
@@ -566,20 +567,33 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         flow2.is_archived = True
         flow2.save(update_fields=("is_archived",))
 
+        # create flow used by a campaign
+        group = self.create_group("Reporters", contacts=[])
         flow3 = self.create_flow("Flow 3")
+        campaign = Campaign.create(self.org, self.admin, "Reminders", group)
+        registered = self.create_field("registered", "Registered", value_type="D")
+        CampaignEvent.create_flow_event(
+            self.org, self.admin, campaign, registered, offset=1, unit="W", flow=flow3, delivery_hour="13"
+        )
 
-        self.login(self.admin)
+        list_url = reverse("flows.flow_list")
 
-        # see our trigger on the list page
-        response = self.client.get(reverse("flows.flow_list"))
-        self.assertContains(response, flow1.name)
-        self.assertContains(response, flow3.name)
+        self.assertRequestDisallowed(list_url, [None, self.agent])
+        self.assertListFetch(list_url, [self.editor, self.admin], context_objects=[flow3, flow1])
 
-        # archive it
-        response = self.client.post(reverse("flows.flow_list"), {"action": "archive", "objects": flow1.id})
+        # try to archive flow used by campaign
+        response = self.client.post(list_url, {"action": "archive", "objects": flow3.id})
+        # TODO: convert to temba-toast
+        # self.assertContains(response, "The following flows are still used by campaigns")
+
+        flow3.refresh_from_db()
+        self.assertFalse(flow3.is_archived)
+
+        # archive first flow
+        response = self.client.post(list_url, {"action": "archive", "objects": flow1.id})
         self.assertEqual(200, response.status_code)
 
-        # flow should no longer appear in list
+        # should no longer appear in list
         response = self.client.get(reverse("flows.flow_list"))
         self.assertNotContains(response, flow1.name)
         self.assertContains(response, flow3.name)
