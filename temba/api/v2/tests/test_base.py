@@ -178,7 +178,7 @@ class EndpointsTest(APITest):
         self.assertEqual(response.status_code, 429)
 
         # if user is demoted to a role that can't use tokens, tokens shouldn't work for them
-        self.org.add_user(self.admin, OrgRole.VIEWER)
+        self.org.add_user(self.admin, OrgRole.AGENT)
 
         self.assertEqual(request_by_token(campaigns_url, token1.key).status_code, 403)
         self.assertEqual(request_by_basic_auth(campaigns_url, self.admin.username, token1.key).status_code, 403)

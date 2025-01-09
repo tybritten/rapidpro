@@ -1650,7 +1650,7 @@ class TicketBulkActionSerializer(WriteSerializer):
 
     tickets = fields.TicketField(many=True)
     action = serializers.ChoiceField(required=True, choices=ACTION_CHOICES)
-    assignee = fields.UserField(required=False, allow_null=True, assignable_only=True)
+    assignee = fields.UserField(required=False, allow_null=True)
     topic = fields.TopicField(required=False)
     note = serializers.CharField(required=False, max_length=Ticket.MAX_NOTE_LENGTH)
 

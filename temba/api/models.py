@@ -86,8 +86,8 @@ class APIPermission(BasePermission):
         if not has_perm:
             return False
 
-        # viewers and servicing staff can only ever GET from the API
-        if role == OrgRole.VIEWER or (not role and request.user.is_staff):
+        # servicing staff can only ever GET from the API
+        if request.user.is_staff and not role:
             return request.method == "GET"
 
         return True
