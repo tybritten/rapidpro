@@ -1,3 +1,8 @@
+v10.1.3 (2025-01-09)
+-------------------------
+ * Data migration to backfill new category counts
+ * Remove viewer user handling code from API
+
 v10.1.2 (2025-01-09)
 -------------------------
  * Remove no longer needed viewer warning
