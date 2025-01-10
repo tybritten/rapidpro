@@ -395,21 +395,20 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         results_by_key = {r["key"]: r for r in self.metadata["results"]}
 
         counts = (
-            self.category_counts.filter(result_key__in=results_by_key)
-            .values("result_key", "category_name")
+            self.result_counts.filter(result__in=results_by_key)
+            .values("result", "category")
             .annotate(total=Sum("count"))
         )
 
         # organize into dict of results keys to dicts of category names to counts
         counts_by_key = defaultdict(dict)
         for count in counts:
-            counts_by_key[count["result_key"]][count["category_name"]] = count["total"]
+            counts_by_key[count["result"]][count["category"]] = count["total"]
 
         results = []
         for result_key, result in results_by_key.items():
             category_counts = counts_by_key.get(result_key, {})
 
-            # TODO maybe we shouldn't store All Responses in the first place
             if not category_counts or (len(category_counts) == 1 and "All Responses" in category_counts):
                 continue
 
@@ -1500,19 +1499,13 @@ class FlowCategoryCount(BaseSquashableCount):
     squash_over = ("flow_id", "node_uuid", "result_key", "result_name", "category_name")
 
     flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="category_counts")
-
-    # the UUID of the node where this result was created
     node_uuid = models.UUIDField(db_index=True)
-
-    # the key and name of the result in the flow
     result_key = models.CharField(max_length=128)
     result_name = models.CharField(max_length=128)
-
-    # the name of the category
     category_name = models.CharField(max_length=128)
 
     @classmethod
-    def get_squash_query(cls, distinct_set: dict) -> tuple:
+    def get_squash_query(cls, distinct_set: dict) -> tuple:  # pragma: no cover
         sql = """
         WITH removed as (
           DELETE FROM %(table)s WHERE "id" IN (
@@ -1535,9 +1528,6 @@ class FlowCategoryCount(BaseSquashableCount):
             distinct_set["category_name"],
         ) * 2
         return sql, params
-
-    def __str__(self):
-        return "%s: %s" % (self.category_name, self.count)
 
     class Meta:
         indexes = [

@@ -244,12 +244,6 @@ class FlowRunTest(TembaTest):
         else:
             run.delete()  # delete_from_counts updated to true
 
-        cat_counts = {c["key"]: c for c in flow.get_category_counts()}
-
-        self.assertEqual(2, len(cat_counts))
-        self.assertEqual(expected["red_count"], cat_counts["color"]["categories"][0]["count"])
-        self.assertEqual(expected["primus_count"], cat_counts["color"]["categories"][0]["count"])
-
         self.assertEqual(expected["start_count"], FlowStartCount.get_count(start))
         self.assertEqual(expected["run_count"], flow.get_run_stats())
 
@@ -260,8 +254,6 @@ class FlowRunTest(TembaTest):
         self._check_deletion(
             by_archiver=False,
             expected={
-                "red_count": 0,
-                "primus_count": 0,
                 "start_count": 1,  # unchanged
                 "run_count": {
                     "total": 0,
@@ -284,8 +276,6 @@ class FlowRunTest(TembaTest):
         self._check_deletion(
             by_archiver=False,
             expected={
-                "red_count": 0,
-                "primus_count": 0,
                 "start_count": 1,  # unchanged
                 "run_count": {
                     "total": 0,
@@ -309,8 +299,6 @@ class FlowRunTest(TembaTest):
         self._check_deletion(
             by_archiver=True,
             expected={
-                "red_count": 1,
-                "primus_count": 1,
                 "start_count": 1,  # unchanged
                 "run_count": {  # unchanged
                     "total": 1,
