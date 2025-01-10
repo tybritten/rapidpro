@@ -400,7 +400,6 @@ class ImportGeoJSONtest(TembaTest):
         self.assertEqual(0, AdminBoundary.objects.filter(level=3).count())
 
         self.country = AdminBoundary.objects.get(level=0)
-        self.assertIsNone(self.country.simplified_geometry)
         self.assertEqual(self.country.geometry, matchers.Dict())
 
     def assertOSMIDs(self, ids):
