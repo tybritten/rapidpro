@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
         ("ivr", "0031_squashed"),
         ("locations", "0032_squashed"),
         ("msgs", "0282_squashed"),
+        ("orgs", "0163_squashed"),
         ("tickets", "0074_squashed"),
     ]
 
