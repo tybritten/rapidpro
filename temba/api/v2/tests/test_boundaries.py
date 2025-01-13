@@ -1,4 +1,3 @@
-from django.contrib.gis.geos import GEOSGeometry
 from django.urls import reverse
 
 from temba.locations.models import BoundaryAlias
@@ -21,7 +20,7 @@ class BoundariesEndpointTest(APITest):
         BoundaryAlias.create(self.org, self.admin, self.state2, "East Prov")
         BoundaryAlias.create(self.org2, self.admin2, self.state1, "Other Org")  # shouldn't be returned
 
-        self.state1.simplified_geometry = GEOSGeometry("MULTIPOLYGON(((1 1, 1 -1, -1 -1, -1 1, 1 1)))")
+        self.state1.geometry = {"type": "MultiPolygon", "coordinates": [[[[1, 1], [1, -1], [-1, -1], [-1, 1], [1, 1]]]]}
         self.state1.save()
 
         # test without geometry
