@@ -1,3 +1,7 @@
+v10.1.6 (2025-01-13)
+-------------------------
+ * More migration tweaking
+
 v10.1.5 (2025-01-13)
 -------------------------
  * Migrations to backfill Msg.is_android and set not-null
