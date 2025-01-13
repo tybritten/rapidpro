@@ -1,3 +1,15 @@
+v10.1.6 (2025-01-13)
+-------------------------
+ * More migration tweaking
+
+v10.1.5 (2025-01-13)
+-------------------------
+ * Migrations to backfill Msg.is_android and set not-null
+ * Start using boundary geometry field
+ * Move deps to project dependencies config in pyproject.toml
+ * Ensure that SQL app migrations run after other apps
+ * Adjust ticket flow to allow more change context
+
 v10.1.4 (2025-01-13)
 -------------------------
  * Remove ability to delete runs from the UI
