@@ -991,12 +991,16 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         for start in self.starts.all():
             start.delete()
 
+        self.labels.clear()
+
         delete_in_batches(self.counts.all())
+        delete_in_batches(self.result_counts.all())
+
+        # TODO remove
         delete_in_batches(self.category_counts.all())
         delete_in_batches(self.path_counts.all())
         delete_in_batches(self.node_counts.all())
         delete_in_batches(self.status_counts.all())
-        self.labels.clear()
 
         super().delete()
 
