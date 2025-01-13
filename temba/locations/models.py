@@ -42,6 +42,7 @@ class AdminBoundary(MPTTModel, models.Model):
     parent = TreeForeignKey("self", null=True, on_delete=models.PROTECT, related_name="children", db_index=True)
     path = models.CharField(max_length=768)  # e.g. Rwanda > Kigali
     simplified_geometry = models.MultiPolygonField(null=True)
+    geometry = models.JSONField(null=True)
 
     objects = NoGeometryManager()
     geometries = GeometryManager()

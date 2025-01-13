@@ -312,15 +312,10 @@ class MailroomClient:
             },
         )
 
-    def ticket_close(self, org, user, tickets, force: bool):
+    def ticket_close(self, org, user, tickets):
         return self._request(
             "ticket/close",
-            {
-                "org_id": org.id,
-                "user_id": user.id,
-                "ticket_ids": [t.id for t in tickets],
-                "force": force,
-            },
+            {"org_id": org.id, "user_id": user.id, "ticket_ids": [t.id for t in tickets]},
         )
 
     def ticket_reopen(self, org, user, tickets):

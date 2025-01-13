@@ -379,18 +379,8 @@ class UserField(TembaModelField):
     lookup_fields = ("email",)
     ignore_case_for_fields = ("email",)
 
-    def __init__(self, assignable_only=False, **kwargs):
-        self.assignable_only = assignable_only
-        super().__init__(**kwargs)
-
     def to_representation(self, obj):
         return {"email": obj.email, "name": obj.name}
 
     def get_queryset(self):
-        org = self.context["org"]
-        if self.assignable_only:
-            qs = org.get_users(with_perm=Ticket.ASSIGNEE_PERMISSION)
-        else:
-            qs = org.get_users()
-
-        return qs
+        return self.context["org"].get_users()

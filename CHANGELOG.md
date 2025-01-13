@@ -1,3 +1,25 @@
+v10.1.4 (2025-01-13)
+-------------------------
+ * Remove ability to delete runs from the UI
+ * Read from new category count model
+ * Add new AdminBoundary.geometry field and populate as JSON
+
+v10.1.3 (2025-01-09)
+-------------------------
+ * Data migration to backfill new category counts
+ * Remove viewer user handling code from API
+
+v10.1.2 (2025-01-09)
+-------------------------
+ * Remove no longer needed viewer warning
+ * Ticket bulk actions endpoint should report failures like message bulk actions endpoint
+ * Add data migration to remove viewers from workspaces
+
+v10.1.1 (2025-01-08)
+-------------------------
+ * Update pyproject.toml for poetry 2
+ * Add support for yearly schedules
+
 v10.1.0 (2025-01-08)
 -------------------------
  * Add new ticket bar

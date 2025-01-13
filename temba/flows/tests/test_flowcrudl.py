@@ -1402,34 +1402,10 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         flow1.metadata["results"] = [{"key": "color", "name": "Color"}, {"key": "beer", "name": "Beer"}]
         flow1.save(update_fields=("metadata",))
 
-        flow1.category_counts.create(
-            node_uuid="9b00751c-0d46-4e5f-86b1-7ccfae76ea10",
-            result_key="color",
-            result_name="Color",
-            category_name="Red",
-            count=3,
-        )
-        flow1.category_counts.create(
-            node_uuid="9b00751c-0d46-4e5f-86b1-7ccfae76ea10",
-            result_key="color",
-            result_name="Color",
-            category_name="Blue",
-            count=2,
-        )
-        flow1.category_counts.create(
-            node_uuid="9b00751c-0d46-4e5f-86b1-7ccfae76ea10",
-            result_key="color",
-            result_name="Color",
-            category_name="Other",
-            count=1,
-        )
-        flow1.category_counts.create(
-            node_uuid="300fd49b-c69d-4e8c-aba9-b6036d0b83d9",
-            result_key="beer",
-            result_name="Beer",
-            category_name="Primus",
-            count=7,
-        )
+        flow1.result_counts.create(result="color", category="Red", count=3)
+        flow1.result_counts.create(result="color", category="Blue", count=2)
+        flow1.result_counts.create(result="color", category="Other", count=1)
+        flow1.result_counts.create(result="beer", category="Primus", count=7)
 
         response = self.assertReadFetch(counts_url, [self.user, self.editor, self.admin])
         self.assertEqual(

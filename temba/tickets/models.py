@@ -216,23 +216,27 @@ class Ticket(models.Model):
 
     @classmethod
     def bulk_assign(cls, org, user: User, tickets: list, assignee: User):
-        return mailroom.get_client().ticket_assign(org, user, tickets, assignee)
+        return cls._bulk_response(mailroom.get_client().ticket_assign(org, user, tickets, assignee), tickets)
 
     @classmethod
     def bulk_add_note(cls, org, user: User, tickets: list, note: str):
-        return mailroom.get_client().ticket_add_note(org, user, tickets, note)
+        return cls._bulk_response(mailroom.get_client().ticket_add_note(org, user, tickets, note), tickets)
 
     @classmethod
     def bulk_change_topic(cls, org, user: User, tickets: list, topic: Topic):
-        return mailroom.get_client().ticket_change_topic(org, user, tickets, topic)
+        return cls._bulk_response(mailroom.get_client().ticket_change_topic(org, user, tickets, topic), tickets)
 
     @classmethod
-    def bulk_close(cls, org, user, tickets, *, force: bool = False):
-        return mailroom.get_client().ticket_close(org, user, tickets, force=force)
+    def bulk_close(cls, org, user, tickets):
+        return cls._bulk_response(mailroom.get_client().ticket_close(org, user, tickets), tickets)
 
     @classmethod
     def bulk_reopen(cls, org, user, tickets):
-        return mailroom.get_client().ticket_reopen(org, user, tickets)
+        return cls._bulk_response(mailroom.get_client().ticket_reopen(org, user, tickets), tickets)
+
+    @classmethod
+    def _bulk_response(self, resp: dict, tickets: list) -> list:
+        return [t for t in tickets if t.id in resp["changed_ids"]]
 
     @classmethod
     def get_allowed_assignees(cls, org):
