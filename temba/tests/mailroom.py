@@ -183,6 +183,7 @@ class TestClient(MailroomClient):
             direction=Msg.DIRECTION_IN,
             status=Msg.STATUS_PENDING,
             msg_type=Msg.TYPE_TEXT,
+            is_android=True,
         )
         return {"id": msg.id, "duplicate": False}
 
@@ -921,6 +922,7 @@ def send_to_contact(org, contact, text, attachments) -> Msg:
         text=text or "",
         attachments=attachments or [],
         msg_type=Msg.TYPE_TEXT,
+        is_android=False,
         created_on=timezone.now(),
         modified_on=timezone.now(),
     )
