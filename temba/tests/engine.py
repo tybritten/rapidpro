@@ -369,6 +369,7 @@ class MockSessionWriter:
             created_on=event["created_on"],
             modified_on=timezone.now(),
             msg_type=Msg.TYPE_TEXT,
+            is_android=False,
             status=Msg.STATUS_SENT,
             sent_on=event["created_on"],
         )
