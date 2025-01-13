@@ -1,3 +1,9 @@
+v10.1.4 (2025-01-13)
+-------------------------
+ * Remove ability to delete runs from the UI
+ * Read from new category count model
+ * Add new AdminBoundary.geometry field and populate as JSON
+
 v10.1.3 (2025-01-09)
 -------------------------
  * Data migration to backfill new category counts
