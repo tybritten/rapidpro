@@ -5,16 +5,15 @@ from django.db import migrations
 
 def backfill_msg_is_android(apps, schema_editor):  # pragma: no cover
     Msg = apps.get_model("msgs", "Msg")
-    Msg.objects.filter(is_android=None).update(is_android=True)
 
     num_updated = 0
     while True:
         batch = list(Msg.objects.filter(is_android=None).select_related("channel")[:1000])
-        if not len(batch):
+        if not batch:
             return
 
         for msg in batch:
-            msg.is_android = msg.channel and msg.channel.channel_type == "A"
+            msg.is_android = bool(msg.channel and msg.channel.channel_type == "A")
             msg.save(update_fields=("is_android",))
 
         num_updated += len(batch)
@@ -26,4 +25,4 @@ class Migration(migrations.Migration):
 
     dependencies = [("msgs", "0282_squashed")]
 
-    operations = [migrations.RunPython(backfill_msg_is_android)]
+    operations = [migrations.RunPython(backfill_msg_is_android, migrations.RunPython.noop)]
