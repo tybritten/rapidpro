@@ -9,7 +9,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("notifications", "0031_squashed"),
+        ("ivr", "0031_squashed"),
         ("locations", "0032_squashed"),
+        ("msgs", "0282_squashed"),
         ("tickets", "0074_squashed"),
     ]
 

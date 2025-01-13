@@ -3,7 +3,7 @@
 from django.db import migrations
 
 SQL = """
-DROP TRIGGER temba_flowrun_on_delete ON flows_flowrun;
+DROP TRIGGER temba_flowrun_delete ON flows_flowrun;
 DROP TRIGGER temba_flowrun_update_flowcategorycount ON flows_flowrun;
 
 DROP FUNCTION temba_flowrun_delete();
