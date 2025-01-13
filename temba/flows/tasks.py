@@ -15,16 +15,7 @@ from temba import mailroom
 from temba.utils.crons import cron_task
 from temba.utils.models import delete_in_batches
 
-from .models import (
-    Flow,
-    FlowActivityCount,
-    FlowCategoryCount,
-    FlowResultCount,
-    FlowRevision,
-    FlowRun,
-    FlowSession,
-    FlowStartCount,
-)
+from .models import Flow, FlowActivityCount, FlowResultCount, FlowRevision, FlowRun, FlowSession, FlowStartCount
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +35,9 @@ def update_session_wait_expires(flow_id):
 
 
 @cron_task(lock_timeout=7200)
-def squash_activity_counts():
+def squash_flow_counts():
     FlowActivityCount.squash()
     FlowResultCount.squash()
-
-
-@cron_task(lock_timeout=7200)
-def squash_flow_counts():
-    FlowCategoryCount.squash()
     FlowStartCount.squash()
 
 
