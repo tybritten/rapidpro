@@ -135,10 +135,7 @@ class AdminBoundaryReadSerializer(ReadSerializer):
         return [alias.name for alias in obj.aliases.all()]
 
     def get_geometry(self, obj):
-        if self.context["include_geometry"] and obj.simplified_geometry:
-            return json.loads(obj.simplified_geometry.geojson)
-        else:
-            return None
+        return obj.geometry if self.context["include_geometry"] else None
 
     class Meta:
         model = AdminBoundary

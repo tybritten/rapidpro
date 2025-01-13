@@ -67,7 +67,7 @@ class AdminBoundary(MPTTModel, models.Model):
         return geojson.Feature(
             properties=dict(name=self.name, osm_id=self.osm_id, id=self.pk, level=self.level),
             zoomable=True if self.children.all() else False,
-            geometry=None if not self.simplified_geometry else geojson.loads(self.simplified_geometry.geojson),
+            geometry=self.geometry,
         )
 
     def get_geojson(self):
