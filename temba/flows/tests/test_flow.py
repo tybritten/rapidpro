@@ -10,8 +10,6 @@ from temba.classifiers.models import Classifier
 from temba.contacts.models import URN, ContactField, ContactGroup
 from temba.flows.models import (
     Flow,
-    FlowCategoryCount,
-    FlowRun,
     FlowSession,
     FlowStart,
     FlowStartCount,
@@ -346,215 +344,63 @@ class FlowTest(TembaTest, CRUDLTestMixin):
                             self.assertEqual(category["count"], truth)
             self.assertTrue(found)
 
-        favorites = self.get_flow("favorites_v13")
-        flow_nodes = favorites.get_definition()["nodes"]
-        color_prompt = flow_nodes[0]
-        color_other = flow_nodes[1]
-        color_split = flow_nodes[2]
-        beer_prompt = flow_nodes[3]
-        beer_split = flow_nodes[5]
-        name_prompt = flow_nodes[6]
-        name_split = flow_nodes[7]
+        flow = self.create_flow("Favorites")
+        flow.metadata = {
+            "results": [
+                {"key": "color", "name": "Color", "categories": ["Red", "Blue", "Green", "Other"]},
+                {"key": "beer", "name": "Beer", "categories": ["Primus" "Mutzig", "Turbo King", "Skol", "Other"]},
+                {"key": "name", "name": "Name", "categories": ["All Responses"]},
+            ]
+        }
+        flow.save(update_fields=("metadata",))
 
-        # add in some fake data
-        for i in range(0, 10):
-            contact = self.create_contact("Contact %d" % i, phone="+120655530%d" % i)
-            (
-                MockSessionWriter(contact, favorites)
-                .visit(color_prompt)
-                .send_msg("What is your favorite color?", self.channel)
-                .visit(color_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "blue"))
-                .set_result("Color", "blue", "Blue", "blue")
-                .visit(beer_prompt)
-                .send_msg("Good choice, I like Blue too! What is your favorite beer?", self.channel)
-                .visit(beer_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "primus"))
-                .set_result("Beer", "primus", "Primus", "primus")
-                .visit(name_prompt)
-                .send_msg("Lastly, what is your name?", self.channel)
-                .visit(name_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "russell"))
-                .set_result("Name", "russell", "All Responses", "russell")
-                .complete()
-                .save()
-            )
+        flow.result_counts.create(result="color", category="Blue", count=10)
+        flow.result_counts.create(result="beer", category="Primus", count=10)
+        flow.result_counts.create(result="name", category="All Responses", count=10)
 
-        for i in range(0, 5):
-            contact = self.create_contact("Contact %d" % i, phone="+120655531%d" % i)
-            (
-                MockSessionWriter(contact, favorites)
-                .visit(color_prompt)
-                .send_msg("What is your favorite color?", self.channel)
-                .visit(color_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "red"))
-                .set_result("Color", "red", "Red", "red")
-                .visit(beer_prompt)
-                .send_msg("Good choice, I like Red too! What is your favorite beer?", self.channel)
-                .visit(beer_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "primus"))
-                .set_result("Beer", "primus", "Primus", "primus")
-                .visit(name_prompt)
-                .send_msg("Lastly, what is your name?", self.channel)
-                .visit(name_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "earl"))
-                .set_result("Name", "earl", "All Responses", "earl")
-                .complete()
-                .save()
-            )
+        flow.result_counts.create(result="color", category="Red", count=5)
+        flow.result_counts.create(result="beer", category="Primus", count=5)
+        flow.result_counts.create(result="name", category="All Responses", count=5)
 
-        # test update flow values
-        for i in range(0, 5):
-            contact = self.create_contact("Contact %d" % i, phone="+120655532%d" % i)
-            (
-                MockSessionWriter(contact, favorites)
-                .visit(color_prompt)
-                .send_msg("What is your favorite color?", self.channel)
-                .visit(color_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "orange"))
-                .set_result("Color", "orange", "Other", "orange")
-                .visit(color_other)
-                .send_msg("I don't know that one, try again please.", self.channel)
-                .visit(color_split)
-                .wait()
-                .save()
-                .resume(msg=self.create_incoming_msg(contact, "green"))
-                .set_result("Color", "green", "Green", "green")
-                .visit(beer_prompt)
-                .send_msg("Good choice, I like Green too! What is your favorite beer?", self.channel)
-                .visit(beer_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "skol"))
-                .set_result("Beer", "skol", "Skol", "skol")
-                .visit(name_prompt)
-                .send_msg("Lastly, what is your name?", self.channel)
-                .visit(name_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "bobby"))
-                .set_result("Name", "bobby", "All Responses", "bobby")
-                .complete()
-                .save()
-            )
+        flow.result_counts.create(result="color", category="Other", count=5)
+        flow.result_counts.create(result="color", category="Other", count=-5)
+        flow.result_counts.create(result="color", category="Green", count=5)
+        flow.result_counts.create(result="beer", category="Skol", count=5)
+        flow.result_counts.create(result="name", category="All Responses", count=5)
 
-        counts = favorites.get_category_counts()
-
-        assertCount(counts, "color", "Blue", 10)
-        assertCount(counts, "color", "Red", 5)
-        assertCount(counts, "beer", "Primus", 15)
+        # categories can be empty (e.g. set_run_result)
+        flow.result_counts.create(result="color", category="", count=5)
 
         # name shouldn't be included since it's open ended
-        self.assertNotIn('"name": "Name"', json.dumps(counts))
+        expected = [
+            {
+                "key": "color",
+                "name": "Color",
+                "categories": [
+                    {"name": "", "count": 5, "pct": 0.2},
+                    {"name": "Blue", "count": 10, "pct": 0.4},
+                    {"name": "Green", "count": 5, "pct": 0.2},
+                    {"name": "Other", "count": 0, "pct": 0.0},
+                    {"name": "Red", "count": 5, "pct": 0.2},
+                ],
+                "total": 25,
+            },
+            {
+                "key": "beer",
+                "name": "Beer",
+                "categories": [
+                    {"name": "Primus", "count": 15, "pct": 0.75},
+                    {"name": "Skol", "count": 5, "pct": 0.25},
+                ],
+                "total": 20,
+            },
+        ]
+        self.assertEqual(expected, flow.get_category_counts())
 
-        # five oranges went back and became greens
-        assertCount(counts, "color", "Other", 0)
-        assertCount(counts, "color", "Green", 5)
-
-        # now remap the uuid for our color node
-        flow_json = favorites.get_definition()
-        flow_json = json.loads(json.dumps(flow_json).replace(color_split["uuid"], str(uuid4())))
-        flow_nodes = flow_json["nodes"]
-        color_prompt = flow_nodes[0]
-        color_other = flow_nodes[1]
-        color_split = flow_nodes[2]
-
-        favorites.save_revision(self.admin, flow_json)
-
-        # send a few more runs through our updated flow
-        for i in range(0, 3):
-            contact = self.create_contact("Contact %d" % i, phone="+120655533%d" % i)
-            (
-                MockSessionWriter(contact, favorites)
-                .visit(color_prompt)
-                .send_msg("What is your favorite color?", self.channel)
-                .visit(color_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "red"))
-                .set_result("Color", "red", "Red", "red")
-                .visit(beer_prompt)
-                .send_msg("Good choice, I like Red too! What is your favorite beer?", self.channel)
-                .visit(beer_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(contact, "turbo"))
-                .set_result("Beer", "turbo", "Turbo King", "turbo")
-                .visit(name_prompt)
-                .wait()
-                .save()
-            )
-
-        # should now have three more reds
-        counts = favorites.get_category_counts()
-        assertCount(counts, "color", "Red", 8)
-        assertCount(counts, "beer", "Turbo King", 3)
-
-        # now delete the color split and repoint nodes to the beer split
-        flow_json["nodes"].pop(2)
-        for node in flow_json["nodes"]:
-            for exit in node["exits"]:
-                if exit.get("destination_uuid") == color_split["uuid"]:
-                    exit["destination_uuid"] = beer_split["uuid"]
-
-        favorites.save_revision(self.admin, flow_json)
-
-        # now the color counts have been removed, but beer is still there
-        counts = favorites.get_category_counts()
-        self.assertEqual(["beer"], [c["key"] for c in counts])
-        assertCount(counts, "beer", "Turbo King", 3)
-
-        # make sure it still works after ze squashings
-        self.assertEqual(76, FlowCategoryCount.objects.all().count())
+        # check no change after squashing
         squash_flow_counts()
-        self.assertEqual(9, FlowCategoryCount.objects.all().count())
-        counts = favorites.get_category_counts()
-        assertCount(counts, "beer", "Turbo King", 3)
 
-        # test tostring
-        str(FlowCategoryCount.objects.all().first())
-
-        # and if we delete our runs, things zero out
-        for run in FlowRun.objects.all():
-            run.delete()
-
-        counts = favorites.get_category_counts()
-        assertCount(counts, "beer", "Turbo King", 0)
-
-    def test_category_counts_with_null_categories(self):
-        flow = self.get_flow("color_v13")
-        flow_nodes = flow.get_definition()["nodes"]
-        color_prompt = flow_nodes[0]
-        color_split = flow_nodes[4]
-
-        msg = self.create_incoming_msg(self.contact, "blue")
-        run = (
-            MockSessionWriter(self.contact, flow)
-            .visit(color_prompt)
-            .send_msg("What is your favorite color?", self.channel)
-            .visit(color_split)
-            .wait()
-            .resume(msg=msg)
-            .set_result("Color", "blue", "Blue", "blue")
-            .complete()
-            .save()
-        ).session.runs.get()
-
-        FlowCategoryCount.objects.get(category_name="Blue", result_name="Color", result_key="color", count=1)
-
-        # get our run and clear the category
-        run = FlowRun.objects.get(flow=flow, contact=self.contact)
-        results = run.results
-        del results["color"]["category"]
-        results["color"]["created_on"] = timezone.now()
-        run.save(update_fields=["results", "modified_on"])
-
-        # should have added a negative one now
-        self.assertEqual(2, FlowCategoryCount.objects.filter(category_name="Blue", result_name="Color").count())
-        FlowCategoryCount.objects.get(category_name="Blue", result_name="Color", result_key="color", count=-1)
+        self.assertEqual(expected, flow.get_category_counts())
 
     def test_start_counts(self):
         # create start for 10 contacts
