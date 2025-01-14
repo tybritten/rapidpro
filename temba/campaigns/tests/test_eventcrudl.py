@@ -216,6 +216,42 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
         # should be redirected back to our campaign read page
         self.assertRedirect(response, reverse("campaigns.campaign_read", args=[campaign.uuid]))
 
+        # also create a flow event for a regular flow
+        flow1 = self.create_flow("Event Flow 1")
+        response = self.assertCreateSubmit(
+            create_url,
+            self.admin,
+            {
+                "relative_to": planting_date.id,
+                "event_type": "F",
+                "direction": "B",
+                "offset": 2,
+                "unit": "D",
+                "flow_to_start": flow1.id,
+                "delivery_hour": 13,
+                "flow_start_mode": "I",
+            },
+            new_obj_query=CampaignEvent.objects.filter(campaign=campaign, event_type="F", flow=flow1, start_mode="I"),
+        )
+
+        # and a flow event for a background flow
+        flow2 = self.create_flow("Event Flow 2", flow_type=Flow.TYPE_BACKGROUND)
+        response = self.assertCreateSubmit(
+            create_url,
+            self.admin,
+            {
+                "relative_to": planting_date.id,
+                "event_type": "F",
+                "direction": "B",
+                "offset": 2,
+                "unit": "D",
+                "flow_to_start": flow2.id,
+                "delivery_hour": 13,
+                "flow_start_mode": "I",
+            },
+            new_obj_query=CampaignEvent.objects.filter(campaign=campaign, event_type="F", flow=flow2, start_mode="P"),
+        )
+
         event = CampaignEvent.objects.get(campaign=campaign, event_type="M", offset=-2)
         self.assertEqual(-2, event.offset)
         self.assertEqual(13, event.delivery_hour)

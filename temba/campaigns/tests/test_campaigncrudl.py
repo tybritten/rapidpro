@@ -57,12 +57,22 @@ class CampaignCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_read(self):
         group = self.create_group("Reporters", contacts=[])
         campaign = self.create_campaign(self.org, "Welcomes", group)
+        registered = self.org.fields.get(key="registered")
+        CampaignEvent.create_flow_event(
+            self.org, self.admin, campaign, registered, offset=0, unit="D", flow=self.create_flow("Event2Flow")
+        )
+        CampaignEvent.create_flow_event(
+            self.org, self.admin, campaign, registered, offset=1, unit="H", flow=self.create_flow("Event3Flow")
+        )
+
         read_url = reverse("campaigns.campaign_read", args=[campaign.uuid])
 
         self.assertRequestDisallowed(read_url, [None, self.agent, self.admin2])
         response = self.assertReadFetch(read_url, [self.editor, self.admin], context_object=campaign)
         self.assertContains(response, "Welcomes")
         self.assertContains(response, "Registered")
+        self.assertContains(response, "Event2Flow")
+        self.assertContains(response, "Event3Flow")
 
         self.assertContentMenu(read_url, self.admin, ["New Event", "Edit", "Export", "Archive"])
 
