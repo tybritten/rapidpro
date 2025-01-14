@@ -17,7 +17,7 @@ class BroadcastsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.broadcasts") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None, self.agent])
-        self.assertPostNotPermitted(endpoint_url, [None, self.user, self.agent])
+        self.assertPostNotPermitted(endpoint_url, [None, self.agent])
         self.assertDeleteNotAllowed(endpoint_url)
 
         self.create_channel("FBA", "Facebook Channel", "billy_bob")
@@ -56,7 +56,7 @@ class BroadcastsEndpointTest(APITest):
         # no filtering
         response = self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[bcast4, bcast3, bcast2, bcast1],
             num_queries=self.BASE_SESSION_QUERIES + 4,
         )

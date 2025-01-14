@@ -238,12 +238,12 @@ class EndpointsTest(APITest):
         response = self.client.get(explorer_url)
         self.assertLoginRedirect(response)
 
-        # viewers can't access
-        self.login(self.user)
+        # agents can't access
+        self.login(self.agent)
         response = self.client.get(explorer_url)
         self.assertLoginRedirect(response)
 
-        # editors and administrators can
+        # editors and administrators can access
         self.login(self.editor)
         response = self.client.get(explorer_url)
         self.assertEqual(200, response.status_code)

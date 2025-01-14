@@ -14,7 +14,7 @@ class FlowStartsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.flow_starts") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None, self.agent])
-        self.assertPostNotPermitted(endpoint_url, [None, self.agent, self.user])
+        self.assertPostNotPermitted(endpoint_url, [None, self.agent])
         self.assertDeleteNotAllowed(endpoint_url)
 
         flow = self.create_flow("Test")
@@ -226,7 +226,7 @@ class FlowStartsEndpointTest(APITest):
         # check fetching with no filtering
         response = self.assertGet(
             endpoint_url,
-            [self.user, self.editor],
+            [self.editor, self.admin],
             results=[start4, start3, start2, start1],
             num_queries=self.BASE_SESSION_QUERIES + 5,
         )

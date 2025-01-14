@@ -25,7 +25,7 @@ class ChannelEndpointTest(APITest):
         # no filtering
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[
                 {
                     "uuid": str(facebook.uuid),

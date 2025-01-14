@@ -13,7 +13,7 @@ class TopicsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.topics") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None])
-        self.assertPostNotPermitted(endpoint_url, [None, self.agent, self.user])
+        self.assertPostNotPermitted(endpoint_url, [None, self.agent])
         self.assertDeleteNotAllowed(endpoint_url)
 
         # create some topics
@@ -27,7 +27,7 @@ class TopicsEndpointTest(APITest):
         # no filtering
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor],
+            [self.editor, self.admin],
             results=[
                 {
                     "uuid": str(sales.uuid),

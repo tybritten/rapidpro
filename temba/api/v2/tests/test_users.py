@@ -15,7 +15,7 @@ class UsersEndpointTest(APITest):
 
         self.assertGet(
             endpoint_url,
-            [self.agent, self.user, self.editor, self.admin],
+            [self.agent, self.editor, self.admin],
             results=[
                 {
                     "email": "agent@textit.com",

@@ -11,7 +11,7 @@ class ArchivesEndpointTest(APITest):
     def test_endpoint(self):
         endpoint_url = reverse("api.v2.archives") + ".json"
 
-        self.assertGetNotPermitted(endpoint_url, [None, self.user, self.agent])
+        self.assertGetNotPermitted(endpoint_url, [None, self.agent])
         self.assertPostNotAllowed(endpoint_url)
         self.assertDeleteNotAllowed(endpoint_url)
 
