@@ -57,6 +57,13 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
 
         self.assertContentMenu(read_url, self.admin, ["Delete"])
 
+        # deleted events should redirect to campaign read page
+        event.is_active = False
+        event.save(update_fields=("is_active",))
+
+        response = self.requestView(read_url, self.editor)
+        self.assertRedirect(response, reverse("campaigns.campaign_read", args=[event.campaign.uuid]))
+
     def test_create(self):
         farmer1 = self.create_contact("Rob Jasper", phone="+250788111111")
         farmer2 = self.create_contact("Mike Gordon", phone="+250788222222", language="kin")
@@ -72,7 +79,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
         # create a campaign for our farmers group
         campaign = Campaign.create(self.org, self.admin, "Planting Reminders", farmers)
 
-        create_url = f"{reverse('campaigns.campaignevent_create')}?campaign={campaign.id}"
+        create_url = reverse("campaigns.campaignevent_create", args=[campaign.id])
 
         # update org to use a single flow language
         self.org.set_flow_languages(self.admin, ["eng"])
@@ -119,6 +126,24 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
                 "delivery_hour": 13,
             },
             form_errors={"flow_start_mode": "This field is required.", "flow_to_start": "This field is required."},
+        )
+
+        # try to create a message event that's too long
+        self.assertCreateSubmit(
+            create_url,
+            self.admin,
+            {
+                "relative_to": planting_date.id,
+                "event_type": "M",
+                "eng": "x" * 641,
+                "direction": "A",
+                "offset": 1,
+                "unit": "W",
+                "flow_to_start": "",
+                "delivery_hour": 13,
+                "message_start_mode": "I",
+            },
+            form_errors={"__all__": "Translation for 'English' exceeds the 640 character limit."},
         )
 
         # can create an event with just a eng translation

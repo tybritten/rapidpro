@@ -5,7 +5,9 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from temba.contacts.models import ContactField, ContactGroup
@@ -129,7 +131,7 @@ class CampaignCRUDL(SmartCRUDL):
                     menu.add_modax(
                         _("New Event"),
                         "event-add",
-                        f"{reverse('campaigns.campaignevent_create')}?campaign={obj.id}",
+                        reverse("campaigns.campaignevent_create", args=[obj.id]),
                         as_button=True,
                     )
 
@@ -661,13 +663,15 @@ class CampaignEventCRUDL(SmartCRUDL):
             context["background_warning"] = CampaignEventCRUDL.BACKGROUND_WARNING
             return context
 
-        def pre_process(self, request, *args, **kwargs):
-            campaign_id = request.GET.get("campaign", None)
-            if campaign_id:
-                campaign = Campaign.objects.filter(id=campaign_id, is_active=True, is_archived=False)
+        @classmethod
+        def derive_url_pattern(cls, path, action):
+            return r"^%s/%s/(?P<campaign_id>\d+)/$" % (path, action)
 
-                if not campaign.exists():
-                    raise Http404("Campaign not found")
+        @cached_property
+        def campaign(self):
+            return get_object_or_404(
+                Campaign, id=self.kwargs["campaign_id"], org=self.request.org, is_active=True, is_archived=False
+            )
 
         def derive_fields(self):
             from copy import deepcopy
@@ -711,9 +715,6 @@ class CampaignEventCRUDL(SmartCRUDL):
 
         def pre_save(self, obj):
             obj = super().pre_save(obj)
-            obj.campaign = Campaign.objects.get(org=self.request.org, id=self.request.GET.get("campaign"))
+            obj.campaign = self.campaign
             self.form.pre_save(self.request, obj)
             return obj
-
-        def form_invalid(self, form):
-            return super().form_invalid(form)
