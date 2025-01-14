@@ -991,12 +991,16 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         for start in self.starts.all():
             start.delete()
 
+        self.labels.clear()
+
         delete_in_batches(self.counts.all())
+        delete_in_batches(self.result_counts.all())
+
+        # TODO remove
         delete_in_batches(self.category_counts.all())
         delete_in_batches(self.path_counts.all())
         delete_in_batches(self.node_counts.all())
         delete_in_batches(self.status_counts.all())
-        self.labels.clear()
 
         super().delete()
 
@@ -1493,41 +1497,14 @@ class FlowResultCount(BaseSquashableCount):
 
 class FlowCategoryCount(BaseSquashableCount):
     """
-    TODO: replace by FlowResultCount
+    TODO: drop
     """
-
-    squash_over = ("flow_id", "node_uuid", "result_key", "result_name", "category_name")
 
     flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="category_counts")
     node_uuid = models.UUIDField(db_index=True)
     result_key = models.CharField(max_length=128)
     result_name = models.CharField(max_length=128)
     category_name = models.CharField(max_length=128)
-
-    @classmethod
-    def get_squash_query(cls, distinct_set: dict) -> tuple:  # pragma: no cover
-        sql = """
-        WITH removed as (
-          DELETE FROM %(table)s WHERE "id" IN (
-            SELECT "id" FROM %(table)s
-              WHERE "flow_id" = %%s AND "node_uuid" = %%s AND "result_key" = %%s AND "result_name" = %%s AND "category_name" = %%s
-              LIMIT 10000
-          ) RETURNING "count"
-        )
-        INSERT INTO %(table)s("flow_id", "node_uuid", "result_key", "result_name", "category_name", "count", "is_squashed")
-        VALUES (%%s, %%s, %%s, %%s, %%s, GREATEST(0, (SELECT SUM("count") FROM removed)), TRUE);
-        """ % {
-            "table": cls._meta.db_table
-        }
-
-        params = (
-            distinct_set["flow_id"],
-            distinct_set["node_uuid"],
-            distinct_set["result_key"],
-            distinct_set["result_name"],
-            distinct_set["category_name"],
-        ) * 2
-        return sql, params
 
     class Meta:
         indexes = [

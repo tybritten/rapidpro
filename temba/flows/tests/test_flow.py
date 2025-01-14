@@ -372,35 +372,61 @@ class FlowTest(TembaTest, CRUDLTestMixin):
         flow.result_counts.create(result="color", category="", count=5)
 
         # name shouldn't be included since it's open ended
-        expected = [
-            {
-                "key": "color",
-                "name": "Color",
-                "categories": [
-                    {"name": "", "count": 5, "pct": 0.2},
-                    {"name": "Blue", "count": 10, "pct": 0.4},
-                    {"name": "Green", "count": 5, "pct": 0.2},
-                    {"name": "Other", "count": 0, "pct": 0.0},
-                    {"name": "Red", "count": 5, "pct": 0.2},
-                ],
-                "total": 25,
-            },
-            {
-                "key": "beer",
-                "name": "Beer",
-                "categories": [
-                    {"name": "Primus", "count": 15, "pct": 0.75},
-                    {"name": "Skol", "count": 5, "pct": 0.25},
-                ],
-                "total": 20,
-            },
-        ]
-        self.assertEqual(expected, flow.get_category_counts())
+        self.assertEqual(
+            [
+                {
+                    "key": "color",
+                    "name": "Color",
+                    "categories": [
+                        {"name": "", "count": 5, "pct": 0.2},
+                        {"name": "Blue", "count": 10, "pct": 0.4},
+                        {"name": "Green", "count": 5, "pct": 0.2},
+                        {"name": "Other", "count": 0, "pct": 0.0},
+                        {"name": "Red", "count": 5, "pct": 0.2},
+                    ],
+                    "total": 25,
+                },
+                {
+                    "key": "beer",
+                    "name": "Beer",
+                    "categories": [
+                        {"name": "Primus", "count": 15, "pct": 0.75},
+                        {"name": "Skol", "count": 5, "pct": 0.25},
+                    ],
+                    "total": 20,
+                },
+            ],
+            flow.get_category_counts(),
+        )
 
-        # check no change after squashing
+        # check no change after squashing except zero count for Other gone
         squash_flow_counts()
 
-        self.assertEqual(expected, flow.get_category_counts())
+        self.assertEqual(
+            [
+                {
+                    "key": "color",
+                    "name": "Color",
+                    "categories": [
+                        {"name": "", "count": 5, "pct": 0.2},
+                        {"name": "Blue", "count": 10, "pct": 0.4},
+                        {"name": "Green", "count": 5, "pct": 0.2},
+                        {"name": "Red", "count": 5, "pct": 0.2},
+                    ],
+                    "total": 25,
+                },
+                {
+                    "key": "beer",
+                    "name": "Beer",
+                    "categories": [
+                        {"name": "Primus", "count": 15, "pct": 0.75},
+                        {"name": "Skol", "count": 5, "pct": 0.25},
+                    ],
+                    "total": 20,
+                },
+            ],
+            flow.get_category_counts(),
+        )
 
     def test_start_counts(self):
         # create start for 10 contacts

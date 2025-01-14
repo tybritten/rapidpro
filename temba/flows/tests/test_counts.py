@@ -4,7 +4,7 @@ from django.db import connection
 from django.utils import timezone
 
 from temba.flows.models import FlowActivityCount, FlowRun, FlowSession
-from temba.flows.tasks import squash_activity_counts
+from temba.flows.tasks import squash_flow_counts
 from temba.tests import TembaTest
 from temba.utils.uuid import uuid4
 
@@ -130,7 +130,7 @@ class FlowActivityCountTest(TembaTest):
         self.assertEqual({"status:W": 2}, flow2.counts.scope_totals())
 
         # no difference after squashing
-        squash_activity_counts()
+        squash_flow_counts()
 
         self.assertEqual({"status:A": 2, "status:W": 1, "status:C": 1}, flow1.counts.scope_totals())
         self.assertEqual({"status:W": 2}, flow2.counts.scope_totals())
@@ -155,7 +155,7 @@ class FlowActivityCountTest(TembaTest):
         self.assertEqual({"status:W": 0, "status:X": 1, "status:I": 2}, flow2.counts.scope_totals())
 
         # no difference after squashing except zeros gone
-        squash_activity_counts()
+        squash_flow_counts()
 
         self.assertEqual({"status:A": 2, "status:I": 4}, flow1.counts.scope_totals())
         self.assertEqual({"status:X": 1, "status:I": 2}, flow2.counts.scope_totals())
@@ -242,7 +242,7 @@ class FlowActivityCountTest(TembaTest):
         self.assertEqual(0, flow2.counts.filter(scope="foo:2").sum())
         self.assertEqual(5, flow2.counts.filter(scope="foo:3").sum())
 
-        squash_activity_counts()
+        squash_flow_counts()
 
         self.assertEqual({"foo:1", "foo:2", "foo:3"}, set(flow1.counts.values_list("scope", flat=True)))
 
@@ -258,7 +258,7 @@ class FlowActivityCountTest(TembaTest):
 
         flow2.counts.create(scope="foo:3", count=-5)  # unsquashed zero + squashed zero
 
-        squash_activity_counts()
+        squash_flow_counts()
 
         # flow2/foo:3 should be gone because it squashed to zero
         self.assertEqual({"foo:1"}, set(flow2.counts.values_list("scope", flat=True)))

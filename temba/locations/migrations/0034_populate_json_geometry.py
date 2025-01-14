@@ -4,7 +4,7 @@ import geojson
 from django.db import migrations
 
 
-def populate_boundary_geometry(apps, schema_editor):
+def populate_boundary_geometry(apps, schema_editor):  # pragma: no cover
     AdminBoundary = apps.get_model("locations", "AdminBoundary")
 
     boundaries = AdminBoundary.objects.all().order_by("level", "osm_id")

@@ -240,6 +240,7 @@ class MsgTest(TembaTest, CRUDLTestMixin):
             channel=self.channel,
             status="H",
             msg_type="T",
+            is_android=False,
             visibility="V",
             log_uuids=[log.uuid],
             created_on=timezone.now(),

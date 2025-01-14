@@ -6,7 +6,7 @@ from django.db import migrations, transaction
 from django.db.models import Sum
 
 
-def backfill_new_counts(apps, schema_editor):
+def backfill_new_counts(apps, schema_editor):  # pragma: no cover
     Flow = apps.get_model("flows", "Flow")
 
     flow_ids = list(Flow.objects.filter(is_active=True).order_by("id").values_list("id", flat=True))
@@ -24,7 +24,7 @@ def backfill_new_counts(apps, schema_editor):
         print(f"> updated counts for {num_backfilled} of {len(flow_ids)} flows")
 
 
-def backfill_for_flow(apps, flow):
+def backfill_for_flow(apps, flow):  # pragma: no cover
     FlowResultCount = apps.get_model("flows", "FlowResultCount")
 
     to_create = []
