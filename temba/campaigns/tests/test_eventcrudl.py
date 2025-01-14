@@ -40,7 +40,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
         read_url = reverse("campaigns.campaignevent_read", args=[event.campaign.uuid, event.id])
 
         self.assertRequestDisallowed(read_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(read_url, [self.user, self.editor, self.admin], context_object=event)
+        response = self.assertReadFetch(read_url, [self.editor, self.admin], context_object=event)
 
         self.assertContains(response, "Welcomes")
         self.assertContains(response, "1 week after")
@@ -57,6 +57,13 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
 
         self.assertContentMenu(read_url, self.admin, ["Delete"])
 
+        # deleted events should redirect to campaign read page
+        event.is_active = False
+        event.save(update_fields=("is_active",))
+
+        response = self.requestView(read_url, self.editor)
+        self.assertRedirect(response, reverse("campaigns.campaign_read", args=[event.campaign.uuid]))
+
     def test_create(self):
         farmer1 = self.create_contact("Rob Jasper", phone="+250788111111")
         farmer2 = self.create_contact("Mike Gordon", phone="+250788222222", language="kin")
@@ -72,7 +79,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
         # create a campaign for our farmers group
         campaign = Campaign.create(self.org, self.admin, "Planting Reminders", farmers)
 
-        create_url = f"{reverse('campaigns.campaignevent_create')}?campaign={campaign.id}"
+        create_url = reverse("campaigns.campaignevent_create", args=[campaign.id])
 
         # update org to use a single flow language
         self.org.set_flow_languages(self.admin, ["eng"])
@@ -89,7 +96,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
             "message_start_mode",
         ]
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
 
         response = self.assertCreateFetch(create_url, [self.editor, self.admin], form_fields=non_lang_fields + ["eng"])
         self.assertEqual(3, len(response.context["form"].fields["message_start_mode"].choices))
@@ -119,6 +126,24 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
                 "delivery_hour": 13,
             },
             form_errors={"flow_start_mode": "This field is required.", "flow_to_start": "This field is required."},
+        )
+
+        # try to create a message event that's too long
+        self.assertCreateSubmit(
+            create_url,
+            self.admin,
+            {
+                "relative_to": planting_date.id,
+                "event_type": "M",
+                "eng": "x" * 641,
+                "direction": "A",
+                "offset": 1,
+                "unit": "W",
+                "flow_to_start": "",
+                "delivery_hour": 13,
+                "message_start_mode": "I",
+            },
+            form_errors={"__all__": "Translation for 'English' exceeds the 640 character limit."},
         )
 
         # can create an event with just a eng translation
@@ -190,6 +215,42 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # should be redirected back to our campaign read page
         self.assertRedirect(response, reverse("campaigns.campaign_read", args=[campaign.uuid]))
+
+        # also create a flow event for a regular flow
+        flow1 = self.create_flow("Event Flow 1")
+        response = self.assertCreateSubmit(
+            create_url,
+            self.admin,
+            {
+                "relative_to": planting_date.id,
+                "event_type": "F",
+                "direction": "B",
+                "offset": 2,
+                "unit": "D",
+                "flow_to_start": flow1.id,
+                "delivery_hour": 13,
+                "flow_start_mode": "I",
+            },
+            new_obj_query=CampaignEvent.objects.filter(campaign=campaign, event_type="F", flow=flow1, start_mode="I"),
+        )
+
+        # and a flow event for a background flow
+        flow2 = self.create_flow("Event Flow 2", flow_type=Flow.TYPE_BACKGROUND)
+        response = self.assertCreateSubmit(
+            create_url,
+            self.admin,
+            {
+                "relative_to": planting_date.id,
+                "event_type": "F",
+                "direction": "B",
+                "offset": 2,
+                "unit": "D",
+                "flow_to_start": flow2.id,
+                "delivery_hour": 13,
+                "flow_start_mode": "I",
+            },
+            new_obj_query=CampaignEvent.objects.filter(campaign=campaign, event_type="F", flow=flow2, start_mode="P"),
+        )
 
         event = CampaignEvent.objects.get(campaign=campaign, event_type="M", offset=-2)
         self.assertEqual(-2, event.offset)

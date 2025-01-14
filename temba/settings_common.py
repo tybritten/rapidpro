@@ -578,11 +578,6 @@ GROUP_PERMISSIONS = {
         "triggers.trigger.*",
     ),
     "Viewers": (
-        "campaigns.campaign_list",
-        "campaigns.campaign_menu",
-        "campaigns.campaign_read",
-        "campaigns.campaignevent_list",
-        "campaigns.campaignevent_read",
         "channels.channel_list",
         "channels.channel_read",
         "channels.channelevent_list",

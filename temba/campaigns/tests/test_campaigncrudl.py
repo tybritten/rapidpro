@@ -35,7 +35,7 @@ class CampaignCRUDLTest(TembaTest, CRUDLTestMixin):
 
         create_url = reverse("campaigns.campaign_create")
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
         self.assertCreateFetch(create_url, [self.editor, self.admin], form_fields=["name", "group"])
 
         # try to submit with no data
@@ -57,53 +57,28 @@ class CampaignCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_read(self):
         group = self.create_group("Reporters", contacts=[])
         campaign = self.create_campaign(self.org, "Welcomes", group)
+        registered = self.org.fields.get(key="registered")
+        CampaignEvent.create_flow_event(
+            self.org, self.admin, campaign, registered, offset=0, unit="D", flow=self.create_flow("Event2Flow")
+        )
+        CampaignEvent.create_flow_event(
+            self.org, self.admin, campaign, registered, offset=1, unit="H", flow=self.create_flow("Event3Flow")
+        )
+
         read_url = reverse("campaigns.campaign_read", args=[campaign.uuid])
 
         self.assertRequestDisallowed(read_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(read_url, [self.user, self.editor, self.admin], context_object=campaign)
+        response = self.assertReadFetch(read_url, [self.editor, self.admin], context_object=campaign)
         self.assertContains(response, "Welcomes")
         self.assertContains(response, "Registered")
+        self.assertContains(response, "Event2Flow")
+        self.assertContains(response, "Event3Flow")
 
         self.assertContentMenu(read_url, self.admin, ["New Event", "Edit", "Export", "Archive"])
 
         campaign.archive(self.admin)
 
         self.assertContentMenu(read_url, self.admin, ["Activate", "Export"])
-
-    def test_archive_and_activate(self):
-        group = self.create_group("Reporters", contacts=[])
-        campaign = self.create_campaign(self.org, "Welcomes", group)
-        other_org_group = self.create_group("Reporters", contacts=[], org=self.org2)
-        other_org_campaign = self.create_campaign(self.org2, "Welcomes", other_org_group)
-
-        archive_url = reverse("campaigns.campaign_archive", args=[campaign.id])
-
-        # can't archive campaign if not logged in
-        response = self.client.post(archive_url)
-        self.assertLoginRedirect(response)
-
-        self.login(self.admin)
-
-        response = self.client.post(archive_url)
-        self.assertEqual(302, response.status_code)
-
-        campaign.refresh_from_db()
-        self.assertTrue(campaign.is_archived)
-
-        # activate that archve
-        response = self.client.post(reverse("campaigns.campaign_activate", args=[campaign.id]))
-        self.assertEqual(302, response.status_code)
-
-        campaign.refresh_from_db()
-        self.assertFalse(campaign.is_archived)
-
-        # can't archive campaign from other org
-        response = self.client.post(reverse("campaigns.campaign_archive", args=[other_org_campaign.id]))
-        self.assertEqual(302, response.status_code)
-
-        # check object is unchanged
-        other_org_campaign.refresh_from_db()
-        self.assertFalse(other_org_campaign.is_archived)
 
     @mock_mailroom
     def test_update(self, mr_mocks):
@@ -114,7 +89,7 @@ class CampaignCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("campaigns.campaign_update", args=[campaign.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(
             update_url, [self.editor, self.admin], form_fields={"name": "Welcomes", "group": group1.id}
         )
@@ -157,17 +132,76 @@ class CampaignCRUDLTest(TembaTest, CRUDLTestMixin):
             mr_mocks.queued_batch_tasks[1],
         )
 
+        # can't update archived campaign
+        campaign.archive(self.admin)
+
+        self.assertRequestDisallowed(update_url, [self.admin])
+
     def test_list(self):
+        list_url = reverse("campaigns.campaign_list")
+
         group = self.create_group("Reporters", contacts=[])
         campaign1 = self.create_campaign(self.org, "Welcomes", group)
         campaign2 = self.create_campaign(self.org, "Follow Ups", group)
+        campaign3 = self.create_campaign(self.org, "Reminders", group)
+        campaign3.archive(self.admin)
 
         other_org_group = self.create_group("Reporters", contacts=[], org=self.org2)
         self.create_campaign(self.org2, "Welcomes", other_org_group)
 
-        list_url = reverse("campaigns.campaign_list")
-
         self.assertRequestDisallowed(list_url, [None, self.agent])
-        self.assertListFetch(list_url, [self.user, self.editor, self.admin], context_objects=[campaign2, campaign1])
-        self.assertContentMenu(list_url, self.user, [])
+        self.assertListFetch(list_url, [self.editor, self.admin], context_objects=[campaign2, campaign1])
         self.assertContentMenu(list_url, self.admin, ["New Campaign"])
+
+    def test_archived(self):
+        archived_url = reverse("campaigns.campaign_archived")
+
+        group = self.create_group("Reporters", contacts=[])
+        campaign1 = self.create_campaign(self.org, "Welcomes", group)
+        campaign2 = self.create_campaign(self.org, "Follow Ups", group)
+        self.create_campaign(self.org, "Reminders", group)
+
+        other_org_group = self.create_group("Reporters", contacts=[], org=self.org2)
+        self.create_campaign(self.org2, "Welcomes", other_org_group)
+
+        campaign1.archive(self.admin)
+        campaign2.archive(self.admin)
+
+        self.assertRequestDisallowed(archived_url, [None, self.agent])
+        self.assertListFetch(archived_url, [self.editor, self.admin], context_objects=[campaign2, campaign1])
+        self.assertContentMenu(archived_url, self.admin, [])
+
+    def test_archive_and_activate(self):
+        group = self.create_group("Reporters", contacts=[])
+        campaign = self.create_campaign(self.org, "Welcomes", group)
+        other_org_group = self.create_group("Reporters", contacts=[], org=self.org2)
+        other_org_campaign = self.create_campaign(self.org2, "Welcomes", other_org_group)
+
+        archive_url = reverse("campaigns.campaign_archive", args=[campaign.id])
+
+        # can't archive campaign if not logged in
+        response = self.client.post(archive_url)
+        self.assertLoginRedirect(response)
+
+        self.login(self.admin)
+
+        response = self.client.post(archive_url)
+        self.assertEqual(302, response.status_code)
+
+        campaign.refresh_from_db()
+        self.assertTrue(campaign.is_archived)
+
+        # activate that archve
+        response = self.client.post(reverse("campaigns.campaign_activate", args=[campaign.id]))
+        self.assertEqual(302, response.status_code)
+
+        campaign.refresh_from_db()
+        self.assertFalse(campaign.is_archived)
+
+        # can't archive campaign from other org
+        response = self.client.post(reverse("campaigns.campaign_archive", args=[other_org_campaign.id]))
+        self.assertEqual(302, response.status_code)
+
+        # check object is unchanged
+        other_org_campaign.refresh_from_db()
+        self.assertFalse(other_org_campaign.is_archived)

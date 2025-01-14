@@ -15,8 +15,8 @@ class CampaignEventsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.campaign_events") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None, self.agent])
-        self.assertPostNotPermitted(endpoint_url, [None, self.user, self.agent])
-        self.assertDeleteNotPermitted(endpoint_url, [None, self.user, self.agent])
+        self.assertPostNotPermitted(endpoint_url, [None, self.agent])
+        self.assertDeleteNotPermitted(endpoint_url, [None, self.agent])
 
         joe = self.create_contact("Joe Blow", phone="+250788123123")
         frank = self.create_contact("Frank", urns=["facebook:123456"])
@@ -63,7 +63,7 @@ class CampaignEventsEndpointTest(APITest):
         # no filtering
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[
                 {
                     "uuid": str(event3.uuid),

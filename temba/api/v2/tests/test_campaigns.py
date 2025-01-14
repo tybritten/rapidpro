@@ -12,7 +12,7 @@ class CampaignsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.campaigns") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None, self.agent])
-        self.assertPostNotPermitted(endpoint_url, [None, self.user, self.agent])
+        self.assertPostNotPermitted(endpoint_url, [None, self.agent])
         self.assertDeleteNotAllowed(endpoint_url)
 
         joe = self.create_contact("Joe Blow", phone="+250788123123")
@@ -29,7 +29,7 @@ class CampaignsEndpointTest(APITest):
         # no filtering
         response = self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[
                 {
                     "uuid": str(campaign2.uuid),
