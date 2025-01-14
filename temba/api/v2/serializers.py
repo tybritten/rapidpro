@@ -126,16 +126,12 @@ class WriteSerializer(serializers.Serializer):
 class AdminBoundaryReadSerializer(ReadSerializer):
     parent = serializers.SerializerMethodField()
     aliases = serializers.SerializerMethodField()
-    geometry = serializers.SerializerMethodField()
 
     def get_parent(self, obj):
         return {"osm_id": obj.parent.osm_id, "name": obj.parent.name} if obj.parent else None
 
     def get_aliases(self, obj):
         return [alias.name for alias in obj.aliases.all()]
-
-    def get_geometry(self, obj):
-        return obj.geometry if self.context["include_geometry"] else None
 
     class Meta:
         model = AdminBoundary
