@@ -1,3 +1,8 @@
+v10.1.7 (2025-01-14)
+-------------------------
+ * Delete new category counts when deleting a flow
+ * Remove squashing and db triggers used for old category counts
+
 v10.1.6 (2025-01-13)
 -------------------------
  * More migration tweaking
