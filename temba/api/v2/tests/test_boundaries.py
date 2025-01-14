@@ -24,7 +24,7 @@ class BoundariesEndpointTest(APITest):
 
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[
                 {
                     "osm_id": "1708283",

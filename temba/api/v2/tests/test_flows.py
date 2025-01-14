@@ -40,7 +40,7 @@ class FlowsEndpointTest(APITest):
         # no filtering
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor],
+            [self.editor, self.admin],
             results=[
                 {
                     "uuid": archived.uuid,

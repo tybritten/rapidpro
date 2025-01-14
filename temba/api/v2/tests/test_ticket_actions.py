@@ -14,7 +14,7 @@ class TicketActionsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.ticket_actions") + ".json"
 
         self.assertGetNotAllowed(endpoint_url)
-        self.assertPostNotPermitted(endpoint_url, [None, self.user])
+        self.assertPostNotPermitted(endpoint_url, [None])
         self.assertDeleteNotAllowed(endpoint_url)
 
         # create some tickets

@@ -17,7 +17,7 @@ class MessagesEndpointTest(APITest):
         endpoint_url = reverse("api.v2.messages") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None, self.agent])
-        self.assertPostNotPermitted(endpoint_url, [None, self.user])
+        self.assertPostNotPermitted(endpoint_url, [None])
         self.assertDeleteNotAllowed(endpoint_url)
 
         joe = self.create_contact("Joe Blow", phone="+250788123123")
@@ -69,7 +69,7 @@ class MessagesEndpointTest(APITest):
         # default response is all messages sorted by created_on
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[joe_msg4, frank_msg4, frank_msg3, joe_msg3, frank_msg2, joe_msg2, frank_msg1, joe_msg1],
             num_queries=self.BASE_SESSION_QUERIES + 6,
         )
@@ -153,7 +153,9 @@ class MessagesEndpointTest(APITest):
         )
 
         # filter by broadcast
-        broadcast = self.create_broadcast(self.user, {"eng": {"text": "A beautiful broadcast"}}, contacts=[joe, frank])
+        broadcast = self.create_broadcast(
+            self.editor, {"eng": {"text": "A beautiful broadcast"}}, contacts=[joe, frank]
+        )
         self.assertGet(
             endpoint_url + f"?broadcast={broadcast.id}",
             [self.editor],

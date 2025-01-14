@@ -13,7 +13,7 @@ class GlobalsEndpointTest(APITest):
         endpoint_url = reverse("api.v2.globals") + ".json"
 
         self.assertGetNotPermitted(endpoint_url, [None, self.agent])
-        self.assertPostNotPermitted(endpoint_url, [None, self.user, self.agent])
+        self.assertPostNotPermitted(endpoint_url, [None, self.agent])
         self.assertDeleteNotAllowed(endpoint_url)
 
         # create some globals
@@ -29,7 +29,7 @@ class GlobalsEndpointTest(APITest):
         # check no filtering
         response = self.assertGet(
             endpoint_url,
-            [self.user, self.editor],
+            [self.editor, self.admin],
             results=[
                 {
                     "key": "access_token",

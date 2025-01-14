@@ -33,7 +33,7 @@ class ClassifiersEndpointTest(APITest):
         # no filtering
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             results=[
                 {
                     "name": "Booker",
@@ -50,4 +50,4 @@ class ClassifiersEndpointTest(APITest):
         self.assertGet(endpoint_url + "?uuid=09d23a05-47fe-11e4-bfe9-b8f6b119e9ab", [self.editor], results=[])
 
         # filter by uuid present
-        self.assertGet(endpoint_url + f"?uuid={c1.uuid}", [self.user, self.editor, self.admin], results=[c1])
+        self.assertGet(endpoint_url + f"?uuid={c1.uuid}", [self.editor, self.admin], results=[c1])

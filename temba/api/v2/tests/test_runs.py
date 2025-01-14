@@ -18,7 +18,7 @@ class RunsEndpointTest(APITest):
         self.assertDeleteNotAllowed(endpoint_url)
 
         flow1 = self.get_flow("color_v13")
-        flow2 = flow1.clone(self.user)
+        flow2 = flow1.clone(self.editor)
 
         flow1_nodes = flow1.get_definition()["nodes"]
         color_prompt = flow1_nodes[0]
@@ -77,7 +77,7 @@ class RunsEndpointTest(APITest):
         # no filtering
         response = self.assertGet(
             endpoint_url,
-            [self.user, self.editor],
+            [self.editor, self.admin],
             results=[joe_run3, joe_run2, frank_run2, frank_run1, joe_run1],
             num_queries=self.BASE_SESSION_QUERIES + 6,
         )
