@@ -923,20 +923,6 @@ class SystemLabel:
         return MsgFolder.from_code(label_type).get_archive_query()
 
 
-class SystemLabelCount(BaseSquashableCount):
-    """
-    TODO drop
-    """
-
-    squash_over = ("org_id", "label_type")
-
-    org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name="system_labels")
-    label_type = models.CharField(max_length=1, choices=SystemLabel.TYPE_CHOICES)
-
-    class Meta:
-        indexes = [models.Index(fields=("org", "label_type", "is_squashed"))]
-
-
 class Label(TembaModel, DependencyMixin):
     """
     Labels represent both user defined labels and folders of labels. User defined labels that can be applied to messages

@@ -1,3 +1,9 @@
+v10.1.8 (2025-01-14)
+-------------------------
+ * Depublicize boundaries API endpoint
+ * Remove old geometry field on boundary
+ * Drop old count models
+
 v10.1.7 (2025-01-14)
 -------------------------
  * Delete new category counts when deleting a flow

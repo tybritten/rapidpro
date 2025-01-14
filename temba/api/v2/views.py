@@ -103,7 +103,6 @@ class ExplorerView(OrgPermsMixin, SmartTemplateView):
 
         context["endpoints"] = [
             ArchivesEndpoint.get_read_explorer(),
-            BoundariesEndpoint.get_read_explorer(),
             BroadcastsEndpoint.get_read_explorer(),
             BroadcastsEndpoint.get_write_explorer(),
             CampaignsEndpoint.get_read_explorer(),
@@ -170,7 +169,6 @@ class RootView(BaseEndpoint):
     are available:
 
      * [/api/v2/archives](/api/v2/archives) - to list archives of messages and runs
-     * [/api/v2/boundaries](/api/v2/boundaries) - to list administrative boundaries
      * [/api/v2/broadcasts](/api/v2/broadcasts) - to list and send broadcasts
      * [/api/v2/campaigns](/api/v2/campaigns) - to list, create, or update campaigns
      * [/api/v2/campaign_events](/api/v2/campaign_events) - to list, create, update or delete campaign events
@@ -279,7 +277,6 @@ class RootView(BaseEndpoint):
         return Response(
             {
                 "archives": reverse("api.v2.archives", request=request),
-                "boundaries": reverse("api.v2.boundaries", request=request),
                 "broadcasts": reverse("api.v2.broadcasts", request=request),
                 "campaigns": reverse("api.v2.campaigns", request=request),
                 "campaign_events": reverse("api.v2.campaign_events", request=request),
@@ -400,54 +397,7 @@ class ArchivesEndpoint(ListAPIMixin, BaseEndpoint):
 
 class BoundariesEndpoint(ListAPIMixin, BaseEndpoint):
     """
-    This endpoint allows you to list the administrative boundaries for the country associated with your account,
-    along with the simplified GPS geometry for those boundaries in GEOJSON format.
-
-    ## Listing Boundaries
-
-    A `GET` returns the boundaries for your organization with the following fields. To include geometry,
-    specify `geometry=true`.
-
-      * **osm_id** - the OSM ID for this boundary prefixed with the element type (string).
-      * **name** - the name of the administrative boundary (string).
-      * **parent** - the id of the containing parent of this boundary or null if this boundary is a country (string).
-      * **level** - the level: 0 for country, 1 for state, 2 for district (int).
-      * **geometry** - the geometry for this boundary, which will usually be a MultiPolygon (GEOJSON).
-
-    **Note that including geometry may produce a very large result so it is recommended to cache the results on the
-    client side.**
-
-    Example:
-
-        GET /api/v2/boundaries.json?geometry=true
-
-    Response is a list of the boundaries on your account
-
-        {
-            "next": null,
-            "previous": null,
-            "results": [
-            {
-                "osm_id": "1708283",
-                "name": "Kigali City",
-                "parent": {"osm_id": "171496", "name": "Rwanda"},
-                "level": 1,
-                "aliases": ["Kigari"],
-                "geometry": {
-                    "type": "MultiPolygon",
-                    "coordinates": [
-                        [
-                            [
-                                [7.5251021, 5.0504713],
-                                [7.5330272, 5.0423498]
-                            ]
-                        ]
-                    ]
-                }
-            },
-            ...
-        }
-
+    Unpublicized endpoint to list administrative boundaries.
     """
 
     class Pagination(CursorPagination):
@@ -468,22 +418,7 @@ class BoundariesEndpoint(ListAPIMixin, BaseEndpoint):
             Prefetch("aliases", queryset=BoundaryAlias.objects.filter(org=org).order_by("name"))
         )
 
-        return queryset.defer(None).select_related("parent")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["include_geometry"] = str_to_bool(self.request.query_params.get("geometry", "false"))
-        return context
-
-    @classmethod
-    def get_read_explorer(cls):
-        return {
-            "method": "GET",
-            "title": "List Administrative Boundaries",
-            "url": reverse("api.v2.boundaries"),
-            "slug": "boundary-list",
-            "params": [],
-        }
+        return queryset.select_related("parent")
 
 
 class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):

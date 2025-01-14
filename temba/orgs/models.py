@@ -1409,7 +1409,6 @@ class Org(SmartModel):
         delete_in_batches(self.templates.all())
 
         # needs to come after deletion of other things as those insert new negative counts
-        delete_in_batches(self.system_labels.all())
         delete_in_batches(self.counts.all())
 
         # now that contacts are no longer in the database, we can start de-indexing them from search

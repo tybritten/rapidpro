@@ -996,12 +996,6 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         delete_in_batches(self.counts.all())
         delete_in_batches(self.result_counts.all())
 
-        # TODO remove
-        delete_in_batches(self.category_counts.all())
-        delete_in_batches(self.path_counts.all())
-        delete_in_batches(self.node_counts.all())
-        delete_in_batches(self.status_counts.all())
-
         super().delete()
 
     class Meta:
@@ -1492,78 +1486,6 @@ class FlowResultCount(BaseSquashableCount):
                 fields=("flow", "result", "category"),
                 condition=Q(is_squashed=False),
             ),
-        ]
-
-
-class FlowCategoryCount(BaseSquashableCount):
-    """
-    TODO: drop
-    """
-
-    flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="category_counts")
-    node_uuid = models.UUIDField(db_index=True)
-    result_key = models.CharField(max_length=128)
-    result_name = models.CharField(max_length=128)
-    category_name = models.CharField(max_length=128)
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=("flow", "node_uuid", "result_key", "result_name", "category_name"),
-                condition=Q(is_squashed=False),
-                name="flowcategorycounts_unsquashed",
-            ),
-        ]
-
-
-class FlowPathCount(BaseSquashableCount):
-    """
-    TODO drop
-    """
-
-    flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="path_counts")
-    from_uuid = models.UUIDField()
-    to_uuid = models.UUIDField()
-    period = models.DateTimeField()
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=("flow", "from_uuid", "to_uuid", "period"),
-                condition=Q(is_squashed=False),
-                name="flowpathcounts_unsquashed",
-            ),
-        ]
-
-
-class FlowNodeCount(BaseSquashableCount):
-    """
-    TODO drop
-    """
-
-    flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="node_counts")
-    node_uuid = models.UUIDField(db_index=True)
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=("flow", "node_uuid"), condition=Q(is_squashed=False), name="flownodecounts_unsquashed"
-            ),
-        ]
-
-
-class FlowRunStatusCount(BaseSquashableCount):
-    """
-    TODO drop
-    """
-
-    flow = models.ForeignKey(Flow, on_delete=models.PROTECT, related_name="status_counts")
-    status = models.CharField(max_length=1, choices=FlowRun.STATUS_CHOICES)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=("flow", "status")),
-            models.Index(name="flowrun_count_unsquashed", fields=("flow", "status"), condition=Q(is_squashed=False)),
         ]
 
 
