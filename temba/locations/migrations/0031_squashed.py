@@ -36,7 +36,11 @@ class Migration(migrations.Migration):
                 ("path", models.CharField(max_length=768)),
                 (
                     "simplified_geometry",
-                    django.contrib.gis.db.models.fields.MultiPolygonField(null=True, srid=4326),
+                    (
+                        django.contrib.gis.db.models.fields.MultiPolygonField(null=True, srid=4326)
+                        if settings.POSTGIS
+                        else models.TextField()
+                    ),
                 ),
                 ("lft", models.PositiveIntegerField(editable=False)),
                 ("rght", models.PositiveIntegerField(editable=False)),

@@ -15,7 +15,7 @@ jobs:
         ports:
           - 6379:6379
       postgres:
-        image: postgis/postgis:15-3.3-alpine
+        image: postgres:15-alpine
         env:
           POSTGRES_DB: temba
           POSTGRES_USER: temba
@@ -63,6 +63,8 @@ jobs:
           port: 6000
 
       - name: Initialize environment
+        env:
+          POSTGIS: 'OFF'
         run: |
           poetry install --no-root
           yarn install
@@ -85,6 +87,8 @@ jobs:
           poetry run python manage.py compress --extension=".html" --settings=temba.settings_compress
 
       - name: Run tests
+        env:
+          POSTGIS: 'OFF'
         run: |
           poetry run coverage run manage.py test --keepdb --noinput --verbosity=2
           poetry run coverage report -i
