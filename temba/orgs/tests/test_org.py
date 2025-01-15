@@ -90,7 +90,6 @@ class OrgTest(TembaTest):
         self.assertEqual(self.editor, self.org.get_owner())
 
         OrgMembership.objects.filter(org=self.org, role_code=OrgRole.EDITOR.code).delete()
-        OrgMembership.objects.filter(org=self.org, role_code=OrgRole.VIEWER.code).delete()
         OrgMembership.objects.filter(org=self.org, role_code=OrgRole.AGENT.code).delete()
 
         # finally defaulting to org creator
