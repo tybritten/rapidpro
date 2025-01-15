@@ -64,7 +64,6 @@ class TembaTest(SmartminTest):
         self.non_org_user = self.create_user("nonorg@textit.com")
         self.admin = self.create_user("admin@textit.com", first_name="Andy")
         self.editor = self.create_user("editor@textit.com", first_name="Ed", last_name="McEdits")
-        self.user = self.create_user("viewer@textit.com")
         self.agent = self.create_user("agent@textit.com", first_name="Agnes")
         self.customer_support = self.create_user("support@textit.com", is_staff=True)
 
@@ -78,7 +77,6 @@ class TembaTest(SmartminTest):
         self.org.initialize()
         self.org.add_user(self.admin, OrgRole.ADMINISTRATOR)
         self.org.add_user(self.editor, OrgRole.EDITOR)
-        self.org.add_user(self.user, OrgRole.VIEWER)
         self.org.add_user(self.agent, OrgRole.AGENT)
 
         # setup a second org with a single admin
@@ -96,7 +94,7 @@ class TembaTest(SmartminTest):
         # a single Android channel
         self.channel = Channel.create(
             self.org,
-            self.user,
+            self.admin,
             "RW",
             "A",
             name="Test Channel",
@@ -224,7 +222,7 @@ class TembaTest(SmartminTest):
         """
 
         org = org or self.org
-        user = user or self.user
+        user = user or self.admin
         urns = [URN.from_tel(phone)] if phone else urns
 
         return create_contact_locally(
@@ -243,9 +241,9 @@ class TembaTest(SmartminTest):
         assert not (contacts and query), "can't provide contact list for a smart group"
 
         if query:
-            return ContactGroup.create_smart(org or self.org, self.user, name, query=query)
+            return ContactGroup.create_smart(org or self.org, self.admin, name, query=query)
         else:
-            group = ContactGroup.create_manual(org or self.org, self.user, name)
+            group = ContactGroup.create_manual(org or self.org, self.admin, name)
             if contacts:
                 group.contacts.add(*contacts)
             return group

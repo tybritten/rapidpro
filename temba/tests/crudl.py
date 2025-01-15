@@ -158,7 +158,6 @@ class CRUDLTestMixin:
     def assertStaffOnly(self, url: str, choose_org=None):
         self.requestView(url, None, checks=[LoginRedirect()], choose_org=choose_org)
         self.requestView(url, self.agent, checks=[LoginRedirect()], choose_org=choose_org)
-        self.requestView(url, self.user, checks=[LoginRedirect()], choose_org=choose_org)
         self.requestView(url, self.editor, checks=[LoginRedirect()], choose_org=choose_org)
         self.requestView(url, self.admin, checks=[LoginRedirect()], choose_org=choose_org)
 

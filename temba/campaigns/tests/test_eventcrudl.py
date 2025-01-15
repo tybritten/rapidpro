@@ -366,7 +366,7 @@ class CampaignEventCRUDLTest(TembaTest, CRUDLTestMixin):
         event = CampaignEvent.objects.all().order_by("id").last()
         update_url = reverse("campaigns.campaignevent_update", args=[event.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
 
         # should get new org primary language but also base language of flow
         response = self.assertUpdateFetch(

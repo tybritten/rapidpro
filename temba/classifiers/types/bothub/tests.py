@@ -27,7 +27,7 @@ class BothubTypeTest(TembaTest):
         # create classifier but don't sync the intents
         c = Classifier.create(
             self.org,
-            self.user,
+            self.admin,
             BothubType.slug,
             "Booker",
             {BothubType.CONFIG_ACCESS_TOKEN: "123456789", BothubType.INTENT_URL: "https://nlp.bothub.it/info/"},

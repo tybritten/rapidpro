@@ -32,19 +32,15 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org.features = [Org.FEATURE_USERS]
         self.org.save(update_fields=("features",))
 
-        self.assertRequestDisallowed(list_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(list_url, [None, self.editor, self.agent])
 
-        response = self.assertListFetch(
-            list_url, [self.admin], context_objects=[self.admin, self.agent, self.editor, self.user]
-        )
+        response = self.assertListFetch(list_url, [self.admin], context_objects=[self.admin, self.agent, self.editor])
         self.assertNotContains(response, "(All Topics)")
 
         self.org.features += [Org.FEATURE_TEAMS]
         self.org.save(update_fields=("features",))
 
-        response = self.assertListFetch(
-            list_url, [self.admin], context_objects=[self.admin, self.agent, self.editor, self.user]
-        )
+        response = self.assertListFetch(list_url, [self.admin], context_objects=[self.admin, self.agent, self.editor])
         self.assertEqual(response.context["admin_count"], 1)
         self.assertContains(response, "(All Topics)")
 
@@ -55,7 +51,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.requestView(list_url, self.customer_support, choose_org=self.org)
         self.assertEqual(
             set(list(response.context["object_list"])),
-            {self.admin, self.agent, self.editor, self.user, system_user},
+            {self.admin, self.agent, self.editor, system_user},
         )
         self.assertContains(response, "(All Topics)")
         self.assertEqual(response.context["admin_count"], 2)
@@ -70,7 +66,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org.features = [Org.FEATURE_TEAMS]
         self.org.save(update_fields=("features",))
 
-        self.assertRequestDisallowed(team_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(team_url, [None, self.editor, self.agent])
 
         self.assertListFetch(team_url, [self.admin], context_objects=[self.agent])
         self.assertContentMenu(team_url, self.admin, [])  # because it's a system team
@@ -94,22 +90,22 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org.features = [Org.FEATURE_USERS]
         self.org.save(update_fields=("features",))
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(update_url, [None, self.editor, self.agent])
 
         self.assertUpdateFetch(update_url, [self.admin], form_fields={"role": "T"})
 
         # check can't update user not in the current org
         self.assertRequestDisallowed(reverse("orgs.user_update", args=[self.admin2.id]), [self.admin])
 
-        # role field for viewers defaults to editor
-        update_url = reverse("orgs.user_update", args=[self.user.id])
-
-        self.assertUpdateFetch(update_url, [self.admin], form_fields={"role": "E"})
-
+        # make agent an editor
         response = self.assertUpdateSubmit(update_url, self.admin, {"role": "E"})
         self.assertRedirect(response, reverse("orgs.user_list"))
 
-        self.assertEqual({self.user, self.editor}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
+        self.assertEqual({self.agent, self.editor}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
+
+        # and back to an agent
+        self.assertUpdateSubmit(update_url, self.admin, {"role": "T"})
+        self.assertEqual({self.agent}, set(self.org.get_users(roles=[OrgRole.AGENT])))
 
         # adding teams feature enables team selection for agents
         self.org.features += [Org.FEATURE_TEAMS]
@@ -132,14 +128,14 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         # can't be updated because no other admins
         response = self.assertUpdateSubmit(update_url, self.admin, {"role": "E"}, object_unchanged=self.admin)
         self.assertRedirect(response, reverse("orgs.user_list"))
-        self.assertEqual({self.user, self.editor}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
+        self.assertEqual({self.editor}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
         self.assertEqual({self.admin}, set(self.org.get_users(roles=[OrgRole.ADMINISTRATOR])))
 
         # even if we add system user to workspace
         self.org.add_user(system_user, OrgRole.ADMINISTRATOR)
         response = self.assertUpdateSubmit(update_url, self.admin, {"role": "E"}, object_unchanged=self.admin)
         self.assertRedirect(response, reverse("orgs.user_list"))
-        self.assertEqual({self.user, self.editor}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
+        self.assertEqual({self.editor}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
         self.assertEqual({self.admin, system_user}, set(self.org.get_users(roles=[OrgRole.ADMINISTRATOR])))
 
         # add another admin to workspace and try again
@@ -148,14 +144,14 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.assertUpdateSubmit(update_url, self.admin, {"role": "E"}, object_unchanged=self.admin)
         self.assertRedirect(response, reverse("orgs.org_start"))  # no longer have access to user list page
 
-        self.assertEqual({self.user, self.editor, self.admin}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
+        self.assertEqual({self.editor, self.admin}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
         self.assertEqual({self.admin2, system_user}, set(self.org.get_users(roles=[OrgRole.ADMINISTRATOR])))
 
         # cannot update system user on a workspace
         update_url = reverse("orgs.user_update", args=[system_user.id])
         response = self.requestView(update_url, self.admin2)
         self.assertRedirect(response, reverse("orgs.org_choose"))
-        self.assertEqual({self.user, self.editor, self.admin}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
+        self.assertEqual({self.editor, self.admin}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
         self.assertEqual({self.admin2, system_user}, set(self.org.get_users(roles=[OrgRole.ADMINISTRATOR])))
 
     def test_delete(self):
@@ -172,7 +168,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org.features = [Org.FEATURE_USERS]
         self.org.save(update_fields=("features",))
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(delete_url, [None, self.editor, self.agent])
 
         # check can't delete user not in the current org
         self.assertRequestDisallowed(reverse("orgs.user_delete", args=[self.admin2.id]), [self.admin])
@@ -186,7 +182,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.assertDeleteSubmit(delete_url, self.admin, object_unchanged=self.agent)
 
         self.assertRedirect(response, reverse("orgs.user_list"))
-        self.assertEqual({self.user, self.editor, self.admin}, set(self.org.get_users()))
+        self.assertEqual({self.editor, self.admin}, set(self.org.get_users()))
 
         # try deleting ourselves..
         delete_url = reverse("orgs.user_delete", args=[self.admin.id])
@@ -194,17 +190,17 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         # can't be removed because no other admins
         response = self.assertDeleteSubmit(delete_url, self.admin, object_unchanged=self.admin)
         self.assertRedirect(response, reverse("orgs.user_list"))
-        self.assertEqual({self.user, self.editor, self.admin}, set(self.org.get_users()))
+        self.assertEqual({self.editor, self.admin}, set(self.org.get_users()))
 
         # cannot still even when the other admin is a system user
         self.org.add_user(system_user, OrgRole.ADMINISTRATOR)
         response = self.assertDeleteSubmit(delete_url, self.admin, object_unchanged=self.admin)
         self.assertRedirect(response, reverse("orgs.user_list"))
-        self.assertEqual({self.user, self.editor, self.admin, system_user}, set(self.org.get_users()))
+        self.assertEqual({self.editor, self.admin, system_user}, set(self.org.get_users()))
 
         # cannot remove system user too
         self.assertRequestDisallowed(reverse("orgs.user_delete", args=[system_user.id]), [self.admin])
-        self.assertEqual({self.user, self.editor, self.admin, system_user}, set(self.org.get_users()))
+        self.assertEqual({self.editor, self.admin, system_user}, set(self.org.get_users()))
 
         # add another admin to workspace and try again
         self.org.add_user(self.admin2, OrgRole.ADMINISTRATOR)
@@ -214,7 +210,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         # this time we could remove ourselves
         response = self.assertDeleteSubmit(delete_url, self.admin, object_unchanged=self.admin)
         self.assertRedirect(response, reverse("orgs.org_choose"))
-        self.assertEqual({self.user, self.editor, self.admin2, system_user}, set(self.org.get_users()))
+        self.assertEqual({self.editor, self.admin2, system_user}, set(self.org.get_users()))
 
     def test_account(self):
         self.login(self.agent)

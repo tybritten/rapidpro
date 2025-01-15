@@ -87,7 +87,7 @@ class AndroidTypeTest(TembaTest, CRUDLTestMixin):
         self.assertContains(response, "https://app.rapidpro.io/android/")
 
         # try to claim as non-admin
-        self.login(self.user)
+        self.login(self.agent)
         response = self.client.post(
             reverse("channels.types.android.claim"), dict(claim_code=android1.claim_code, phone_number="0788123123")
         )

@@ -99,7 +99,7 @@ class LuisTypeTest(TembaTest):
         # create classifier but don't sync the intents
         c = Classifier.create(
             self.org,
-            self.user,
+            self.admin,
             LuisType.slug,
             "Booker",
             {

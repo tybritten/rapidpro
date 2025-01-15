@@ -101,7 +101,7 @@ class HTTPLogCRUDLTest(TembaTest, CRUDLTestMixin):
         log_url = reverse("request_logs.httplog_read", args=[l1.id])
         error_log_url = reverse("request_logs.httplog_read", args=[l2.id])
 
-        self.assertRequestDisallowed(webhooks_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(webhooks_url, [None, self.agent])
         response = self.assertListFetch(webhooks_url, [self.editor, self.admin], context_objects=[l2, l1])
         self.assertContains(response, "Webhooks")
         self.assertContains(response, log_url)
@@ -115,7 +115,7 @@ class HTTPLogCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertContentMenu(webhooks_url + "?error=1", self.admin, ["All logs"])
 
         # view the individual log item
-        self.assertRequestDisallowed(log_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(log_url, [None, self.agent, self.admin2])
         response = self.assertReadFetch(log_url, [self.editor, self.admin], context_object=l1)
         self.assertContains(response, "200")
         self.assertContains(response, "org1.bar")
@@ -160,7 +160,7 @@ class HTTPLogCRUDLTest(TembaTest, CRUDLTestMixin):
 
         list_url = reverse("request_logs.httplog_channel", args=[ch1.uuid])
 
-        self.assertRequestDisallowed(list_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(list_url, [None, self.editor, self.agent, self.admin2])
         self.assertListFetch(list_url, [self.admin], context_objects=[l2, l1])
 
     def test_classifier(self):
@@ -193,7 +193,7 @@ class HTTPLogCRUDLTest(TembaTest, CRUDLTestMixin):
         list_url = reverse("request_logs.httplog_classifier", args=[c1.uuid])
         log_url = reverse("request_logs.httplog_read", args=[l1.id])
 
-        self.assertRequestDisallowed(list_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(list_url, [None, self.editor, self.agent, self.admin2])
         response = self.assertListFetch(list_url, [self.admin], context_objects=[l1])
 
         menu_path = f"/settings/classifiers/{c1.uuid}"
@@ -204,7 +204,7 @@ class HTTPLogCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertNotContains(response, "Classifier Called")
 
         # view the individual log item
-        self.assertRequestDisallowed(log_url, [None, self.user, self.agent, self.editor, self.admin2])
+        self.assertRequestDisallowed(log_url, [None, self.agent, self.editor, self.admin2])
         response = self.assertReadFetch(log_url, [self.admin], context_object=l1)
         self.assertEqual(menu_path, response.headers[TEMBA_MENU_SELECTION])
         self.assertContains(response, "200")

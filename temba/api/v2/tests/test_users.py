@@ -27,15 +27,6 @@ class UsersEndpointTest(APITest):
                     "avatar": None,
                 },
                 {
-                    "email": "viewer@textit.com",
-                    "first_name": "",
-                    "last_name": "",
-                    "role": "viewer",
-                    "team": None,
-                    "created_on": format_datetime(self.user.date_joined),
-                    "avatar": None,
-                },
-                {
                     "email": "editor@textit.com",
                     "first_name": "Ed",
                     "last_name": "McEdits",

@@ -61,7 +61,6 @@ class OrgTest(TembaTest):
             [self.admin, self.editor, admin3],
             list(self.org.get_users(roles=[OrgRole.ADMINISTRATOR, OrgRole.EDITOR]).order_by("id")),
         )
-        self.assertEqual([self.user], list(self.org.get_users(roles=[OrgRole.VIEWER]).order_by("id")))
         self.assertEqual(
             [self.admin, self.admin2],
             list(self.org2.get_users(roles=[OrgRole.ADMINISTRATOR, OrgRole.EDITOR]).order_by("id")),
@@ -79,7 +78,7 @@ class OrgTest(TembaTest):
         self.assertEqual([self.admin, self.admin2], list(self.org2.get_admins().order_by("id")))
 
     def test_get_owner(self):
-        self.org.created_by = self.user
+        self.org.created_by = self.agent
         self.org.save(update_fields=("created_by",))
 
         # admins take priority
@@ -95,7 +94,7 @@ class OrgTest(TembaTest):
         OrgMembership.objects.filter(org=self.org, role_code=OrgRole.AGENT.code).delete()
 
         # finally defaulting to org creator
-        self.assertEqual(self.user, self.org.get_owner())
+        self.assertEqual(self.agent, self.org.get_owner())
 
     def test_get_unique_slug(self):
         self.org.slug = "allo"
@@ -824,7 +823,6 @@ class OrgDeleteTest(TembaTest):
 
         self.assertUserReleased(self.admin)
         self.assertUserActive(self.editor)  # because they're also in org #2
-        self.assertUserReleased(self.user)
         self.assertUserReleased(self.agent)
         self.assertUserReleased(self.admin)
         self.assertUserActive(self.admin2)

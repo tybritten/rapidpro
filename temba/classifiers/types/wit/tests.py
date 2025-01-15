@@ -44,7 +44,7 @@ class WitTypeTest(TembaTest):
         # create classifier but don't sync the intents
         c = Classifier.create(
             self.org,
-            self.user,
+            self.admin,
             WitType.slug,
             "Booker",
             {WitType.CONFIG_APP_ID: "12345", WitType.CONFIG_ACCESS_TOKEN: "sesame"},

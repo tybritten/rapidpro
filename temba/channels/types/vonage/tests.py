@@ -220,7 +220,7 @@ class VonageTypeTest(TembaTest):
         self.org.channels.update(is_active=False)
         self.channel = Channel.create(
             self.org,
-            self.user,
+            self.admin,
             "RW",
             "NX",
             "Vonage",
