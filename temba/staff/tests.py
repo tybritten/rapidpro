@@ -326,7 +326,6 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # make editor the owner of the org
         OrgMembership.objects.filter(org=self.org, role_code=OrgRole.ADMINISTRATOR.code).delete()
-        OrgMembership.objects.filter(org=self.org, role_code=OrgRole.VIEWER.code).delete()
         OrgMembership.objects.filter(org=self.org, role_code=OrgRole.AGENT.code).delete()
 
         response = self.requestView(delete_url, self.customer_support)

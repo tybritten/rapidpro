@@ -520,11 +520,7 @@ class UserCRUDL(SmartCRUDL):
 
         def derive_initial(self):
             membership = self.request.org.get_membership(self.object)
-            return {
-                # viewers default to editors
-                "role": OrgRole.EDITOR.code if membership.role == OrgRole.VIEWER else membership.role.code,
-                "team": membership.team,
-            }
+            return {"role": membership.role.code, "team": membership.team}
 
         def get_form_kwargs(self):
             kwargs = super().get_form_kwargs()

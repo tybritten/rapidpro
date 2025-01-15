@@ -1724,7 +1724,6 @@ class UserReadSerializer(ReadSerializer):
     ROLES = {
         OrgRole.ADMINISTRATOR: "administrator",
         OrgRole.EDITOR: "editor",
-        OrgRole.VIEWER: "viewer",
         OrgRole.AGENT: "agent",
     }
 
