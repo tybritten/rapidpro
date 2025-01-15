@@ -18,7 +18,7 @@ class TeamCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org.features = [Org.FEATURE_TEAMS]
         self.org.save(update_fields=("features",))
 
-        self.assertRequestDisallowed(create_url, [None, self.agent, self.user, self.editor])
+        self.assertRequestDisallowed(create_url, [None, self.agent, self.editor])
 
         self.assertCreateFetch(create_url, [self.admin], form_fields=("name", "topics"))
 
@@ -93,7 +93,7 @@ class TeamCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("tickets.team_update", args=[team.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.editor, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.editor, self.admin2])
 
         self.assertUpdateFetch(update_url, [self.admin], form_fields=["name", "topics"])
 
@@ -128,7 +128,7 @@ class TeamCRUDLTest(TembaTest, CRUDLTestMixin):
 
         delete_url = reverse("tickets.team_delete", args=[team1.id])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.agent, self.editor, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.agent, self.editor, self.admin2])
 
         # deleting blocked for team with agents
         response = self.assertDeleteFetch(delete_url, [self.admin])

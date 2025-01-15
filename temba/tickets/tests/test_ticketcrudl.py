@@ -36,14 +36,14 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
         # just a placeholder view for frontend components
         self.assertRequestDisallowed(list_url, [None])
         self.assertListFetch(
-            list_url, [self.user, self.editor, self.admin, self.agent, self.agent2, self.agent3], context_objects=[]
+            list_url, [self.editor, self.admin, self.agent, self.agent2, self.agent3], context_objects=[]
         )
 
         # link to our ticket within the All folder
         deep_link = f"{list_url}all/open/{ticket.uuid}/"
 
         response = self.assertListFetch(
-            deep_link, [self.user, self.editor, self.admin, self.agent, self.agent3], context_objects=[]
+            deep_link, [self.editor, self.admin, self.agent, self.agent3], context_objects=[]
         )
         self.assertEqual("All", response.context["title"])
         self.assertEqual("all", response.context["folder"])
@@ -71,7 +71,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertRequestDisallowed(deep_link, [self.agent2])  # doesn't have access to that topic
 
         response = self.assertListFetch(
-            deep_link, [self.user, self.editor, self.admin, self.agent, self.agent3], context_objects=[]
+            deep_link, [self.editor, self.admin, self.agent, self.agent3], context_objects=[]
         )
         self.assertEqual("Support", response.context["title"])
         self.assertEqual(str(self.support.uuid), response.context["folder"])
@@ -128,7 +128,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("tickets.ticket_update", args=[ticket.uuid])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.admin2])
         self.assertUpdateFetch(update_url, [self.agent, self.editor, self.admin], form_fields=["topic"])
 
         user_topic = Topic.objects.create(org=self.org, name="Hot Topic", created_by=self.admin, modified_by=self.admin)
@@ -379,7 +379,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("tickets.ticket_note", args=[ticket.uuid])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.admin2])
         self.assertUpdateFetch(update_url, [self.agent, self.editor, self.admin], form_fields=["note"])
 
         self.assertUpdateSubmit(
@@ -416,7 +416,7 @@ class TicketCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertRequestDisallowed(export_url, [None, self.agent])
         response = self.assertUpdateFetch(
             export_url,
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             form_fields=("start_date", "end_date", "with_fields", "with_groups"),
         )
         self.assertNotContains(response, "already an export in progress")

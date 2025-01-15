@@ -35,7 +35,7 @@ class EndpointsTest(APITestMixin, TembaTest):
         )
         self.assertGet(
             endpoint_url + "?level=district",
-            [self.user],
+            [self.editor],
             results=[
                 {"osm_id": "R1711131", "name": "Gatsibo", "path": "Rwanda > Eastern Province > Gatsibo"},
                 {"osm_id": "1711163", "name": "Kayônza", "path": "Rwanda > Eastern Province > Kayônza"},
@@ -251,7 +251,7 @@ class EndpointsTest(APITestMixin, TembaTest):
         # no filtering
         self.assertGet(
             endpoint_url,
-            [self.user, self.editor],
+            [self.editor, self.admin],
             results=[
                 {
                     "uuid": str(tpl2.uuid),

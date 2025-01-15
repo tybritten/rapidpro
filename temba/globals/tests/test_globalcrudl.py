@@ -22,7 +22,7 @@ class GlobalCRUDLTest(TembaTest, CRUDLTestMixin):
 
         self.assertRequestDisallowed(list_url, [None, self.agent])
         response = self.assertListFetch(
-            list_url, [self.user, self.editor, self.admin], context_objects=[self.global2, self.global1]
+            list_url, [self.editor, self.admin], context_objects=[self.global2, self.global1]
         )
         self.assertContains(response, "Acme Ltd")
         self.assertContains(response, "23464373")
@@ -31,14 +31,14 @@ class GlobalCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.client.get(list_url + "?search=access")
         self.assertEqual(list(response.context["object_list"]), [self.global2])
 
-        self.assertListFetch(unused_url, [self.user, self.editor, self.admin], context_objects=[self.global2])
+        self.assertListFetch(unused_url, [self.editor, self.admin], context_objects=[self.global2])
         self.assertContentMenu(list_url, self.admin, ["New"])
 
     @override_settings(ORG_LIMIT_DEFAULTS={"globals": 4})
     def test_create(self):
         create_url = reverse("globals.global_create")
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
         self.assertCreateFetch(create_url, [self.editor, self.admin], form_fields=["name", "value"])
 
         # try to submit with invalid name and missing value
@@ -90,7 +90,7 @@ class GlobalCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_update(self):
         update_url = reverse("globals.global_update", args=[self.global1.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(update_url, [self.editor, self.admin], form_fields=["value"])
 
         # try to submit with missing value
@@ -121,14 +121,14 @@ class GlobalCRUDLTest(TembaTest, CRUDLTestMixin):
         detail_url = reverse("globals.global_usages", args=[self.global1.uuid])
 
         self.assertRequestDisallowed(detail_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(detail_url, [self.user, self.editor, self.admin], context_object=self.global1)
+        response = self.assertReadFetch(detail_url, [self.editor, self.admin], context_object=self.global1)
 
         self.assertEqual({"flow": [self.flow]}, {t: list(qs) for t, qs in response.context["dependents"].items()})
 
     def test_delete(self):
         delete_url = reverse("globals.global_delete", args=[self.global2.uuid])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.agent, self.admin2])
 
         # fetch delete modal
         response = self.assertDeleteFetch(delete_url, [self.editor, self.admin])
