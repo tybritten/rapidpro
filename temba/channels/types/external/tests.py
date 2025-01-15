@@ -157,7 +157,7 @@ class ExternalTypeTest(TembaTest):
     def test_update(self):
         channel = Channel.create(
             self.org,
-            self.user,
+            self.admin,
             None,
             "EX",
             name="EX 12345",

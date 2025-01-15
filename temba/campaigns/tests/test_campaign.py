@@ -152,7 +152,7 @@ class CampaignTest(TembaTest):
 
     def test_get_sorted_events(self):
         # create a campaign
-        campaign = Campaign.create(self.org, self.user, "Planting Reminders", self.farmers)
+        campaign = Campaign.create(self.org, self.editor, "Planting Reminders", self.farmers)
 
         flow = self.create_flow("Test 1")
 
@@ -376,7 +376,7 @@ class CampaignTest(TembaTest):
 
     def test_unarchiving_campaigns(self):
         # create a campaign
-        campaign = Campaign.create(self.org, self.user, "Planting Reminders", self.farmers)
+        campaign = Campaign.create(self.org, self.editor, "Planting Reminders", self.farmers)
 
         flow = self.create_flow("Test")
 
@@ -508,7 +508,7 @@ class CampaignTest(TembaTest):
         campaign = Campaign.create(self.org, self.admin, "Planting Reminders", self.farmers)
 
         new_org = Org.objects.create(
-            name="Temba New", timezone=ZoneInfo("Africa/Kigali"), created_by=self.user, modified_by=self.user
+            name="Temba New", timezone=ZoneInfo("Africa/Kigali"), created_by=self.editor, modified_by=self.editor
         )
 
         self.assertRaises(
@@ -567,7 +567,7 @@ class CampaignTest(TembaTest):
         campaign = Campaign.create(self.org, self.admin, "Planting Reminders", self.farmers)
 
         new_org = Org.objects.create(
-            name="Temba New", timezone=ZoneInfo("Africa/Kigali"), created_by=self.user, modified_by=self.user
+            name="Temba New", timezone=ZoneInfo("Africa/Kigali"), created_by=self.editor, modified_by=self.editor
         )
 
         with self.assertRaises(AssertionError):

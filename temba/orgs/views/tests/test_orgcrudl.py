@@ -164,7 +164,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
                 "Incidents",
                 "Workspaces (2)",
                 "Dashboard",
-                "Users (4)",
+                "Users (3)",
                 "Invitations (0)",
                 "Teams (1)",
                 "Export",
@@ -419,14 +419,14 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.client.get(grant_url)
         self.assertRedirect(response, "/users/login/")
 
-        self.user = self.create_user("tito@textit.com")
+        user = self.create_user("tito@textit.com")
 
-        self.login(self.user)
+        self.login(user)
         response = self.client.get(grant_url)
         self.assertRedirect(response, "/users/login/")
 
         granters = Group.objects.get(name="Granters")
-        self.user.groups.add(granters)
+        user.groups.add(granters)
 
         response = self.client.get(grant_url)
         self.assertEqual(200, response.status_code)
@@ -594,9 +594,9 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_new_signup_with_user_logged_in(self, mock_pre_process):
         mock_pre_process.return_value = None
         signup_url = reverse("orgs.org_signup")
-        self.user = self.create_user("tito@textit.com")
+        user1 = self.create_user("tito@textit.com")
 
-        self.login(self.user)
+        self.login(user1)
 
         response = self.client.get(signup_url)
         self.assertEqual(response.status_code, 200)
@@ -615,21 +615,21 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(response.status_code, 302)
 
         # should have a new user
-        user = User.objects.get(username="kellan@example.com")
-        self.assertEqual(user.first_name, "Kellan")
-        self.assertEqual(user.last_name, "Alexander")
-        self.assertEqual(user.email, "kellan@example.com")
-        self.assertTrue(user.check_password("HeyThere123"))
+        user2 = User.objects.get(username="kellan@example.com")
+        self.assertEqual(user2.first_name, "Kellan")
+        self.assertEqual(user2.last_name, "Alexander")
+        self.assertEqual(user2.email, "kellan@example.com")
+        self.assertTrue(user2.check_password("HeyThere123"))
 
         # should have a new org
         org = Org.objects.get(name="AlexCom")
         self.assertEqual(org.timezone, ZoneInfo("Africa/Kigali"))
 
         # of which our user is an administrator
-        self.assertIn(user, org.get_admins())
+        self.assertIn(user2, org.get_admins())
 
         # not the logged in user at the signup time
-        self.assertNotIn(self.user, org.get_admins())
+        self.assertNotIn(user1, org.get_admins())
 
     @override_settings(
         AUTH_PASSWORD_VALIDATORS=[
@@ -885,7 +885,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org2.save(update_fields=("features",))
 
         # since we can only create child orgs, we don't show type as an option
-        self.assertRequestDisallowed(create_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.editor, self.agent])
         self.assertCreateFetch(create_url, [self.admin], form_fields=["name", "timezone"])
 
         # try to submit an empty form
@@ -925,7 +925,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org2.save(update_fields=("features",))
 
         # because we can create both new orgs and child orgs, type is an option
-        self.assertRequestDisallowed(create_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.editor, self.agent])
         self.assertCreateFetch(create_url, [self.admin], form_fields=["type", "name", "timezone"])
 
         # create new org
@@ -988,7 +988,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("orgs.org_update", args=[child1.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.editor, self.agent, self.admin2])
         self.assertUpdateFetch(
             update_url, [self.admin], form_fields=["name", "timezone", "date_format", "language"], choose_org=self.org
         )
@@ -1014,7 +1014,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         child = self.org.create_new(self.admin, "Child Workspace", self.org.timezone, as_child=True)
         delete_url = reverse("orgs.org_delete", args=[child.id])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.editor, self.agent, self.admin2])
         self.assertDeleteFetch(delete_url, [self.admin], choose_org=self.org)
 
         # schedule for deletion
@@ -1038,7 +1038,6 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         # now for all our roles
         self.assertRedirect(self.requestView(start_url, self.admin), "/msg/")
         self.assertRedirect(self.requestView(start_url, self.editor), "/msg/")
-        self.assertRedirect(self.requestView(start_url, self.user), "/msg/")
         self.assertRedirect(self.requestView(start_url, self.agent), "/ticket/")
 
         # now try as customer support
@@ -1055,19 +1054,18 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # create an inactive org which should never appear as an option
         org3 = Org.objects.create(
-            name="Deactivated", timezone=tzone.utc, created_by=self.user, modified_by=self.user, is_active=False
+            name="Deactivated", timezone=tzone.utc, created_by=self.admin, modified_by=self.admin, is_active=False
         )
         org3.add_user(self.editor, OrgRole.EDITOR)
 
         # and another org that none of our users belong to
-        org4 = Org.objects.create(name="Other", timezone=tzone.utc, created_by=self.user, modified_by=self.user)
+        org4 = Org.objects.create(name="Other", timezone=tzone.utc, created_by=self.admin, modified_by=self.admin)
 
         self.assertLoginRedirect(self.client.get(choose_url))
 
         # users with a single org are always redirected to the start page automatically
         self.assertRedirect(self.requestView(choose_url, self.admin), "/org/start/")
         self.assertRedirect(self.requestView(choose_url, self.editor), "/org/start/")
-        self.assertRedirect(self.requestView(choose_url, self.user), "/org/start/")
         self.assertRedirect(self.requestView(choose_url, self.agent), "/org/start/")
 
         # users with no org are redirected back to the login page
@@ -1179,7 +1177,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual("English", response.context["primary_lang"])
         self.assertEqual([], response.context["other_langs"])
 
-        self.assertRequestDisallowed(langs_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(langs_url, [None, self.editor, self.agent])
         self.assertUpdateFetch(langs_url, [self.admin], form_fields=["primary_lang", "other_langs", "input_collation"])
 
         # initial should do a match on code only

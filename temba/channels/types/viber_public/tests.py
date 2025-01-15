@@ -22,7 +22,7 @@ class ViberPublicTypeTest(TembaTest, CRUDLTestMixin):
             )
             self.channel = Channel.create(
                 self.org,
-                self.user,
+                self.admin,
                 None,
                 "VP",
                 name="Viber",
@@ -77,7 +77,7 @@ class ViberPublicTypeTest(TembaTest, CRUDLTestMixin):
         update_url = reverse("channels.channel_update", args=[self.channel.id])
         read_url = reverse("channels.channel_read", args=[self.channel.uuid])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(
             update_url, [self.editor, self.admin], form_fields={"name": "Viber", "welcome_message": ""}
         )

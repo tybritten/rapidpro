@@ -50,8 +50,8 @@ class RocketChatMixin(TembaTest):
                 RocketChatType.CONFIG_SECRET: self.secret,
             }
         return Channel.create(
-            org=self.org,
-            user=self.user,
+            self.org,
+            self.admin,
             country=None,
             channel_type=RocketChatType.code,
             name="Name",

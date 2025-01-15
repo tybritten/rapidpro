@@ -330,7 +330,7 @@ class EventTest(TembaTest):
         registered = self.create_field("registered", "Registered", value_type="D")
         campaign = Campaign.create(self.org, self.admin, "Welcomes", group)
         event = CampaignEvent.create_flow_event(
-            self.org, self.user, campaign, registered, offset=1, unit="W", flow=flow
+            self.org, self.admin, campaign, registered, offset=1, unit="W", flow=flow
         )
         contact = self.create_contact("Jim", phone="0979111111")
         fire = EventFire.objects.create(
@@ -391,7 +391,7 @@ class EventTest(TembaTest):
                     "email": "agent@textit.com",
                 },
             },
-            Event.from_ticket_event(self.org, self.user, event1),
+            Event.from_ticket_event(self.org, self.admin, event1),
         )
 
         # event without a user
@@ -415,7 +415,7 @@ class EventTest(TembaTest):
                 "created_on": matchers.ISODate(),
                 "created_by": None,
             },
-            Event.from_ticket_event(self.org, self.user, event2),
+            Event.from_ticket_event(self.org, self.admin, event2),
         )
 
     def test_from_ivr_call(self):
@@ -449,7 +449,7 @@ class EventTest(TembaTest):
                 "created_on": matchers.ISODate(),
                 "logs_url": None,  # user can't see logs
             },
-            Event.from_ivr_call(self.org, self.user, call2),
+            Event.from_ivr_call(self.org, self.agent, call2),
         )
         self.assertEqual(
             {

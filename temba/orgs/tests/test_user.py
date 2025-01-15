@@ -132,7 +132,6 @@ class UserTest(TembaTest):
 
         # release all but our admin
         self.editor.release(self.customer_support)
-        self.user.release(self.customer_support)
         self.agent.release(self.customer_support)
 
         # still a user left, our org remains active
