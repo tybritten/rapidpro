@@ -390,7 +390,7 @@ class OrgRole(Enum):
 
     @classmethod
     def choices(cls):
-        return [(r.code, r.display) for r in cls if r != cls.VIEWER]
+        return [(r.code, r.display) for r in cls]
 
     def has_perm(self, permission: str) -> bool:
         """
