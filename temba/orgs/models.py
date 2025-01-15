@@ -18,7 +18,7 @@ from smartmin.models import SmartModel
 from timezone_field import TimeZoneField
 
 from django.conf import settings
-from django.contrib.auth.models import Group, Permission, User as AuthUser
+from django.contrib.auth.models import Group, User as AuthUser
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import OpClass
 from django.contrib.postgres.validators import ArrayMinLengthValidator
@@ -1037,17 +1037,11 @@ class Org(SmartModel):
         format = formats[1] if show_time else formats[0]
         return datetime_to_str(d, format, self.timezone)
 
-    def get_users(self, *, roles: list = None, with_perm: str = None):
+    def get_users(self, *, roles: list = None):
         """
         Gets users in this org, filtered by role or permission.
         """
         qs = self.users.filter(is_active=True).select_related("settings")
-
-        if with_perm:
-            app_label, codename = with_perm.split(".")
-            permission = Permission.objects.get(content_type__app_label=app_label, codename=codename)
-            groups = Group.objects.filter(permissions=permission)
-            roles = [OrgRole.from_group(g) for g in groups]
 
         if roles is not None:
             qs = qs.filter(orgmembership__org=self, orgmembership__role_code__in=[r.code for r in roles])

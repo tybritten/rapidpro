@@ -55,10 +55,6 @@ class TicketTest(TembaTest):
 
         self.assertEqual([call(self.org, self.admin, [ticket])], mr_mocks.calls["ticket_reopen"])
 
-    def test_allowed_assignees(self):
-        self.assertEqual({self.admin, self.editor, self.agent}, set(Ticket.get_allowed_assignees(self.org)))
-        self.assertEqual({self.admin2}, set(Ticket.get_allowed_assignees(self.org2)))
-
     @mock_mailroom
     def test_counts(self, mr_mocks):
         general = self.org.default_ticket_topic
@@ -81,7 +77,7 @@ class TicketTest(TembaTest):
             org, *, assignee_open: dict, assignee_closed: dict, topic_open: dict, topic_closed: dict, contacts: dict
         ):
             all_topics = org.topics.filter(is_active=True)
-            assignees = [None] + list(Ticket.get_allowed_assignees(org))
+            assignees = [None] + list(org.get_users())
 
             self.assertEqual(
                 assignee_open, {u: Ticket.get_assignee_count(org, u, all_topics, Ticket.STATUS_OPEN) for u in assignees}

@@ -379,7 +379,7 @@ PERMISSIONS = {
         "workspace",
     ),
     "request_logs.httplog": ("webhooks", "classifier"),
-    "tickets.ticket": ("assign", "assignee", "menu", "note", "export_stats", "export"),
+    "tickets.ticket": ("assign", "menu", "note", "export_stats", "export"),
     "triggers.trigger": ("archived", "type", "menu"),
 }
 
@@ -585,7 +585,6 @@ GROUP_PERMISSIONS = {
         "orgs.org_languages",
         "orgs.org_menu",
         "tickets.ticket_assign",
-        "tickets.ticket_assignee",
         "tickets.ticket_list",
         "tickets.ticket_menu",
         "tickets.ticket_note",
