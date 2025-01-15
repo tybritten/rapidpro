@@ -182,9 +182,6 @@ class Ticket(models.Model):
     STATUS_CLOSED = "C"
     STATUS_CHOICES = ((STATUS_OPEN, _("Open")), (STATUS_CLOSED, _("Closed")))
 
-    # permission that users need to have a ticket assigned to them
-    ASSIGNEE_PERMISSION = "tickets.ticket_assignee"
-
     MAX_NOTE_LENGTH = 10_000
 
     uuid = models.UUIDField(unique=True, default=uuid4)
@@ -237,10 +234,6 @@ class Ticket(models.Model):
     @classmethod
     def _bulk_response(self, resp: dict, tickets: list) -> list:
         return [t for t in tickets if t.id in resp["changed_ids"]]
-
-    @classmethod
-    def get_allowed_assignees(cls, org):
-        return org.get_users(with_perm=cls.ASSIGNEE_PERMISSION)
 
     @classmethod
     def get_assignee_count(cls, org, user, topics, status: str) -> int:

@@ -66,14 +66,6 @@ class OrgTest(TembaTest):
             list(self.org2.get_users(roles=[OrgRole.ADMINISTRATOR, OrgRole.EDITOR]).order_by("id")),
         )
 
-        self.assertEqual(
-            [self.admin, self.editor, self.agent, admin3],
-            list(self.org.get_users(with_perm="tickets.ticket_assignee").order_by("id")),
-        )
-        self.assertEqual(
-            [self.admin, self.admin2], list(self.org2.get_users(with_perm="tickets.ticket_assignee").order_by("id"))
-        )
-
         self.assertEqual([self.admin, admin3], list(self.org.get_admins().order_by("id")))
         self.assertEqual([self.admin, self.admin2], list(self.org2.get_admins().order_by("id")))
 

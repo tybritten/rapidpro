@@ -37,7 +37,7 @@ from temba.orgs.views.base import (
     BaseUsagesModal,
 )
 from temba.orgs.views.mixins import BulkActionMixin, OrgObjPermsMixin, OrgPermsMixin
-from temba.tickets.models import Ticket, Topic
+from temba.tickets.models import Topic
 from temba.utils import json, on_transaction_commit
 from temba.utils.dates import datetime_to_timestamp, timestamp_to_datetime
 from temba.utils.fields import CheckboxWidget, InputWidget, SelectWidget, TembaChoiceField
@@ -780,7 +780,7 @@ class ContactCRUDL(SmartCRUDL):
                 super().__init__(**kwargs)
 
                 self.fields["topic"].queryset = org.topics.filter(is_active=True).order_by("name")
-                self.fields["assignee"].queryset = Ticket.get_allowed_assignees(org).order_by("email")
+                self.fields["assignee"].queryset = org.get_users().order_by("email")
 
         form_class = Form
         submit_button_name = _("Open")
