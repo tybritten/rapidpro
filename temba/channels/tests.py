@@ -133,7 +133,7 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
         with self.assertRaises(ValueError):
             Channel.create(
                 self.org,
-                self.user,
+                self.admin,
                 "KE",
                 "AT",
                 None,
@@ -147,7 +147,7 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
         with self.assertRaises(ValueError):
             Channel.create(
                 self.org,
-                self.user,
+                self.admin,
                 "US",
                 "EX",
                 None,
@@ -160,7 +160,7 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
         with self.assertRaises(ValueError):
             Channel.create(
                 self.org,
-                self.user,
+                self.admin,
                 "US",
                 "EX",
                 None,
@@ -173,9 +173,9 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
     def test_release(self, mr_mocks):
         # create two channels..
         channel1 = Channel.create(
-            self.org, self.user, "RW", "A", "Test Channel", "0785551212", config={Channel.CONFIG_FCM_ID: "123"}
+            self.org, self.admin, "RW", "A", "Test Channel", "0785551212", config={Channel.CONFIG_FCM_ID: "123"}
         )
-        channel2 = Channel.create(self.org, self.user, "", "T", "Test Channel", "0785553333")
+        channel2 = Channel.create(self.org, self.admin, "", "T", "Test Channel", "0785553333")
 
         # add channel trigger
         flow = self.create_flow("Test")
@@ -340,7 +340,7 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
         chart_url = reverse("channels.channel_chart", args=[self.tel_channel.uuid])
 
         self.assertRequestDisallowed(chart_url, [None, self.agent, self.admin2])
-        self.assertReadFetch(chart_url, [self.user, self.editor, self.admin])
+        self.assertReadFetch(chart_url, [self.editor, self.admin])
 
         # create some test messages
         test_date = datetime(2020, 1, 20, 0, 0, 0, 0, tzone.utc)
@@ -392,13 +392,13 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
         response = self.client.get(tel_channel_read_url)
         self.assertRedirect(response, reverse("orgs.org_choose"))
 
-        self.login(self.user)
+        self.login(self.editor)
 
         response = self.client.get(tel_channel_read_url)
         self.assertEqual(f"/settings/channels/{self.tel_channel.uuid}", response.headers[TEMBA_MENU_SELECTION])
 
         # org users can
-        response = self.requestView(tel_channel_read_url, self.user)
+        response = self.requestView(tel_channel_read_url, self.editor)
 
         self.assertTrue(len(response.context["latest_sync_events"]) <= 5)
 
@@ -506,115 +506,6 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(401, response.status_code)
         self.assertEqual(4, response.json()["error_id"])
 
-    def test_claim(self):
-        # no access for regular users
-        self.login(self.user)
-        response = self.client.get(reverse("channels.channel_claim"))
-        self.assertLoginRedirect(response)
-
-        # editor can access
-        self.login(self.editor)
-        response = self.client.get(reverse("channels.channel_claim"))
-        self.assertEqual(200, response.status_code)
-
-        # as can admins
-        self.login(self.admin)
-        response = self.client.get(reverse("channels.channel_claim"))
-        self.assertEqual(200, response.status_code)
-
-        # 3 recommended channels for Rwanda
-        self.assertEqual(["AT", "MT", "TG"], [t.code for t in response.context["recommended_channels"]])
-
-        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "CT")
-        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "EX")
-        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "I2")
-        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
-
-        self.org.timezone = "Canada/Central"
-        self.org.save()
-
-        response = self.client.get(reverse("channels.channel_claim"))
-        self.assertEqual(200, response.status_code)
-
-        self.assertEqual(["TG", "TMS", "T", "NX"], [t.code for t in response.context["recommended_channels"]])
-
-        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "CT")
-        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "EX")
-        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "I2")
-        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
-
-        with override_settings(ORG_LIMIT_DEFAULTS={"channels": 2}):
-            response = self.client.get(reverse("channels.channel_claim"))
-            self.assertEqual(200, response.status_code)
-
-            self.assertEqual(2, response.context["total_count"])
-            self.assertEqual(2, response.context["total_limit"])
-            self.assertContains(
-                response,
-                "You have reached the limit of 2 channels per workspace. Please remove channels that you are no longer using.",
-            )
-
-        with override_settings(ORG_LIMIT_DEFAULTS={"channels": 3}):
-            response = self.client.get(reverse("channels.channel_claim"))
-            self.assertEqual(200, response.status_code)
-
-            self.assertEqual(2, response.context["total_count"])
-            self.assertEqual(3, response.context["total_limit"])
-            self.assertContains(
-                response,
-                "You are approaching the limit of 3 channels per workspace. You should remove channels that you are no longer using.",
-            )
-
-    def test_claim_all(self):
-        # no access for regular users
-        self.login(self.user)
-        response = self.client.get(reverse("channels.channel_claim_all"))
-        self.assertLoginRedirect(response)
-
-        # editor can access
-        self.login(self.editor)
-        response = self.client.get(reverse("channels.channel_claim_all"))
-        self.assertEqual(200, response.status_code)
-
-        # as can admins
-        self.login(self.admin)
-        response = self.client.get(reverse("channels.channel_claim_all"))
-        self.assertEqual(200, response.status_code)
-
-        # should see all channel types not for beta only and having a category
-        self.assertEqual(["AT", "MT", "TG"], [t.code for t in response.context["recommended_channels"]])
-
-        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "AC")
-        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "BL")
-        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "BS")
-        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
-
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][0].code, "D3C")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][1].code, "FBA")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][2].code, "IG")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-2].code, "WC")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-1].code, "ZVW")
-
-        self.admin.groups.add(Group.objects.get(name="Beta"))
-
-        response = self.client.get(reverse("channels.channel_claim_all"))
-        self.assertEqual(200, response.status_code)
-
-        # should see all channel types having a category including beta only channel types
-        self.assertEqual(["AT", "MT", "TG"], [t.code for t in response.context["recommended_channels"]])
-
-        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "AC")
-        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "BW")
-        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "BL")
-        self.assertEqual(response.context["channel_types"]["PHONE"][3].code, "BS")
-        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
-
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][0].code, "D3C")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][1].code, "FBA")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][2].code, "IG")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-2].code, "WA")
-        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-1].code, "ZVW")
-
     def test_sync_unclaimed(self):
         response = self.sync(self.unclaimed_channel, cmds=[])
         self.assertEqual(401, response.status_code)
@@ -669,7 +560,7 @@ class ChannelTest(TembaTest, CRUDLTestMixin):
     def test_sync_broadcast_multiple_channels(self):
         channel2 = Channel.create(
             self.org,
-            self.user,
+            self.admin,
             "RW",
             "A",
             name="Test Channel 2",
@@ -998,6 +889,93 @@ class ChannelCRUDLTest(TembaTest, CRUDLTestMixin):
             config={"send_url": "http://send.com"},
         )
 
+    def test_claim(self):
+        claim_url = reverse("channels.channel_claim")
+        self.assertRequestDisallowed(claim_url, [None, self.agent])
+        response = self.assertReadFetch(claim_url, [self.editor, self.admin])
+
+        # 3 recommended channels for Rwanda
+        self.assertEqual(["AT", "MT", "TG"], [t.code for t in response.context["recommended_channels"]])
+
+        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "CT")
+        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "EX")
+        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "I2")
+        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
+
+        self.org.timezone = "Canada/Central"
+        self.org.save()
+
+        response = self.client.get(reverse("channels.channel_claim"))
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual(["TG", "TMS", "T", "NX"], [t.code for t in response.context["recommended_channels"]])
+
+        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "CT")
+        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "EX")
+        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "I2")
+        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
+
+        with override_settings(ORG_LIMIT_DEFAULTS={"channels": 2}):
+            response = self.client.get(reverse("channels.channel_claim"))
+            self.assertEqual(200, response.status_code)
+
+            self.assertEqual(2, response.context["total_count"])
+            self.assertEqual(2, response.context["total_limit"])
+            self.assertContains(
+                response,
+                "You have reached the limit of 2 channels per workspace. Please remove channels that you are no longer using.",
+            )
+
+        with override_settings(ORG_LIMIT_DEFAULTS={"channels": 3}):
+            response = self.client.get(reverse("channels.channel_claim"))
+            self.assertEqual(200, response.status_code)
+
+            self.assertEqual(2, response.context["total_count"])
+            self.assertEqual(3, response.context["total_limit"])
+            self.assertContains(
+                response,
+                "You are approaching the limit of 3 channels per workspace. You should remove channels that you are no longer using.",
+            )
+
+    def test_claim_all(self):
+        claim_url = reverse("channels.channel_claim_all")
+        self.assertRequestDisallowed(claim_url, [None, self.agent])
+        response = self.assertReadFetch(claim_url, [self.editor, self.admin])
+
+        # should see all channel types not for beta only and having a category
+        self.assertEqual(["AT", "MT", "TG"], [t.code for t in response.context["recommended_channels"]])
+
+        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "AC")
+        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "BL")
+        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "BS")
+        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
+
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][0].code, "D3C")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][1].code, "FBA")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][2].code, "IG")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-2].code, "WC")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-1].code, "ZVW")
+
+        self.admin.groups.add(Group.objects.get(name="Beta"))
+
+        response = self.client.get(reverse("channels.channel_claim_all"))
+        self.assertEqual(200, response.status_code)
+
+        # should see all channel types having a category including beta only channel types
+        self.assertEqual(["AT", "MT", "TG"], [t.code for t in response.context["recommended_channels"]])
+
+        self.assertEqual(response.context["channel_types"]["PHONE"][0].code, "AC")
+        self.assertEqual(response.context["channel_types"]["PHONE"][1].code, "BW")
+        self.assertEqual(response.context["channel_types"]["PHONE"][2].code, "BL")
+        self.assertEqual(response.context["channel_types"]["PHONE"][3].code, "BS")
+        self.assertEqual(response.context["channel_types"]["PHONE"][-1].code, "A")
+
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][0].code, "D3C")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][1].code, "FBA")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][2].code, "IG")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-2].code, "WA")
+        self.assertEqual(response.context["channel_types"]["SOCIAL_MEDIA"][-1].code, "ZVW")
+
     def test_configuration(self):
         config_url = reverse("channels.channel_configuration", args=[self.ex_channel.uuid])
 
@@ -1029,7 +1007,7 @@ class ChannelCRUDLTest(TembaTest, CRUDLTestMixin):
         vonage_url = reverse("channels.channel_update", args=[vonage_channel.id])
         telegram_url = reverse("channels.channel_update", args=[telegram_channel.id])
 
-        self.assertRequestDisallowed(android_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(android_url, [None, self.agent, self.admin2])
 
         # fields shown depend on scheme and role
         self.assertUpdateFetch(
@@ -1081,7 +1059,7 @@ class ChannelCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_delete(self):
         delete_url = reverse("channels.channel_delete", args=[self.ex_channel.uuid])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.agent, self.admin2])
 
         response = self.assertDeleteFetch(delete_url, [self.editor, self.admin])
         self.assertContains(response, "You are about to delete")
@@ -1631,7 +1609,7 @@ class ChannelLogCRUDLTest(CRUDLTestMixin, TembaTest):
 
         msg1_url = reverse("channels.channellog_msg", args=[self.channel.uuid, msg1.id])
 
-        self.assertRequestDisallowed(msg1_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(msg1_url, [None, self.editor, self.agent, self.admin2])
         response = self.assertListFetch(msg1_url, [self.admin], context_objects=[])
         self.assertEqual(2, len(response.context["logs"]))
         self.assertEqual("https://foo.bar/send1", response.context["logs"][0]["http_logs"][0]["url"])
@@ -1693,7 +1671,7 @@ class ChannelLogCRUDLTest(CRUDLTestMixin, TembaTest):
 
         call1_url = reverse("channels.channellog_call", args=[self.channel.uuid, call1.id])
 
-        self.assertRequestDisallowed(call1_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(call1_url, [None, self.editor, self.agent, self.admin2])
         response = self.assertListFetch(call1_url, [self.admin], context_objects=[])
         self.assertEqual(2, len(response.context["logs"]))
         self.assertEqual("https://foo.bar/call1", response.context["logs"][0]["http_logs"][0]["url"])
@@ -1767,14 +1745,14 @@ class ChannelLogCRUDLTest(CRUDLTestMixin, TembaTest):
 
         list_url = reverse("channels.channellog_list", args=[self.channel.uuid])
 
-        self.assertRequestDisallowed(list_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(list_url, [None, self.editor, self.agent, self.admin2])
         response = self.assertListFetch(list_url, [self.admin], context_objects=[other_log, failed_log, success_log])
         self.assertEqual(f"/settings/channels/{self.channel.uuid}", response.headers[TEMBA_MENU_SELECTION])
 
         # try viewing the failed message log
         read_url = reverse("channels.channellog_read", args=[failed_log.id])
 
-        self.assertRequestDisallowed(read_url, [None, self.user, self.agent, self.editor, self.admin2])
+        self.assertRequestDisallowed(read_url, [None, self.agent, self.editor, self.admin2])
         self.assertReadFetch(read_url, [self.admin], context_object=failed_log)
 
         # invalid channel UUID returns 404
@@ -2101,7 +2079,7 @@ class FacebookWhitelistTest(TembaTest, CRUDLTestMixin):
         self.channel.delete()
         self.channel = Channel.create(
             self.org,
-            self.user,
+            self.admin,
             None,
             "FB",
             "Facebook",

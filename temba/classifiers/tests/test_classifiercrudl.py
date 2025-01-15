@@ -79,7 +79,7 @@ class ClassifierCRUDLTest(TembaTest, CRUDLTestMixin):
         read_url = reverse("classifiers.classifier_read", args=[self.c1.uuid])
 
         self.assertRequestDisallowed(read_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(read_url, [self.user, self.editor, self.admin], context_object=self.c1)
+        response = self.assertReadFetch(read_url, [self.editor, self.admin], context_object=self.c1)
 
         # lists active intents
         self.assertContains(response, "book_flight")
@@ -91,7 +91,7 @@ class ClassifierCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_delete(self):
         delete_url = reverse("classifiers.classifier_delete", args=[self.c2.uuid])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.editor, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.editor, self.agent, self.admin2])
 
         # fetch delete modal
         response = self.assertDeleteFetch(delete_url, [self.admin])

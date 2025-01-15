@@ -8,7 +8,7 @@ class ShortcutCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_create(self):
         create_url = reverse("tickets.shortcut_create")
 
-        self.assertRequestDisallowed(create_url, [None, self.agent, self.user])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
 
         self.assertCreateFetch(create_url, [self.editor, self.admin], form_fields=("name", "text"))
 
@@ -60,7 +60,7 @@ class ShortcutCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("tickets.shortcut_update", args=[shortcut.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
 
         self.assertUpdateFetch(update_url, [self.editor, self.admin], form_fields=["name", "text"])
 
@@ -85,7 +85,7 @@ class ShortcutCRUDLTest(TembaTest, CRUDLTestMixin):
 
         delete_url = reverse("tickets.shortcut_delete", args=[shortcut1.id])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.agent, self.admin2])
 
         response = self.assertDeleteFetch(delete_url, [self.editor, self.admin])
         self.assertContains(response, "You are about to delete")
