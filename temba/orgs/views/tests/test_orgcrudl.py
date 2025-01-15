@@ -116,7 +116,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         workspace_url = reverse("orgs.org_workspace")
 
         self.assertRequestDisallowed(workspace_url, [None, self.agent])
-        response = self.assertListFetch(workspace_url, [self.user, self.editor, self.admin])
+        response = self.assertListFetch(workspace_url, [self.editor, self.admin])
 
         # make sure we have the appropriate number of sections
         self.assertEqual(6, len(response.context["formax"].sections))
@@ -145,8 +145,8 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
             name="Child Org",
             timezone=ZoneInfo("Africa/Kigali"),
             country=self.org.country,
-            created_by=self.user,
-            modified_by=self.user,
+            created_by=self.admin,
+            modified_by=self.admin,
             parent=self.org,
         )
 
@@ -837,7 +837,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         self.org.save(update_fields=("features",))
 
         # since we can only create new orgs, we don't show type as an option
-        self.assertRequestDisallowed(create_url, [None, self.user, self.editor, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.editor, self.agent])
         self.assertCreateFetch(create_url, [self.admin], form_fields=["name", "timezone"])
 
         # try to submit an empty form

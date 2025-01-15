@@ -65,9 +65,9 @@ class SystemLabelTest(TembaTest):
         self.create_incoming_msg(contact1, "Message 2")
         msg3 = self.create_incoming_msg(contact1, "Message 3")
         msg4 = self.create_incoming_msg(contact1, "Message 4")
-        self.create_broadcast(self.user, {"eng": {"text": "Broadcast 2"}}, contacts=[contact1, contact2], status="P")
+        self.create_broadcast(self.editor, {"eng": {"text": "Broadcast 2"}}, contacts=[contact1, contact2], status="P")
         self.create_broadcast(
-            self.user,
+            self.editor,
             {"eng": {"text": "Broadcast 2"}},
             contacts=[contact1, contact2],
             schedule=Schedule.create(self.org, timezone.now(), Schedule.REPEAT_DAILY),
@@ -93,7 +93,7 @@ class SystemLabelTest(TembaTest):
         msg3.archive()
 
         bcast1 = self.create_broadcast(
-            self.user,
+            self.editor,
             {"eng": {"text": "Broadcast 1"}},
             contacts=[contact1, contact2],
             msg_status=Msg.STATUS_INITIALIZING,
@@ -101,7 +101,7 @@ class SystemLabelTest(TembaTest):
         msg5, msg6 = tuple(Msg.objects.filter(broadcast=bcast1))
 
         self.create_broadcast(
-            self.user,
+            self.editor,
             {"eng": {"text": "Broadcast 3"}},
             contacts=[contact1],
             schedule=Schedule.create(self.org, timezone.now(), Schedule.REPEAT_DAILY),

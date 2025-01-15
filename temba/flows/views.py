@@ -270,7 +270,7 @@ class FlowCRUDL(SmartCRUDL):
         Used by the editor for fetching and saving flow definitions
         """
 
-        permission = "flows.flow_editor"  # POSTs explicitly check for flows.flow_update
+        permission = "flows.flow_editor"
         slug_url_kwarg = "uuid"
 
         @classmethod
@@ -306,11 +306,6 @@ class FlowCRUDL(SmartCRUDL):
             )
 
         def post(self, request, *args, **kwargs):
-            if not self.has_org_perm("flows.flow_update"):
-                return JsonResponse(
-                    {"status": "failure", "description": _("You don't have permission to edit this flow")}, status=403
-                )
-
             # try to parse our body
             definition = json.loads(force_str(request.body))
             try:
@@ -782,7 +777,7 @@ class FlowCRUDL(SmartCRUDL):
                 context["can_start"] = False
                 context["can_simulate"] = False
             else:
-                context["mutable"] = self.has_org_perm("flows.flow_update")
+                context["mutable"] = True
                 context["can_start"] = flow.flow_type != Flow.TYPE_VOICE or flow.org.supports_ivr()
                 context["can_simulate"] = True
 

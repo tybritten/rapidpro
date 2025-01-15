@@ -215,7 +215,7 @@ class BulkActionMixin:
             # check we have the required permission for this action
             permission = self.get_bulk_action_permission(action)
             if not user.has_perm(permission) and not user.has_org_perm(org, permission):
-                return HttpResponseForbidden()
+                return HttpResponseForbidden()  # pragma: no cover
 
             try:
                 self.apply_bulk_action(user, action, objects, label)

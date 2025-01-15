@@ -9,7 +9,7 @@ class LabelCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_create(self):
         create_url = reverse("msgs.label_create")
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
         self.assertCreateFetch(create_url, [self.editor, self.admin], form_fields=("name", "messages"))
 
         # try to create label with invalid name
@@ -54,7 +54,7 @@ class LabelCRUDLTest(TembaTest, CRUDLTestMixin):
         label1_url = reverse("msgs.label_update", args=[label1.id])
         label2_url = reverse("msgs.label_update", args=[label2.id])
 
-        self.assertRequestDisallowed(label2_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(label2_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(label2_url, [self.editor, self.admin], form_fields={"name": "Sales", "messages": None})
 
         # try to update to invalid name
@@ -77,7 +77,7 @@ class LabelCRUDLTest(TembaTest, CRUDLTestMixin):
 
         delete_url = reverse("msgs.label_delete", args=[label.uuid])
 
-        self.assertRequestDisallowed(delete_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_url, [None, self.agent, self.admin2])
 
         # fetch delete modal
         response = self.assertDeleteFetch(delete_url, [self.editor, self.admin], as_modal=True)

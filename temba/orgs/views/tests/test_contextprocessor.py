@@ -12,6 +12,7 @@ class OrgContextProcessorTest(TembaTest):
         self.assertTrue(perms["orgs"]["org_country"])
         self.assertTrue(perms["orgs"]["user_list"])
         self.assertTrue(perms["orgs"]["org_delete"])
+        self.assertTrue(perms["tickets"]["ticket_list"])
 
         perms = RolePermsWrapper(OrgRole.EDITOR)
 
@@ -19,13 +20,15 @@ class OrgContextProcessorTest(TembaTest):
         self.assertTrue(perms["contacts"]["contact_update"])
         self.assertFalse(perms["orgs"]["user_list"])
         self.assertFalse(perms["orgs"]["org_delete"])
+        self.assertTrue(perms["tickets"]["ticket_list"])
 
-        perms = RolePermsWrapper(OrgRole.VIEWER)
+        perms = RolePermsWrapper(OrgRole.AGENT)
 
-        self.assertTrue(perms["msgs"]["msg_list"])
+        self.assertFalse(perms["msgs"]["msg_list"])
         self.assertFalse(perms["contacts"]["contact_update"])
         self.assertFalse(perms["orgs"]["user_list"])
         self.assertFalse(perms["orgs"]["org_delete"])
+        self.assertTrue(perms["tickets"]["ticket_list"])
 
         self.assertFalse(perms["msgs"]["foo"])  # no blow up if perm doesn't exist
         self.assertFalse(perms["chickens"]["foo"])  # or app doesn't exist

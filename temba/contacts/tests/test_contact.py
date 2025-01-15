@@ -41,7 +41,7 @@ class ContactTest(TembaTest):
 
         # create an deleted contact
         self.jim = self.create_contact(name="Jim")
-        self.jim.release(self.user, deindex=False)
+        self.jim.release(self.admin, deindex=False)
 
         # create contact in other org
         self.other_org_contact = self.create_contact(name="Fred", phone="+250768111222", org=self.org2)
@@ -51,7 +51,7 @@ class ContactTest(TembaTest):
 
         # create 10 notes
         for i in range(10):
-            self.joe.set_note(self.user, f"{note_text} {i+1}")
+            self.joe.set_note(self.admin, f"{note_text} {i+1}")
 
         notes = self.joe.notes.all().order_by("id")
 
@@ -255,7 +255,7 @@ class ContactTest(TembaTest):
         self.assertEqual(set(label.msgs.all()), {msg1, msg2, msg3})
         self.assertEqual(set(static_group.contacts.all()), {self.joe})
 
-        self.joe.stop(self.user)
+        self.joe.stop(self.admin)
 
         # check that joe is now stopped
         self.joe = Contact.objects.get(pk=self.joe.pk)
@@ -274,7 +274,7 @@ class ContactTest(TembaTest):
         )
         self.assertEqual(set(static_group.contacts.all()), set())
 
-        self.joe.block(self.user)
+        self.joe.block(self.admin)
 
         # check that joe is now blocked instead of stopped
         self.joe.refresh_from_db()
@@ -337,7 +337,7 @@ class ContactTest(TembaTest):
             },
         )
 
-        self.joe.release(self.user)
+        self.joe.release(self.admin)
 
         # check that joe has been released (doesn't change his status)
         self.joe = Contact.objects.get(pk=self.joe.pk)
@@ -371,8 +371,8 @@ class ContactTest(TembaTest):
         self.assertEqual(0, ContactURN.objects.filter(contact=self.joe).count())
 
         # blocking and failing an inactive contact won't change groups
-        self.joe.block(self.user)
-        self.joe.stop(self.user)
+        self.joe.block(self.admin)
+        self.joe.stop(self.admin)
 
         self.assertEqual(
             Contact.get_status_counts(self.org),
@@ -783,7 +783,7 @@ class ContactTest(TembaTest):
 
         contact5 = self.create_contact(name="Jimmy", phone="+250788333555")
         mods = contact5.update_urns(["twitter:jimmy_woot", "tel:0788333666"])
-        contact5.modify(self.user, mods)
+        contact5.modify(self.editor, mods)
 
         # check old phone URN still existing but was detached
         self.assertIsNone(ContactURN.objects.get(identity="tel:+250788333555").contact)
