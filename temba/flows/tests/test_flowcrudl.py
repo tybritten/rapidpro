@@ -47,7 +47,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         create_url = reverse("flows.flow_create")
         self.create_flow("Registration")
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
         response = self.assertCreateFetch(
             create_url,
             [self.editor, self.admin],
@@ -179,6 +179,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual([["test"]], list(flow2.triggers.order_by("id").values_list("keywords", flat=True)))
 
     def test_views(self):
+        list_url = reverse("flows.flow_list")
         create_url = reverse("flows.flow_create")
 
         self.create_contact("Eric", phone="+250788382382")
@@ -188,7 +189,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         other_flow = Flow.create(self.org2, self.admin2, "Flow2")
 
         # no login, no list
-        response = self.client.get(reverse("flows.flow_list"))
+        response = self.client.get(list_url)
         self.assertLoginRedirect(response)
 
         user = self.admin
@@ -197,16 +198,11 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         user.save()
         self.login(user)
 
-        self.assertContentMenu(reverse("flows.flow_list"), self.user, ["Export"])
-
-        self.assertContentMenu(
-            reverse("flows.flow_list"),
-            self.admin,
-            ["New Flow", "New Label", "Import", "Export"],
-        )
+        self.assertContentMenu(list_url, self.editor, ["New Flow", "New Label", "Import", "Export"])
+        self.assertContentMenu(list_url, self.admin, ["New Flow", "New Label", "Import", "Export"])
 
         # list, should have only one flow (the one created in setUp)
-        response = self.client.get(reverse("flows.flow_list"))
+        response = self.client.get(list_url)
         self.assertEqual(1, len(response.context["object_list"]))
 
         # inactive list shouldn't have any flows
@@ -316,7 +312,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(200, response.status_code)
 
         # check flow listing
-        response = self.client.get(reverse("flows.flow_list"))
+        response = self.client.get(list_url)
         self.assertEqual(list(response.context["object_list"]), [flow3, voice_flow, flow1, flow])  # by saved_on
 
         # test update view
@@ -380,7 +376,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
             actual = list(flow.triggers.filter(trigger_type="K", is_active=True).values("keywords", "is_archived"))
             self.assertCountEqual(actual, expected)
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(
             update_url,
             [self.editor, self.admin],
@@ -486,7 +482,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         flow = self.create_flow("IVR Test", flow_type=Flow.TYPE_VOICE)
         update_url = reverse("flows.flow_update", args=[flow.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(
             update_url,
             [self.editor, self.admin],
@@ -535,7 +531,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         update_url = reverse("flows.flow_update", args=[flow.id])
 
         # we should only see name and contact creation option on form
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(update_url, [self.editor, self.admin], form_fields=["name", "contact_creation"])
 
         # update name and contact creation option to be per login
@@ -550,7 +546,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         update_url = reverse("flows.flow_update", args=[flow.id])
 
         # we should only see name on form
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(update_url, [self.editor, self.admin], form_fields=["name"])
 
         # update name and contact creation option to be per login
@@ -746,7 +742,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual("11.12", revisions[1].spec_version)
 
         self.assertRequestDisallowed(revisions_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(revisions_url, [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(revisions_url, [self.editor, self.admin])
         self.assertEqual(
             [
                 {
@@ -768,7 +764,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         )
 
         # fetch a specific revision
-        response = self.assertReadFetch(f"{revisions_url}{revisions[0].id}/", [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(f"{revisions_url}{revisions[0].id}/", [self.editor, self.admin])
 
         # make sure we can read the definition
         definition = response.json()["definition"]
@@ -800,10 +796,10 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
 
         definition = flow.revisions.all().first().definition
 
-        # viewers can't save flows
-        self.login(self.user)
+        # agents can't access
+        self.login(self.agent)
         response = self.client.post(revisions_url, definition, content_type="application/json")
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(302, response.status_code)
 
         # check that we can create a new revision
         self.login(self.admin)
@@ -1254,7 +1250,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         flow = self.create_flow("Test")
         start_url = f"{reverse('flows.flow_start', args=[])}?flow={flow.id}"
 
-        self.assertRequestDisallowed(start_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(start_url, [None, self.agent])
         self.assertUpdateFetch(start_url, [self.editor, self.admin], form_fields=["flow", "contact_search"])
 
         # create flow start with a query
@@ -1367,7 +1363,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # nothing set in redis just means empty list
         self.assertRequestDisallowed(seg1_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(seg1_url, [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(seg1_url, [self.editor, self.admin])
         self.assertEqual([], response.json())
 
         def add_recent_contact(exit_uuid: str, dest_uuid: str, contact, text: str, ts: float):
@@ -1379,7 +1375,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         add_recent_contact(node1_exit1_uuid, node2_uuid, contact2, "|x|", 1639338555.234567)
         add_recent_contact(node1_exit1_uuid, node2_uuid, contact1, "Sounds good", 1639338561.345678)
 
-        response = self.assertReadFetch(seg1_url, [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(seg1_url, [self.editor, self.admin])
         self.assertEqual(
             [
                 {
@@ -1409,7 +1405,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertRequestDisallowed(counts_url, [None, self.agent])
 
         # check with no data
-        response = self.assertReadFetch(counts_url, [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(counts_url, [self.editor, self.admin])
         self.assertEqual({"counts": []}, response.json())
 
         # simulate some category data
@@ -1421,7 +1417,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         flow1.result_counts.create(result="color", category="Other", count=1)
         flow1.result_counts.create(result="beer", category="Primus", count=7)
 
-        response = self.assertReadFetch(counts_url, [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(counts_url, [self.editor, self.admin])
         self.assertEqual(
             {
                 "counts": [
@@ -1454,7 +1450,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         results_url = reverse("flows.flow_results", args=[flow.id])
 
         self.assertRequestDisallowed(results_url, [None, self.agent])
-        self.assertReadFetch(results_url, [self.user, self.editor, self.admin])
+        self.assertReadFetch(results_url, [self.editor, self.admin])
 
         flow.release(self.admin)
 
@@ -1472,7 +1468,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check fetching as template
         self.assertRequestDisallowed(engagement_url, [None, self.agent])
-        self.assertReadFetch(engagement_url, [self.user, self.editor, self.admin])
+        self.assertReadFetch(engagement_url, [self.editor, self.admin])
 
         # check fetching as chart data (when there's no data)
         response = self.requestView(engagement_url, self.admin, HTTP_ACCEPT="application/json")
@@ -1688,7 +1684,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
 
         self.assertRequestDisallowed(activity_url, [None, self.agent])
 
-        response = self.assertReadFetch(activity_url, [self.user, self.editor, self.admin])
+        response = self.assertReadFetch(activity_url, [self.editor, self.admin])
         self.assertEqual(
             {
                 "nodes": {"01c175da-d23d-40a4-a845-c4a9bb4b481a": 4, "400d6b5e-c963-42a1-a06c-50bb9b1e38b1": 5},
@@ -1782,7 +1778,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertRequestDisallowed(export_url, [None, self.agent])
         response = self.assertUpdateFetch(
             export_url + f"?ids={flow1.id},{flow2.id}",
-            [self.user, self.editor, self.admin],
+            [self.editor, self.admin],
             form_fields=(
                 "start_date",
                 "end_date",
@@ -1964,7 +1960,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         export_url = reverse("flows.flow_export_translation", args=[flow.id])
 
         self.assertRequestDisallowed(export_url, [None, self.agent, self.admin2])
-        self.assertUpdateFetch(export_url, [self.user, self.editor, self.admin], form_fields=["language"])
+        self.assertUpdateFetch(export_url, [self.editor, self.admin], form_fields=["language"])
 
         # submit with no language
         response = self.assertUpdateSubmit(export_url, self.admin, {}, success_status=200)
@@ -1976,7 +1972,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         with patch("temba.mailroom.client.client.MailroomClient.po_export") as mock_po_export:
             mock_po_export.return_value = b'msgid "Red"\nmsgstr "Roja"\n\n'
             self.assertRequestDisallowed(download_url, [None, self.agent, self.admin2])
-            response = self.assertReadFetch(download_url, [self.user, self.editor, self.admin])
+            response = self.assertReadFetch(download_url, [self.editor, self.admin])
 
             self.assertEqual(b'msgid "Red"\nmsgstr "Roja"\n\n', response.content)
             self.assertEqual('attachment; filename="favorites.po"', response["Content-Disposition"])
@@ -2003,7 +1999,7 @@ class FlowCRUDLTest(TembaTest, CRUDLTestMixin):
         step1_url = reverse("flows.flow_import_translation", args=[flow.id])
 
         # check step 1 is just a file upload
-        self.assertRequestDisallowed(step1_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(step1_url, [None, self.agent, self.admin2])
         self.assertUpdateFetch(step1_url, [self.editor, self.admin], form_fields=["po_file"])
 
         # submit with no file

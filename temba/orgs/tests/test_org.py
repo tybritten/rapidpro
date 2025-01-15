@@ -310,8 +310,8 @@ class OrgTest(TembaTest):
         mock_async_start.assert_called_once()
 
     def test_prometheus(self):
-        # visit as viewer, no prometheus section
-        self.login(self.user)
+        # visit as editor, no prometheus section
+        self.login(self.editor)
         settings_url = reverse("orgs.org_workspace")
         response = self.client.get(settings_url)
 

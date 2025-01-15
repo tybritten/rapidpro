@@ -28,8 +28,8 @@ class ContactGroupCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_create(self, mr_mocks):
         url = reverse("contacts.contactgroup_create")
 
-        # can't create group as viewer
-        self.login(self.user)
+        # can't create group as agent
+        self.login(self.agent)
         response = self.client.post(url, {"name": "Spammers"})
         self.assertLoginRedirect(response)
 
@@ -120,7 +120,7 @@ class ContactGroupCRUDLTest(TembaTest, CRUDLTestMixin):
 
         update_url = reverse("contacts.contactgroup_update", args=[manual.id])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
 
         self.assertUpdateFetch(update_url, [self.editor, self.admin], form_fields=("name",))
 
@@ -239,7 +239,7 @@ class ContactGroupCRUDLTest(TembaTest, CRUDLTestMixin):
         usages_url = reverse("contacts.contactgroup_usages", args=[group.uuid])
 
         self.assertRequestDisallowed(usages_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(usages_url, [self.user, self.editor, self.admin], context_object=group)
+        response = self.assertReadFetch(usages_url, [self.editor, self.admin], context_object=group)
 
         self.assertEqual(
             {"flow": [flow], "campaign": [campaign1], "trigger": [trigger1, trigger2]},
@@ -293,7 +293,7 @@ class ContactGroupCRUDLTest(TembaTest, CRUDLTestMixin):
         delete_group3_url = reverse("contacts.contactgroup_delete", args=[group3.uuid])
         delete_group4_url = reverse("contacts.contactgroup_delete", args=[group4.uuid])
 
-        self.assertRequestDisallowed(delete_group1_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_group1_url, [None, self.agent, self.admin2])
 
         # a group with no dependents can be deleted
         response = self.assertDeleteFetch(delete_group1_url, [self.editor, self.admin])

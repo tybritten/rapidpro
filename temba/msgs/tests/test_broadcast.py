@@ -35,11 +35,11 @@ class BroadcastTest(TembaTest):
         self.create_incoming_msg(self.frank, "Bonjour")
 
         # create a broadcast which is a response to an incoming message
-        self.create_broadcast(self.user, {"eng": {"text": "Noted"}}, contacts=[self.joe])
+        self.create_broadcast(self.admin, {"eng": {"text": "Noted"}}, contacts=[self.joe])
 
         # create a broadcast which is to several contacts
         broadcast2 = self.create_broadcast(
-            self.user,
+            self.admin,
             {"eng": {"text": "Very old broadcast"}},
             groups=[self.joe_and_frank],
             contacts=[self.kevin, self.lucy],
@@ -97,7 +97,7 @@ class BroadcastTest(TembaTest):
 
         bcast2 = Broadcast.create(
             self.org,
-            self.user,
+            self.admin,
             {"eng": {"text": "Hello everyone"}, "spa": {"text": "Hola a todos"}, "fra": {"text": "Salut à tous"}},
             base_language="eng",
             groups=[self.joe_and_frank],
@@ -140,7 +140,7 @@ class BroadcastTest(TembaTest):
 
         # can't create broadcast with no recipients
         with self.assertRaises(AssertionError):
-            Broadcast.create(self.org, self.user, {"und": {"text": "no recipients"}}, base_language="und")
+            Broadcast.create(self.org, self.admin, {"und": {"text": "no recipients"}}, base_language="und")
 
     @mock_mailroom
     def test_preview(self, mr_mocks):
@@ -181,7 +181,7 @@ class BroadcastTest(TembaTest):
         fra_attachments = [attachments[2]]
 
         broadcast = self.create_broadcast(
-            self.user,
+            self.admin,
             translations={
                 "eng": {"text": eng_text, "attachments": eng_attachments},
                 "spa": {"text": spa_text, "attachments": spa_attachments},

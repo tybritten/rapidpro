@@ -23,7 +23,7 @@ class ContactFieldCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_create(self):
         create_url = reverse("contacts.contactfield_create")
 
-        self.assertRequestDisallowed(create_url, [None, self.user, self.agent])
+        self.assertRequestDisallowed(create_url, [None, self.agent])
 
         # for a deploy that doesn't have locations feature, don't show location field types
         with override_settings(FEATURES={}):
@@ -117,7 +117,7 @@ class ContactFieldCRUDLTest(TembaTest, CRUDLTestMixin):
     def test_update(self):
         update_url = reverse("contacts.contactfield_update", args=[self.age.key])
 
-        self.assertRequestDisallowed(update_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(update_url, [None, self.agent, self.admin2])
 
         # for a deploy that doesn't have locations feature, don't show location field types
         with override_settings(FEATURES={}):
@@ -237,10 +237,8 @@ class ContactFieldCRUDLTest(TembaTest, CRUDLTestMixin):
         list_url = reverse("contacts.contactfield_list")
 
         self.assertRequestDisallowed(list_url, [None, self.agent])
-        self.assertListFetch(
-            list_url, [self.user, self.editor, self.admin], context_objects=[self.age, self.gender, self.state]
-        )
-        self.assertContentMenu(list_url, self.user, [])
+        self.assertListFetch(list_url, [self.editor, self.admin], context_objects=[self.age, self.gender, self.state])
+        self.assertContentMenu(list_url, self.editor, ["New"])
         self.assertContentMenu(list_url, self.admin, ["New"])
 
     def test_create_warnings(self):
@@ -300,7 +298,7 @@ class ContactFieldCRUDLTest(TembaTest, CRUDLTestMixin):
         usages_url = reverse("contacts.contactfield_usages", args=[field.key])
 
         self.assertRequestDisallowed(usages_url, [None, self.agent, self.admin2])
-        response = self.assertReadFetch(usages_url, [self.user, self.editor, self.admin], context_object=field)
+        response = self.assertReadFetch(usages_url, [self.editor, self.admin], context_object=field)
 
         self.assertEqual(
             {"flow": [flow], "group": [group], "campaign_event": [event1]},
@@ -326,7 +324,7 @@ class ContactFieldCRUDLTest(TembaTest, CRUDLTestMixin):
         delete_joined_url = reverse("contacts.contactfield_delete", args=[joined_on.key])
         delete_age_url = reverse("contacts.contactfield_delete", args=[self.age.key])
 
-        self.assertRequestDisallowed(delete_gender_url, [None, self.user, self.agent, self.admin2])
+        self.assertRequestDisallowed(delete_gender_url, [None, self.agent, self.admin2])
 
         # a field with no dependents can be deleted
         response = self.assertDeleteFetch(delete_gender_url, [self.editor, self.admin])
