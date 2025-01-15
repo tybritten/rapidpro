@@ -386,11 +386,8 @@ PERMISSIONS = {
 
 # assigns the permissions that each group should have
 GROUP_PERMISSIONS = {
-    "Alpha": (),
     "Beta": (),
     "Dashboard": ("orgs.org_dashboard",),
-    "Surveyors": (),
-    "Customer Support": (),
     "Granters": ("orgs.org_grant",),
     "Administrators": (
         "airtime.airtimetransfer_list",
@@ -577,7 +574,6 @@ GROUP_PERMISSIONS = {
         "tickets.topic.*",
         "triggers.trigger.*",
     ),
-    "Viewers": (),
     "Agents": (
         "contacts.contact_history",
         "contacts.contact_interrupt",
@@ -591,7 +587,6 @@ GROUP_PERMISSIONS = {
         "tickets.ticket_update",
         "tickets.topic_list",
     ),
-    "Prometheus": (),
 }
 
 # extra permissions that only apply to API requests (wildcard notation not supported here)

@@ -266,7 +266,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.requestView(update_url, self.customer_support)
         self.assertEqual(200, response.status_code)
 
-        alphas = Group.objects.get(name="Alpha")
+        granters = Group.objects.get(name="Granters")
         betas = Group.objects.get(name="Beta")
         current_password = self.editor.password
 
@@ -278,7 +278,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
                 "email": "eddy@textit.com",
                 "first_name": "Edward",
                 "last_name": "",
-                "groups": [alphas.id, betas.id],
+                "groups": [granters.id, betas.id],
             },
         )
         self.assertEqual(302, response.status_code)
@@ -289,7 +289,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(current_password, self.editor.password)
         self.assertEqual("Edward", self.editor.first_name)
         self.assertEqual("", self.editor.last_name)
-        self.assertEqual({alphas, betas}, set(self.editor.groups.all()))
+        self.assertEqual({granters, betas}, set(self.editor.groups.all()))
 
         # submit with new password and one less group
         response = self.requestView(
@@ -300,7 +300,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
                 "new_password": "Asdf1234",
                 "first_name": "Edward",
                 "last_name": "",
-                "groups": [alphas.id],
+                "groups": [granters.id],
             },
         )
         self.assertEqual(302, response.status_code)
@@ -311,7 +311,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertNotEqual(current_password, self.editor.password)
         self.assertEqual("Edward", self.editor.first_name)
         self.assertEqual("", self.editor.last_name)
-        self.assertEqual({alphas}, set(self.editor.groups.all()))
+        self.assertEqual({granters}, set(self.editor.groups.all()))
 
     @mock_mailroom
     def test_delete(self, mr_mocks):
