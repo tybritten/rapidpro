@@ -1,3 +1,11 @@
+v10.1.9 (2025-01-15)
+-------------------------
+ * Remove no longer used auth groups
+ * Remove no longer needed functionality for restricting which users can by assigned to tickets
+ * Tweak broadcast API rate limit
+ * Remove VIEWER role
+ * Update to latest xlsxlite
+
 v10.1.8 (2025-01-14)
 -------------------------
  * Depublicize boundaries API endpoint
