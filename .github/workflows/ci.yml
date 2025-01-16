@@ -64,7 +64,7 @@ jobs:
 
       - name: Initialize environment
         env:
-          POSTGIS: 'OFF'
+          POSTGIS: 'off'
         run: |
           poetry install --no-root
           yarn install
@@ -88,7 +88,7 @@ jobs:
 
       - name: Run tests
         env:
-          POSTGIS: 'OFF'
+          POSTGIS: 'off'
         run: |
           poetry run coverage run manage.py test --keepdb --noinput --verbosity=2
           poetry run coverage report -i

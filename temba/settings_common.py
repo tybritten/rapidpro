@@ -18,9 +18,6 @@ SECRET_KEY = "your own secret key"
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2500  # needed for exports of big workspaces
 
-# Temp workaround to allow running migrations without PostGIS
-POSTGIS = os.getenv("POSTGIS") != "OFF"
-
 # -----------------------------------------------------------------------------------
 # Tests
 # -----------------------------------------------------------------------------------
@@ -630,6 +627,10 @@ INVITATION_VALIDITY = timedelta(days=30)
 # -----------------------------------------------------------------------------------
 # Database
 # -----------------------------------------------------------------------------------
+
+# temp workaround to allow running migrations without PostGIS
+POSTGIS = os.getenv("POSTGIS", "") != "off"
+
 _default_database_config = {
     "ENGINE": "django.contrib.gis.db.backends.postgis" if POSTGIS else "django.db.backends.postgresql",
     "NAME": "temba",
