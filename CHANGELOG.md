@@ -1,3 +1,7 @@
+v10.1.11 (2025-01-16)
+-------------------------
+ * Turn prometheus access into an org feature and grant to all orgs with existing token
+
 v10.1.10 (2025-01-16)
 -------------------------
  * Allow running migrations without PostGIS
