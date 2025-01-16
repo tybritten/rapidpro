@@ -299,46 +299,6 @@ class OrgTest(TembaTest):
 
         mock_async_start.assert_called_once()
 
-    def test_prometheus(self):
-        # visit as editor, no prometheus section
-        self.login(self.editor)
-        settings_url = reverse("orgs.org_workspace")
-        response = self.client.get(settings_url)
-
-        self.assertNotContains(response, "Prometheus")
-
-        # admin can see it though
-        self.login(self.admin)
-
-        response = self.client.get(settings_url)
-        self.assertContains(response, "Prometheus")
-        self.assertContains(response, "Enable")
-
-        # enable it
-        prometheus_url = reverse("orgs.org_prometheus")
-        response = self.client.post(prometheus_url, {}, follow=True)
-        self.assertContains(response, "Disable")
-
-        # make sure our token is set
-        self.org.refresh_from_db()
-        self.assertIsNotNone(self.org.prometheus_token)
-
-        # other admin sees it enabled too
-        self.other_admin = self.create_user("other_admin@textit.com")
-        self.org.add_user(self.other_admin, OrgRole.ADMINISTRATOR)
-        self.login(self.other_admin)
-
-        response = self.client.get(settings_url)
-        self.assertContains(response, "Prometheus")
-        self.assertContains(response, "Disable")
-
-        # now disable it
-        response = self.client.post(prometheus_url, {}, follow=True)
-        self.assertContains(response, "Enable")
-
-        self.org.refresh_from_db()
-        self.assertIsNone(self.org.prometheus_token)
-
     def test_resthooks(self):
         resthook_url = reverse("orgs.org_resthooks")
 

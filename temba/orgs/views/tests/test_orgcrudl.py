@@ -119,7 +119,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         response = self.assertListFetch(workspace_url, [self.editor, self.admin])
 
         # make sure we have the appropriate number of sections
-        self.assertEqual(6, len(response.context["formax"].sections))
+        self.assertEqual(5, len(response.context["formax"].sections))
 
         self.assertPageMenu(
             f"{reverse('orgs.org_menu')}settings/",
@@ -137,8 +137,8 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
             ],
         )
 
-        # enable child workspaces, users and teams
-        self.org.features = [Org.FEATURE_USERS, Org.FEATURE_CHILD_ORGS, Org.FEATURE_TEAMS]
+        # enable more features..
+        self.org.features = [Org.FEATURE_USERS, Org.FEATURE_CHILD_ORGS, Org.FEATURE_TEAMS, Org.FEATURE_PROMETHEUS]
         self.org.save(update_fields=("features",))
 
         self.child_org = Org.objects.create(
@@ -152,6 +152,8 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         with self.assertNumQueries(9):
             response = self.client.get(workspace_url)
+
+        self.assertEqual(6, len(response.context["formax"].sections))
 
         # should have an extra menu options for workspaces and users
         self.assertPageMenu(
@@ -1256,3 +1258,36 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
             )
 
         languages.reload()
+
+    def test_prometheus(self):
+        prometheus_url = reverse("orgs.org_prometheus")
+        workspace_url = reverse("orgs.org_workspace")
+
+        # by default, prometheus feature not enabled
+        response = self.requestView(workspace_url, self.admin)
+        self.assertNotContains(response, "Prometheus")
+
+        self.org.features = [Org.FEATURE_PROMETHEUS]
+        self.org.save(update_fields=("features",))
+
+        response = self.requestView(workspace_url, self.admin)
+        self.assertContains(response, "Prometheus")
+        self.assertContains(response, "Enable")
+
+        # not visible to editor users tho
+        response = self.requestView(workspace_url, self.editor)
+        self.assertNotContains(response, "Prometheus")
+
+        self.assertRequestDisallowed(prometheus_url, [self.editor, self.agent])
+
+        # enable it...
+        self.requestView(prometheus_url, self.admin, post_data={})
+
+        self.org.refresh_from_db()
+        self.assertIsNotNone(self.org.prometheus_token)
+
+        # and then disable it...
+        self.requestView(prometheus_url, self.admin, post_data={})
+
+        self.org.refresh_from_db()
+        self.assertIsNone(self.org.prometheus_token)
