@@ -1,3 +1,7 @@
+v10.1.10 (2025-01-16)
+-------------------------
+ * Allow running migrations without PostGIS
+
 v10.1.9 (2025-01-15)
 -------------------------
  * Remove no longer used auth groups
