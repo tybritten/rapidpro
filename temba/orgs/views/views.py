@@ -2019,7 +2019,7 @@ class OrgCRUDL(SmartCRUDL):
 
             return super().pre_save(obj)
 
-    class Prometheus(FormaxSectionMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
+    class Prometheus(RequireFeatureMixin, FormaxSectionMixin, InferOrgMixin, OrgPermsMixin, SmartUpdateView):
         class Form(forms.ModelForm):
             class Meta:
                 model = Org
@@ -2027,6 +2027,7 @@ class OrgCRUDL(SmartCRUDL):
 
         form_class = Form
         success_url = "@orgs.org_workspace"
+        require_feature = Org.FEATURE_PROMETHEUS
 
         def save(self, obj):
             org = self.request.org
