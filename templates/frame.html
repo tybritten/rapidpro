@@ -68,8 +68,13 @@
       }
 
       function handleMenuListSelection(evt) {
-        document.activeElement.blur()
-        spaGet(evt.detail.selected.target_url);
+        const selected = evt.detail.selected;
+        document.activeElement.blur();
+        if (selected.target_url) {
+          spaGet(evt.detail.selected.target_url);
+        } else if (selected.type == "workspace") {
+          handleWorkspaceChanged(selected.id);
+        }
       }
 
       // set our initial title
@@ -91,11 +96,6 @@
         window.addEventListener('resize', function(event) {
           updateFrameForMobile();
         });
-      });
-
-      document.addEventListener("temba-workspace-choosen", function(event) {
-        const item = event.detail;
-        handleWorkspaceChanged(item.id);
       });
 
       document.addEventListener("temba-workspace-settings", function(event) {

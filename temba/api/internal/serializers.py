@@ -3,6 +3,7 @@ from datetime import timezone as tzone
 from rest_framework import serializers
 
 from temba.locations.models import AdminBoundary
+from temba.orgs.models import Org
 from temba.templates.models import Template, TemplateTranslation
 from temba.tickets.models import Shortcut
 
@@ -24,6 +25,12 @@ class ShortcutReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shortcut
         fields = ("uuid", "name", "text", "modified_on")
+
+
+class OrgReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Org
+        fields = ("id", "name")
 
 
 class TemplateReadSerializer(serializers.ModelSerializer):
