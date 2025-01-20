@@ -1046,7 +1046,7 @@ class FlowSession(models.Model):
 
     # when this session was created and ended
     created_on = models.DateTimeField(default=timezone.now)
-    modified_on = models.DateTimeField(null=True)
+    modified_on = models.DateTimeField(default=timezone.now)
     ended_on = models.DateTimeField(null=True)
 
     # if session is waiting for input...

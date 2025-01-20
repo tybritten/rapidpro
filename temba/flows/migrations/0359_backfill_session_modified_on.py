@@ -5,7 +5,7 @@ from django.db.models import F
 from django.db.models.functions import Greatest
 
 
-def backfill_session_modified_on(apps, schema_editor):
+def backfill_session_modified_on(apps, schema_editor):  # pragma: no cover
     FlowSession = apps.get_model("flows", "FlowSession")
 
     num_updated = 0
