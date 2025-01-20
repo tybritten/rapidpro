@@ -35,7 +35,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
             menu_url,
             self.admin,
             [
-                ("Workspace", ["Nyaruka", "Sign Out", "Child Workspace"]),
+                ("Workspace", ["Sign Out"]),
                 "Messages",
                 "Contacts",
                 "Flows",
@@ -89,7 +89,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
             menu_url,
             self.admin,
             [
-                ("Workspace", ["Nyaruka", "Sign Out", "Child Workspace", "New Workspace"]),
+                ("Workspace", ["New Workspace", "Sign Out"]),
                 "Messages",
                 "Contacts",
                 "Flows",
