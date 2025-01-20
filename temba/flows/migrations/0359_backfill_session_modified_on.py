@@ -25,6 +25,12 @@ def backfill_session_modified_on(apps, schema_editor):
         print(f"Updated {num_updated} sessions")
 
 
+def apply_manual():  # pragma: no cover
+    from django.apps import apps
+
+    backfill_session_modified_on(apps, None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
