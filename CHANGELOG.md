@@ -1,3 +1,7 @@
+v10.1.12 (2025-01-20)
+-------------------------
+ * Add FlowSession.modified_on
+
 v10.1.11 (2025-01-16)
 -------------------------
  * Turn prometheus access into an org feature and grant to all orgs with existing token
