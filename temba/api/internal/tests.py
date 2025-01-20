@@ -122,6 +122,15 @@ class EndpointsTest(APITestMixin, TembaTest):
         self.assertEqual(2, self.admin.notifications.filter(is_seen=True).count())
         self.assertEqual(1, self.editor.notifications.filter(is_seen=False).count())
 
+    def test_orgs(self):
+        endpoint_url = reverse("api.internal.orgs") + ".json"
+        self.assertGet(
+            endpoint_url,
+            [self.admin],
+            results=[{"id": self.org.id, "name": "Nyaruka"}],
+            num_queries=NUM_BASE_QUERIES + 1,
+        )
+
     def test_shortcuts(self):
         endpoint_url = reverse("api.internal.shortcuts") + ".json"
 

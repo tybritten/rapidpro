@@ -1254,26 +1254,32 @@ class OrgCRUDL(SmartCRUDL):
 
             menu = []
             if org:
-                other_orgs = User.get_orgs_for_request(self.request).exclude(id=org.id).order_by("-parent", "name")
-                other_org_items = [
-                    self.create_menu_item(
-                        menu_id=other_org.id,
-                        name=other_org.name,
-                        avatar=other_org.name,
-                        event="temba-workspace-choosen",
-                    )
-                    for other_org in other_orgs
-                ]
-
-                if len(other_org_items):
-                    other_org_items.insert(0, self.create_divider())
+                org_options = []
+                has_other_orgs = User.get_orgs_for_request(self.request).exclude(id=org.id).exists()
+                if has_other_orgs:
+                    org_options = [
+                        self.create_list(
+                            "workspaces",
+                            "/api/internal/orgs.json",
+                            "temba-workspace-select",
+                            json.dumps({"id": org.id, "name": org.name}),
+                        )
+                    ]
+                else:
+                    org_options = [
+                        self.create_space(),
+                        self.create_menu_item(
+                            menu_id=org.id,
+                            name=org.name,
+                            avatar=org.name,
+                            event="temba-workspace-settings",
+                        ),
+                    ]
 
                 if self.has_org_perm("orgs.org_create"):
                     if Org.FEATURE_NEW_ORGS in org.features and Org.FEATURE_CHILD_ORGS not in org.features:
-                        other_org_items.append(self.create_divider())
-                        other_org_items.append(
-                            self.create_modax_button(name=_("New Workspace"), href="orgs.org_create")
-                        )
+                        org_options.append(self.create_divider())
+                        org_options.append(self.create_modax_button(name=_("New Workspace"), href="orgs.org_create"))
 
                 menu += [
                     self.create_menu_item(
@@ -1282,10 +1288,7 @@ class OrgCRUDL(SmartCRUDL):
                         avatar=org.name,
                         popup=True,
                         items=[
-                            self.create_space(),
-                            self.create_menu_item(
-                                menu_id="settings", name=org.name, avatar=org.name, event="temba-workspace-settings"
-                            ),
+                            *org_options,
                             self.create_divider(),
                             self.create_menu_item(
                                 menu_id="logout",
@@ -1294,10 +1297,9 @@ class OrgCRUDL(SmartCRUDL):
                                 posterize=True,
                                 href=reverse("orgs.logout"),
                             ),
-                            *other_org_items,
                             self.create_space(),
                         ],
-                    )
+                    ),
                 ]
 
             menu += [
