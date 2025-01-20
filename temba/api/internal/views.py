@@ -7,6 +7,7 @@ from django.db.models import Prefetch, Q
 from temba.channels.models import Channel
 from temba.locations.models import AdminBoundary
 from temba.notifications.models import Notification
+from temba.orgs.models import Org, User
 from temba.templates.models import Template, TemplateTranslation
 from temba.tickets.models import Shortcut
 
@@ -84,6 +85,19 @@ class NotificationsEndpoint(ListAPIMixin, BaseEndpoint):
         Notification.mark_seen(self.request.org, self.request.user)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrgsEndpoint(ListAPIMixin, BaseEndpoint):
+    """
+    Orgs for the current user.
+    """
+
+    model = Org
+    serializer_class = serializers.OrgReadSerializer
+    pagination_class = ModifiedOnCursorPagination
+
+    def get_queryset(self):
+        return User.get_orgs_for_request(self.request)
 
 
 class ShortcutsEndpoint(ListAPIMixin, BaseEndpoint):

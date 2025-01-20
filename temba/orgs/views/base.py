@@ -129,8 +129,8 @@ class BaseMenuView(OrgPermsMixin, SmartTemplateView):
     def create_section(self, name, items=()):  # pragma: no cover
         return {"id": slugify(name), "name": name, "type": "section", "items": items}
 
-    def create_list(self, name, href, type):
-        return {"id": name, "href": href, "type": type}
+    def create_list(self, name, href, type, initial=None):
+        return {"id": name, "href": href, "type": type, "initial": initial}
 
     def create_modax_button(self, name, href, icon=None, on_submit=None):  # pragma: no cover
         menu_item = {"id": slugify(name), "name": name, "type": "modax-button"}
