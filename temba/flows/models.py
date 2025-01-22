@@ -1410,7 +1410,7 @@ class FlowRevision(models.Model):
             definition["metadata"]["revision"] = self.revision
 
         # migrate our definition if necessary
-        if self.spec_version != to_version:
+        if self.spec_version != to_version and self.spec_version != Flow.CURRENT_SPEC_VERSION:
             definition = Flow.migrate_definition(definition, self.flow, to_version)
 
         # update variables from our db into our revision
