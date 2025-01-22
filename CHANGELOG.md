@@ -1,3 +1,11 @@
+v10.1.17 (2025-01-22)
+-------------------------
+ * Do not migrate definitions with the current spec version
+
+v10.1.16 (2025-01-21)
+-------------------------
+ * Fix button layout for tickets
+
 v10.1.15 (2025-01-20)
 -------------------------
  * Use temba-workspace-select in menu
