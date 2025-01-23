@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from smartmin.users.models import FailedLogin, PasswordHistory
 from smartmin.users.views import UserUpdateForm
-from smartmin.views import SmartCRUDL, SmartDeleteView, SmartListView, SmartReadView, SmartFormView, SmartUpdateView
+from smartmin.views import SmartCRUDL, SmartDeleteView, SmartFormView, SmartListView, SmartReadView, SmartUpdateView
 
 from django import forms
 from django.conf import settings
