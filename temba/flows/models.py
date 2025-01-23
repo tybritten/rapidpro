@@ -1095,15 +1095,11 @@ class FlowSession(models.Model):
             ),
             # for trimming ended sessions
             models.Index(name="flowsessions_ended", fields=("ended_on",), condition=Q(ended_on__isnull=False)),
+            # for expiring waiting sessions
             models.Index(
-                name="flows_session_message_expires",
+                name="flows_session_waiting_expires",
                 fields=("wait_expires_on",),
-                condition=Q(session_type=Flow.TYPE_MESSAGE, status="W", wait_expires_on__isnull=False),
-            ),
-            models.Index(
-                name="flows_session_voice_expires",
-                fields=("wait_expires_on",),
-                condition=Q(session_type=Flow.TYPE_VOICE, status="W", wait_expires_on__isnull=False),
+                condition=Q(status="W", wait_expires_on__isnull=False),
             ),
         ]
         constraints = [
