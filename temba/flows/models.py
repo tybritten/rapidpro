@@ -1107,11 +1107,6 @@ class FlowSession(models.Model):
             ),
         ]
         constraints = [
-            # ensure that waiting sessions have a wait started and expires
-            models.CheckConstraint(
-                check=~Q(status="W") | Q(wait_started_on__isnull=False, wait_expires_on__isnull=False),
-                name="flows_session_waiting_has_started_and_expires",
-            ),
             # ensure that non-waiting sessions have an ended_on
             models.CheckConstraint(
                 check=Q(status="W") | Q(ended_on__isnull=False), name="flows_session_non_waiting_has_ended_on"
