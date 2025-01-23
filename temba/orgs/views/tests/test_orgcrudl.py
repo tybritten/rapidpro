@@ -103,7 +103,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         )
 
         # confirm no notifications
-        self.login(self.admin)
+        self.login(self.admin, choose_org=self.org)
         menu = self.client.get(menu_url).json()["results"]
         self.assertEqual(None, menu[8].get("bubble"))
 
@@ -749,6 +749,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         )
 
         # should now be able to go to channels page
+        self.login(self.admin)
         response = self.client.get(reverse("channels.channel_claim"))
         self.assertEqual(200, response.status_code)
 
@@ -782,8 +783,11 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # log in as the user
         self.client.login(username="myal12345678901234567890@relieves.org", password="HelloWorld1")
-        response = self.client.get(reverse("orgs.org_workspace"))
 
+        # choose an org
+        self.client.get("/org/choose/")
+
+        response = self.client.get(reverse("orgs.org_workspace"))
         self.assertEqual(200, response.status_code)
 
         # try changing our username, wrong password
@@ -1042,14 +1046,14 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertRedirect(self.requestView(start_url, self.editor), "/msg/")
         self.assertRedirect(self.requestView(start_url, self.agent), "/ticket/")
 
-        # now try as customer support
-        self.assertRedirect(self.requestView(start_url, self.customer_support), "/staff/org/")
+        # now try as customer support, they should go to choose which is responsible for routing them further
+        self.assertRedirect(self.requestView(start_url, self.customer_support), "/org/choose/")
 
-        # if org isn't set, we redirect instead to choose view
+        # login will pick the first org even if they have more than one
         self.client.logout()
         self.org2.add_user(self.admin, OrgRole.ADMINISTRATOR)
         self.login(self.admin)
-        self.assertRedirect(self.client.get(start_url), "/org/choose/")
+        self.assertRedirect(self.client.get(start_url), "/msg/")
 
     def test_choose(self):
         choose_url = reverse("orgs.org_choose")
@@ -1082,11 +1086,9 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
         # turn editor into a multi-org user
         self.org2.add_user(self.editor, OrgRole.EDITOR)
 
-        # now we see a page to choose one of the two orgs
+        # choose should just pick an org for us and route to start
         response = self.requestView(choose_url, self.editor)
-        self.assertEqual(["organization", "loc"], list(response.context["form"].fields.keys()))
-        self.assertEqual({self.org, self.org2}, set(response.context["form"].fields["organization"].queryset))
-        self.assertEqual({self.org, self.org2}, set(response.context["orgs"]))
+        self.assertRedirect(self.requestView(choose_url, self.editor), "/org/start/")
 
         # try to submit for an org we don't belong to
         response = self.client.post(choose_url, {"organization": org4.id})

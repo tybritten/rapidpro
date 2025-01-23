@@ -109,7 +109,7 @@ class RocketChatViewTest(RocketChatMixin):
     def submit_form(self, data, mock_generate_secret, mock_socket):
         mock_generate_secret.return_value = self.secret
 
-        self.client.force_login(self.admin)
+        self.login(self.admin)
 
         return self.client.post(self.claim_url, data=data)
 
@@ -117,7 +117,7 @@ class RocketChatViewTest(RocketChatMixin):
     def test_session_key(self, mock_generate_secret):
         mock_generate_secret.return_value = self.secret
 
-        self.client.force_login(self.admin)
+        self.login(self.admin)
         response = self.client.get(self.claim_url)
         self.assertEqual(response.wsgi_request.session.get(ClaimView.SESSION_KEY), self.secret)
         response.wsgi_request.session.pop(ClaimView.SESSION_KEY, None)
@@ -126,7 +126,7 @@ class RocketChatViewTest(RocketChatMixin):
     def test_form_initial(self, mock_generate_secret):
         mock_generate_secret.return_value = self.secret
 
-        self.client.force_login(self.admin)
+        self.login(self.admin)
         response = self.client.get(self.claim_url)
         self.assertEqual(response.context_data["form"].initial.get("secret"), self.secret)
 

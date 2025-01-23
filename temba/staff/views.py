@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from smartmin.users.models import FailedLogin, PasswordHistory
 from smartmin.users.views import UserUpdateForm
-from smartmin.views import SmartCRUDL, SmartDeleteView, SmartFormView, SmartListView, SmartReadView, SmartUpdateView
+from smartmin.views import SmartCRUDL, SmartDeleteView, SmartListView, SmartReadView, SmartFormView, SmartUpdateView
 
 from django import forms
 from django.conf import settings
@@ -229,28 +229,30 @@ class OrgCRUDL(SmartCRUDL):
 
     class Service(StaffOnlyMixin, SmartFormView):
         class ServiceForm(forms.Form):
-            other_org = forms.ModelChoiceField(queryset=Org.objects.all(), widget=forms.HiddenInput())
+            other_org = forms.ModelChoiceField(queryset=Org.objects.none(), widget=forms.HiddenInput())
             next = forms.CharField(widget=forms.HiddenInput(), required=False)
 
+            def __init__(self, request, *args, **kwargs):
+                super().__init__(**kwargs)
+                self.request = request
+                self.fields["other_org"].queryset = Org.objects.filter(is_active=True)
+
         form_class = ServiceForm
-        fields = ("other_org", "next")
+
+        def get_form_kwargs(self):
+            kwargs = super().get_form_kwargs()
+            kwargs["request"] = self.request
+            return kwargs
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
-            context["other_org"] = Org.objects.filter(id=self.request.GET.get("other_org")).first()
-            context["next"] = self.request.GET.get("next", "")
+            context["other_org"] = Org.objects.filter(is_active=True, id=self.request.GET.get("other_org")).first()
             return context
 
-        def derive_initial(self):
-            initial = super().derive_initial()
-            initial["other_org"] = self.request.GET.get("other_org", "")
-            initial["next"] = self.request.GET.get("next", "")
-            return initial
-
-        # valid form means we set our org and redirect to their inbox
+        # valid form means we set our org and redirect to next
         def form_valid(self, form):
             switch_to_org(self.request, form.cleaned_data["other_org"], servicing=True)
-            success_url = form.cleaned_data["next"] or reverse("msgs.msg_inbox")
+            success_url = form.cleaned_data["next"] or reverse("orgs.org_start")
             return HttpResponseRedirect(success_url)
 
         # invalid form login 'logs out' the user from the org and takes them to the root

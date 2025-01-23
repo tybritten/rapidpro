@@ -457,7 +457,8 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
 
         # if the user has access to that org, we redirect to the org choose page
         self.org2.add_user(self.admin, OrgRole.ADMINISTRATOR)
-        response = self.requestView(group3_url, self.admin)
+        response = self.requestView(group3_url, self.admin, choose_org=self.org)
+        print(response.status_code)
         self.assertRedirect(response, "/org/choose/")
 
     @mock_mailroom

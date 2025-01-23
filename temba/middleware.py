@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.utils import timezone, translation
 
-from temba.orgs.models import Org, User
+from temba.orgs.models import Org
 
 
 class ExceptionMiddleware:
@@ -79,11 +79,6 @@ class OrgMiddleware:
             # only use if user actually belongs to this org
             if org and (user.is_staff or org.has_user(user)):
                 return org
-
-        # otherwise if user only belongs to one org, we can use that
-        user_orgs = User.get_orgs_for_request(request)
-        if user_orgs.count() == 1:
-            return user_orgs[0]
 
         return None
 

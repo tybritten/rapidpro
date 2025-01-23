@@ -1054,6 +1054,7 @@ class OrgCRUDL(SmartCRUDL):
     actions = (
         "signup",
         "start",
+        "switch",
         "edit",
         "update",
         "join",
@@ -1684,6 +1685,49 @@ class OrgCRUDL(SmartCRUDL):
                 response["X-Temba-Success"] = success_url
                 return response
 
+    class Switch(NoNavMixin, OrgPermsMixin, SmartFormView):
+        class SwitchForm(forms.Form):
+            other_org = forms.ModelChoiceField(queryset=Org.objects.none(), widget=forms.HiddenInput())
+            next = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+            def __init__(self, request, *args, **kwargs):
+                super().__init__(**kwargs)
+                self.request = request
+                self.fields["other_org"].queryset = User.get_orgs_for_request(self.request)
+
+            class Meta:
+                fields = ("other_org", "next")
+
+        form_class = SwitchForm
+        fields = ("other_org", "next")
+        title = _("Switch Workspaces")
+
+        def get_form_kwargs(self):
+            kwargs = super().get_form_kwargs()
+            kwargs["request"] = self.request
+            return kwargs
+
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            context["other_org"] = (
+                User.get_orgs_for_request(self.request).filter(id=self.request.GET.get("other_org")).first()
+            )
+            context["next"] = self.request.GET.get("next", "")
+            return context
+
+        def derive_initial(self):
+            initial = super().derive_initial()
+            initial["other_org"] = self.request.GET.get("other_org", "")
+            initial["next"] = self.request.GET.get("next", "")
+            return initial
+
+        # valid form means we set our org and redirect to next
+        def form_valid(self, form):
+            print("form_valid")
+            switch_to_org(self.request, form.cleaned_data["other_org"])
+            success_url = form.cleaned_data["next"] or reverse("orgs.org_start")
+            return HttpResponseRedirect(success_url)
+
     class Start(SmartTemplateView):
         def has_permission(self, request, *args, **kwargs):
             return self.request.user.is_authenticated
@@ -1693,13 +1737,9 @@ class OrgCRUDL(SmartCRUDL):
             org = self.request.org
 
             if not org:
-                no_org_page = reverse("orgs.org_choose")
-                if user.is_staff:
-                    no_org_page = f"{reverse('staff.org_list')}?filter=active"
-                return HttpResponseRedirect(no_org_page)
+                return HttpResponseRedirect(reverse("orgs.org_choose"))
 
             role = org.get_user_role(user)
-
             return HttpResponseRedirect(reverse(role.start_view if role else "msgs.msg_inbox"))
 
     class Choose(NoNavMixin, SpaMixin, SmartFormView):
@@ -1717,24 +1757,47 @@ class OrgCRUDL(SmartCRUDL):
 
         def pre_process(self, request, *args, **kwargs):
             user = self.request.user
-            if user.is_authenticated:
+            settings = user.settings
+            org = self.request.org
+
+            # if we don't have an org, try to find one for the user
+            if user.is_authenticated and request.method == "GET":
                 user_orgs = User.get_orgs_for_request(self.request)
-                if user_orgs.count() == 1:
-                    org = user_orgs[0]
+                if user_orgs.count() == 0:
+                    # staff users aren't required to have an org
+                    if user.is_staff:
+                        return HttpResponseRedirect(f"{reverse('staff.org_list')}?filter=active")
+
+                else:
+                    # just one org, then it's easy
+                    if user_orgs.count() == 1:
+                        org = user_orgs[0]
+                    else:
+                        # check if they have a last org
+                        if settings.last_org in user_orgs:
+                            org = settings.last_org
+
+                        # otherwise pick the the newest one they have access to
+                        if not org:
+                            org = user_orgs.order_by("-created_on")[0]
+
+                if org:
+                    # record our org on our session
                     switch_to_org(self.request, org)
                     analytics.identify(user, self.request.branding, org)
 
+                    # if our last org has changed, update it accordingly
+                    if settings.last_org != org:
+                        settings.last_org = org
+                        settings.save(update_fields=("last_org",))
+
                     return HttpResponseRedirect(reverse("orgs.org_start"))
 
-                elif user_orgs.count() == 0:
-                    if user.is_staff:
-                        return HttpResponseRedirect(reverse("staff.org_list"))
-
-                    # for regular users, if there's no orgs, log them out with a message
-                    messages.info(request, _("No workspaces for this account, please contact your administrator."))
-                    logout(request)
-                    return HttpResponseRedirect(reverse("orgs.login"))
-            return None
+            if not org:
+                # TODO: we should take to a workspace create page if permitted by deployment
+                messages.info(request, _("No workspaces for this account, please contact your administrator."))
+                logout(request)
+                return HttpResponseRedirect(reverse("orgs.login"))
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
@@ -1752,6 +1815,12 @@ class OrgCRUDL(SmartCRUDL):
         def form_valid(self, form):
             org = form.cleaned_data["organization"]
             switch_to_org(self.request, org)
+
+            settings = self.request.user.settings
+            if settings.last_org != org:
+                settings.last_org = org
+                settings.save(update_fields=("last_org",))
+
             analytics.identify(self.request.user, self.request.branding, org)
             return HttpResponseRedirect(reverse("orgs.org_start"))
 

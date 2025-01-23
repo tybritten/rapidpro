@@ -309,43 +309,6 @@ class User(AuthUser):
         proxy = True
 
 
-class UserSettings(models.Model):
-    """
-    Additional non-org specific fields for users
-    """
-
-    STATUS_UNVERIFIED = "U"
-    STATUS_VERIFIED = "V"
-    STATUS_FAILING = "F"
-    STATUS_CHOICES = (
-        (STATUS_UNVERIFIED, _("Unverified")),
-        (STATUS_VERIFIED, _("Verified")),
-        (STATUS_FAILING, _("Failing")),
-    )
-
-    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name="settings")
-    language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
-    otp_secret = models.CharField(max_length=16, default=pyotp.random_base32)
-    two_factor_enabled = models.BooleanField(default=False)
-    last_auth_on = models.DateTimeField(null=True)
-    external_id = models.CharField(max_length=128, null=True)
-    verification_token = models.CharField(max_length=64, null=True)
-    email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
-    email_verification_secret = models.CharField(max_length=64, db_index=True)
-    avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=public_file_storage, null=True)
-    is_system = models.BooleanField(default=False)
-
-
-@receiver(post_save, sender=User)
-def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
-    """
-    Handle user post-save signals so that we can create user settings for them.
-    """
-
-    if created:
-        instance.settings = UserSettings.objects.create(user=instance, email_verification_secret=generate_secret(64))
-
-
 class OrgRole(Enum):
     ADMINISTRATOR = ("A", _("Administrator"), _("Administrators"), "Administrators", "msgs.msg_inbox")
     EDITOR = ("E", _("Editor"), _("Editors"), "Editors", "msgs.msg_inbox")
@@ -1501,6 +1464,44 @@ class OrgImport(SmartModel):
         else:
             self.status = self.STATUS_COMPLETE
             self.save(update_fields=("status", "modified_on"))
+
+
+class UserSettings(models.Model):
+    """
+    Additional non-org specific fields for users
+    """
+
+    STATUS_UNVERIFIED = "U"
+    STATUS_VERIFIED = "V"
+    STATUS_FAILING = "F"
+    STATUS_CHOICES = (
+        (STATUS_UNVERIFIED, _("Unverified")),
+        (STATUS_VERIFIED, _("Verified")),
+        (STATUS_FAILING, _("Failing")),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name="settings")
+    language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
+    otp_secret = models.CharField(max_length=16, default=pyotp.random_base32)
+    two_factor_enabled = models.BooleanField(default=False)
+    last_auth_on = models.DateTimeField(null=True)
+    external_id = models.CharField(max_length=128, null=True)
+    verification_token = models.CharField(max_length=64, null=True)
+    email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
+    email_verification_secret = models.CharField(max_length=64, db_index=True)
+    avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=public_file_storage, null=True)
+    is_system = models.BooleanField(default=False)
+    last_org = models.ForeignKey(Org, on_delete=models.SET_NULL, null=True)
+
+
+@receiver(post_save, sender=User)
+def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
+    """
+    Handle user post-save signals so that we can create user settings for them.
+    """
+
+    if created:
+        instance.settings = UserSettings.objects.create(user=instance, email_verification_secret=generate_secret(64))
 
 
 class Invitation(SmartModel):
