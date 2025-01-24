@@ -1156,6 +1156,8 @@ class Contact(LegacyUUIDMixin, SmartModel):
             # and any event fire history
             self.campaign_fires.all().delete()
 
+            delete_in_batches(self.fires.all())
+
             # take us out of broadcast addressed contacts
             for broadcast in self.addressed_broadcasts.all():
                 broadcast.contacts.remove(self)
@@ -1731,6 +1733,31 @@ class ContactGroupCount(BaseSquashableCount):
     class Meta:
         indexes = [
             models.Index(fields=("group",), condition=Q(is_squashed=False), name="contactgroupcounts_unsquashed")
+        ]
+
+
+class ContactFire(models.Model):
+    """
+    Something to happen to a contact in the future - processed by mailroom.
+    """
+
+    TYPE_WAIT_EXPIRATION = "E"
+    TYPE_WAIT_TIMEOUT = "T"
+    TYPE_CAMPAIGN = "C"
+    TYPE_CHOICES = ((TYPE_WAIT_EXPIRATION, "Expiration"), (TYPE_WAIT_TIMEOUT, "Timeout"), (TYPE_CAMPAIGN, "Campaign"))
+
+    id = models.BigAutoField(auto_created=True, primary_key=True)
+    org = models.ForeignKey(Org, on_delete=models.PROTECT, db_index=False)
+    contact = models.ForeignKey(Contact, on_delete=models.PROTECT, related_name="fires", db_index=False)  # index below
+    fire_type = models.CharField(max_length=1, choices=TYPE_CHOICES)
+    scope = models.CharField(max_length=64)  # e.g. campaign event id
+    extra = models.JSONField(default=dict)  # e.g. session id
+    fire_on = models.DateTimeField(db_index=True)
+
+    class Meta:
+        constraints = [
+            # used to prevent adding duplicate fires for the same contact and scope
+            models.UniqueConstraint(name="fire_contact_type_scope_unique", fields=("contact", "fire_type", "scope"))
         ]
 
 

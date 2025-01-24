@@ -1,3 +1,12 @@
+v10.1.18 (2025-01-23)
+-------------------------
+ * Revert "Do not migrate definitions with the current spec version"
+ * Add new generic model for scheduled contact events like session timeouts etc
+
+v10.1.17 (2025-01-22)
+-------------------------
+ * Do not migrate definitions with the current spec version
+
 v10.1.16 (2025-01-21)
 -------------------------
  * Fix button layout for tickets
