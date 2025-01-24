@@ -1095,23 +1095,14 @@ class FlowSession(models.Model):
             ),
             # for trimming ended sessions
             models.Index(name="flowsessions_ended", fields=("ended_on",), condition=Q(ended_on__isnull=False)),
+            # for expiring waiting sessions
             models.Index(
-                name="flows_session_message_expires",
+                name="flows_session_waiting_expires",
                 fields=("wait_expires_on",),
-                condition=Q(session_type=Flow.TYPE_MESSAGE, status="W", wait_expires_on__isnull=False),
-            ),
-            models.Index(
-                name="flows_session_voice_expires",
-                fields=("wait_expires_on",),
-                condition=Q(session_type=Flow.TYPE_VOICE, status="W", wait_expires_on__isnull=False),
+                condition=Q(status="W", wait_expires_on__isnull=False),
             ),
         ]
         constraints = [
-            # ensure that waiting sessions have a wait started and expires
-            models.CheckConstraint(
-                check=~Q(status="W") | Q(wait_started_on__isnull=False, wait_expires_on__isnull=False),
-                name="flows_session_waiting_has_started_and_expires",
-            ),
             # ensure that non-waiting sessions have an ended_on
             models.CheckConstraint(
                 check=Q(status="W") | Q(ended_on__isnull=False), name="flows_session_non_waiting_has_ended_on"
