@@ -1,3 +1,7 @@
+v10.1.21 (2025-01-24)
+-------------------------
+ * Nulls last on membership sort
+
 v10.1.20 (2025-01-24)
 -------------------------
  * Auto org selection with cross-org object switcher
