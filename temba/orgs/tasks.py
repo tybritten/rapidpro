@@ -12,7 +12,7 @@ from temba.contacts.models import URN, ContactURN
 from temba.utils.crons import cron_task
 from temba.utils.email import EmailSender
 
-from .models import Export, Invitation, ItemCount, Org, OrgMembership, OrgImport, User, UserSettings
+from .models import Export, Invitation, ItemCount, Org, OrgImport, OrgMembership, User, UserSettings
 
 
 @cron_task()
