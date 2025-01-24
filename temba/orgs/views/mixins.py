@@ -107,8 +107,9 @@ class OrgObjPermsMixin(OrgPermsMixin):
                     f"{reverse('staff.org_service')}?next={quote_plus(request.path)}&other_org={org.id}"
                 )
             else:
-                # TODO implement view to let regular users switch orgs as well
-                return HttpResponseRedirect(reverse("orgs.org_choose"))
+                return HttpResponseRedirect(
+                    f"{reverse('orgs.org_switch')}?next={quote_plus(request.path)}&other_org={org.id}"
+                )
 
         return super().pre_process(request, *args, **kwargs)
 

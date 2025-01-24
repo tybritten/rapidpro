@@ -149,7 +149,7 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
 
         self.login(self.editor)
 
-        with self.assertNumQueries(16):
+        with self.assertNumQueries(15):
             response = self.client.get(list_url)
 
         self.assertEqual([frank, joe], list(response.context["object_list"]))
@@ -455,10 +455,10 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
         response = self.requestView(group3_url, self.admin)
         self.assertLoginRedirect(response)
 
-        # if the user has access to that org, we redirect to the org choose page
+        # if the user has access to that org, we redirect to the switch page
         self.org2.add_user(self.admin, OrgRole.ADMINISTRATOR)
-        response = self.requestView(group3_url, self.admin)
-        self.assertRedirect(response, "/org/choose/")
+        response = self.requestView(group3_url, self.admin, choose_org=self.org)
+        self.assertRedirect(response, "/org/switch/")
 
     @mock_mailroom
     def test_read(self, mr_mocks):
@@ -644,7 +644,7 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
 
         # fetch our contact history
         self.login(self.admin)
-        with self.assertNumQueries(25):
+        with self.assertNumQueries(24):
             response = self.client.get(history_url + "?limit=100")
 
         # history should include all messages in the last 90 days, the channel event, the call, and the flow run

@@ -150,7 +150,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         # cannot update system user on a workspace
         update_url = reverse("orgs.user_update", args=[system_user.id])
         response = self.requestView(update_url, self.admin2)
-        self.assertRedirect(response, reverse("orgs.org_choose"))
+        self.assertRedirect(response, reverse("orgs.org_workspace"))
         self.assertEqual({self.editor, self.admin}, set(self.org.get_users(roles=[OrgRole.EDITOR])))
         self.assertEqual({self.admin2, system_user}, set(self.org.get_users(roles=[OrgRole.ADMINISTRATOR])))
 

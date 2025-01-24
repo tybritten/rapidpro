@@ -52,7 +52,7 @@ class MsgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check query count
         self.login(self.admin)
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(11):
             self.client.get(inbox_url)
 
         self.assertRequestDisallowed(inbox_url, [None, self.agent])
@@ -129,7 +129,7 @@ class MsgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check query count
         self.login(self.admin)
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(11):
             self.client.get(flows_url)
 
         self.assertRequestDisallowed(flows_url, [None, self.agent])
@@ -150,7 +150,7 @@ class MsgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check query count
         self.login(self.admin)
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(11):
             self.client.get(archived_url)
 
         self.assertRequestDisallowed(archived_url, [None, self.agent])
@@ -193,7 +193,7 @@ class MsgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check query count
         self.login(self.admin)
-        with self.assertNumQueries(11):
+        with self.assertNumQueries(10):
             self.client.get(outbox_url)
 
         # messages sorted by created_on
@@ -241,7 +241,7 @@ class MsgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check query count
         self.login(self.admin)
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(9):
             self.client.get(sent_url)
 
         # messages sorted by sent_on
@@ -270,7 +270,7 @@ class MsgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # check query count
         self.login(self.admin)
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(9):
             self.client.get(failed_url)
 
         self.assertRequestDisallowed(failed_url, [None, self.agent])

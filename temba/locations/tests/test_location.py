@@ -128,7 +128,7 @@ class LocationTest(TembaTest):
         )
 
         # update our alias for east
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(12):
             response = self.client.post(
                 reverse("locations.adminboundary_boundaries", args=[self.country.osm_id]),
                 json.dumps(dict(osm_id=self.state2.osm_id, aliases="kigs\n")),
@@ -138,7 +138,7 @@ class LocationTest(TembaTest):
         self.assertEqual(200, response.status_code)
 
         # fetch our aliases
-        with self.assertNumQueries(18):
+        with self.assertNumQueries(17):
             response = self.client.get(reverse("locations.adminboundary_boundaries", args=[self.country.osm_id]))
         response_json = response.json()
 
@@ -157,7 +157,7 @@ class LocationTest(TembaTest):
         self.assertEqual(200, response.status_code)
 
         # fetch our aliases
-        with self.assertNumQueries(25):
+        with self.assertNumQueries(24):
             response = self.client.get(reverse("locations.adminboundary_boundaries", args=[self.state1.osm_id]))
         response_json = response.json()
 

@@ -153,6 +153,13 @@ class TembaTest(SmartminTest):
             f"couldn't login as {user.username}:{self.default_password}",
         )
 
+        # infer our org if we weren't handed one
+        if not choose_org:
+            orgs = user.orgs.filter(is_active=True).order_by("-created_on")
+            if orgs.count() > 0:
+                # take the newest one
+                choose_org = orgs[0]
+
         if update_last_auth_on:
             user.record_auth()
 

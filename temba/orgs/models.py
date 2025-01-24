@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import pycountry
 import pyotp
 import pytz
+from django_redis import get_redis_connection
 from packaging.version import Version
 from smartmin.models import SmartModel
 from timezone_field import TimeZoneField
@@ -1444,10 +1445,20 @@ class OrgMembership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role_code = models.CharField(max_length=1)
     team = models.ForeignKey("tickets.Team", on_delete=models.PROTECT, null=True)
+    last_seen_on = models.DateTimeField(null=True)
 
     @property
     def role(self):
         return OrgRole.from_code(self.role_code)
+
+    def record_seen(self):
+        r = get_redis_connection()
+        r.sadd("org_members_seen", self.id)
+
+    @classmethod
+    def get_seen(self) -> list:
+        r = get_redis_connection()
+        return [k.decode() for k in r.spop("org_members_seen", r.scard("org_members_seen"))]
 
     class Meta:
         unique_together = (("org", "user"),)

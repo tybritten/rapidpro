@@ -8,7 +8,7 @@ from temba.templates.models import TemplateTranslation
 from temba.tests import TembaTest, matchers
 from temba.tickets.models import Shortcut, TicketExport
 
-NUM_BASE_QUERIES = 4  # number of queries required for any request (internal API is session only)
+NUM_BASE_QUERIES = 3  # number of queries required for any request (internal API is session only)
 
 
 class EndpointsTest(APITestMixin, TembaTest):

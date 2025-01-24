@@ -18,11 +18,17 @@ class MiddlewareTest(TembaTest):
         response = self.client.get(index_url)
         self.assertEqual(str(self.org.id), response["X-Temba-Org"])
 
-        # if not, org isn't set
+        # add them to another org
         self.org2.add_user(self.admin, OrgRole.ADMINISTRATOR)
 
+        # we'll still have the original org
         response = self.client.get(index_url)
-        self.assertFalse(response.has_header("X-Temba-Org"))
+        self.assertEqual(str(self.org.id), response["X-Temba-Org"])
+
+        # but when we login again, it'll select the newest org
+        self.login(self.admin)
+        response = self.client.get(index_url)
+        self.assertEqual(str(self.org2.id), response["X-Temba-Org"])
 
         # org will be read from session if set
         s = self.client.session
