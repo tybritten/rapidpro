@@ -24,7 +24,7 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.views import LoginView as AuthLoginView
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.functions import Lower
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -1780,7 +1780,9 @@ class OrgCRUDL(SmartCRUDL):
                 else:
                     # grab the most recent org membership
                     membership = (
-                        OrgMembership.objects.filter(org__in=user_orgs).order_by("-last_seen_on", "-id").first()
+                        OrgMembership.objects.filter(org__in=user_orgs)
+                        .order_by(F("last_seen_on").desc(nulls_last=True), "-id")
+                        .first()
                     )
 
                     if membership:
