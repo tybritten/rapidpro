@@ -1,3 +1,7 @@
+v10.1.22 (2025-01-24)
+-------------------------
+ * Fix case for staff also being a member
+
 v10.1.21 (2025-01-24)
 -------------------------
  * Nulls last on membership sort
