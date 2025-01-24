@@ -549,7 +549,7 @@ class ContactTest(TembaTest):
                 omnibox_request("?search=250"),
             )
 
-        with self.assertNumQueries(14):
+        with self.assertNumQueries(13):
             mr_mocks.contact_search(query='name ~ "FRA" OR urn ~ "FRA"', total=1, contacts=[self.frank])
 
             self.assertEqual(
