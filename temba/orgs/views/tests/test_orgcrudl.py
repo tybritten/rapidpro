@@ -1293,3 +1293,27 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         self.org.refresh_from_db()
         self.assertIsNone(self.org.prometheus_token)
+
+    def test_switch(self):
+
+        self.login(self.admin)
+
+        # hitting switch for an org we don't have access to routes to choose
+        response = self.client.get(f"{reverse("orgs.org_switch")}?other_org={self.org2.id}&next=/msg")
+        self.assertRedirect(response, reverse("orgs.org_choose"))
+
+        # can't post to it either
+        response = self.client.post(reverse("orgs.org_switch"), {"other_org": self.org2.id, "next": "/msg"})
+        self.assertRedirect(response, reverse("orgs.org_choose"))
+
+        # now put us in that org and we should see the switch option
+        self.org2.add_user(self.admin, OrgRole.ADMINISTRATOR)
+        response = self.client.get(f"{reverse("orgs.org_switch")}?other_org={self.org2.id}&next=/msg")
+        self.assertContains(
+            response, f"The page you are requesting belongs to one of your other workspaces, <b>{self.org2.name}</b>"
+        )
+
+        # now switch to it
+        response = self.client.post(reverse("orgs.org_switch"), {"other_org": self.org2.id, "next": "/msg"})
+        self.assertRedirect(response, "/msg")
+        self.assertEqual(self.org2.id, self.client.session["org_id"])

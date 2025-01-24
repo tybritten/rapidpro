@@ -1703,6 +1703,16 @@ class OrgCRUDL(SmartCRUDL):
         fields = ("other_org", "next")
         title = _("Switch Workspaces")
 
+        def pre_process(self, request, *args, **kwargs):
+            # make sure the other_org is valid
+            other_org_id = self.request.GET.get("other_org", self.request.POST.get("other_org"))
+            if other_org_id:
+                # make sure we have access to that org
+                if not User.get_orgs_for_request(self.request).filter(id=other_org_id).exists():
+                    return HttpResponseRedirect(reverse("orgs.org_choose"))
+
+            return super().pre_process(request, *args, **kwargs)
+
         def get_form_kwargs(self):
             kwargs = super().get_form_kwargs()
             kwargs["request"] = self.request
@@ -1724,7 +1734,6 @@ class OrgCRUDL(SmartCRUDL):
 
         # valid form means we set our org and redirect to next
         def form_valid(self, form):
-            print("form_valid")
             switch_to_org(self.request, form.cleaned_data["other_org"])
             success_url = form.cleaned_data["next"] or reverse("orgs.org_start")
             return HttpResponseRedirect(success_url)
