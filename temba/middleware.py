@@ -84,7 +84,7 @@ class OrgMiddleware:
                 membership = org.get_membership(user)
                 if membership:
                     membership.record_seen()
-                return org
+                    return org
 
         return None
 
