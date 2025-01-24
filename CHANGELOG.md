@@ -1,3 +1,8 @@
+v10.1.19 (2025-01-24)
+-------------------------
+ * Change index used by mailroom to find expired waiting sessions
+ * Drop constraint that waiting sessions have wait_expires_on
+
 v10.1.18 (2025-01-23)
 -------------------------
  * Revert "Do not migrate definitions with the current spec version"
