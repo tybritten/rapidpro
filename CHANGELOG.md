@@ -1,3 +1,7 @@
+v10.1.20 (2025-01-24)
+-------------------------
+ * Auto org selection with cross-org object switcher
+
 v10.1.19 (2025-01-24)
 -------------------------
  * Change index used by mailroom to find expired waiting sessions
