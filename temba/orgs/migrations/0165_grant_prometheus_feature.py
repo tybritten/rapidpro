@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def grant_prometheus_feature(apps, schema_editor):
+def grant_prometheus_feature(apps, schema_editor):  # pragma: no cover
     Org = apps.get_model("orgs", "Org")
 
     num_updated = 0
