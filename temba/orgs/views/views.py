@@ -74,6 +74,7 @@ from ..models import (
     Invitation,
     Org,
     OrgImport,
+    OrgMembership,
     OrgRole,
     User,
     UserSettings,
@@ -1757,7 +1758,6 @@ class OrgCRUDL(SmartCRUDL):
 
         def pre_process(self, request, *args, **kwargs):
             user = self.request.user
-            settings = user.settings
             org = self.request.org
 
             # if we don't have an org, try to find one for the user
@@ -1769,28 +1769,18 @@ class OrgCRUDL(SmartCRUDL):
                         return HttpResponseRedirect(f"{reverse('staff.org_list')}?filter=active")
 
                 else:
-                    # just one org, then it's easy
-                    if user_orgs.count() == 1:
-                        org = user_orgs[0]
-                    else:
-                        # check if they have a last org
-                        if settings.last_org in user_orgs:
-                            org = settings.last_org
+                    # grab the most recent org membership
+                    membership = (
+                        OrgMembership.objects.filter(org__in=user_orgs).order_by("-last_seen_on", "-id").first()
+                    )
 
-                        # otherwise pick the the newest one they have access to
-                        if not org:
-                            org = user_orgs.order_by("-created_on")[0]
+                    if membership:
+                        org = membership.org
 
                 if org:
                     # record our org on our session
                     switch_to_org(self.request, org)
                     analytics.identify(user, self.request.branding, org)
-
-                    # if our last org has changed, update it accordingly
-                    if settings.last_org != org:
-                        settings.last_org = org
-                        settings.save(update_fields=("last_org",))
-
                     return HttpResponseRedirect(reverse("orgs.org_start"))
 
             if not org:
@@ -1815,12 +1805,6 @@ class OrgCRUDL(SmartCRUDL):
         def form_valid(self, form):
             org = form.cleaned_data["organization"]
             switch_to_org(self.request, org)
-
-            settings = self.request.user.settings
-            if settings.last_org != org:
-                settings.last_org = org
-                settings.save(update_fields=("last_org",))
-
             analytics.identify(self.request.user, self.request.branding, org)
             return HttpResponseRedirect(reverse("orgs.org_start"))
 

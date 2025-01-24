@@ -176,10 +176,11 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
 
         # requesting a next page has a slightly different message
         response = self.client.get(service_url, {"other_org": self.org.id, "next": inbox_url})
+        print(inbox_url)
         self.assertContains(response, "The page you are requesting belongs to a different workspace, <b>Nyaruka</b>.")
 
         response = self.client.post(service_url, {"other_org": self.org.id})
-        self.assertRedirect(response, "/msg/")
+        self.assertRedirect(response, "/org/start/")
         self.assertEqual(self.org.id, self.client.session["org_id"])
         self.assertTrue(self.client.session["servicing"])
 

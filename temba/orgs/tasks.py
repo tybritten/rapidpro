@@ -12,7 +12,17 @@ from temba.contacts.models import URN, ContactURN
 from temba.utils.crons import cron_task
 from temba.utils.email import EmailSender
 
-from .models import Export, Invitation, ItemCount, Org, OrgImport, User, UserSettings
+from .models import Export, Invitation, ItemCount, Org, OrgMembership, OrgImport, User, UserSettings
+
+
+@cron_task()
+def update_members_seen():
+    """
+    Updates last_seen_on for OrgMemberships. We do this in a task every 60 seconds rather than on every request
+    """
+    membership_ids = OrgMembership.get_seen()
+    if membership_ids:
+        OrgMembership.objects.filter(id__in=membership_ids).update(last_seen_on=timezone.now())
 
 
 @shared_task

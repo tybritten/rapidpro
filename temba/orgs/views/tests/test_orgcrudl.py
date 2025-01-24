@@ -150,7 +150,7 @@ class OrgCRUDLTest(TembaTest, CRUDLTestMixin):
             parent=self.org,
         )
 
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(8):
             response = self.client.get(workspace_url)
 
         self.assertEqual(6, len(response.context["formax"].sections))

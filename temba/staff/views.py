@@ -229,25 +229,27 @@ class OrgCRUDL(SmartCRUDL):
 
     class Service(StaffOnlyMixin, SmartFormView):
         class ServiceForm(forms.Form):
-            other_org = forms.ModelChoiceField(queryset=Org.objects.none(), widget=forms.HiddenInput())
+            other_org = forms.ModelChoiceField(queryset=Org.objects.all(), widget=forms.HiddenInput())
             next = forms.CharField(widget=forms.HiddenInput(), required=False)
 
-            def __init__(self, request, *args, **kwargs):
+            def __init__(self, *args, **kwargs):
                 super().__init__(**kwargs)
-                self.request = request
                 self.fields["other_org"].queryset = Org.objects.filter(is_active=True)
 
         form_class = ServiceForm
-
-        def get_form_kwargs(self):
-            kwargs = super().get_form_kwargs()
-            kwargs["request"] = self.request
-            return kwargs
+        fields = ("other_org", "next")
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
             context["other_org"] = Org.objects.filter(is_active=True, id=self.request.GET.get("other_org")).first()
+            context["next"] = self.request.GET.get("next", "")
             return context
+
+        def derive_initial(self):
+            initial = super().derive_initial()
+            initial["other_org"] = self.request.GET.get("other_org", "")
+            initial["next"] = self.request.GET.get("next", "")
+            return initial
 
         # valid form means we set our org and redirect to next
         def form_valid(self, form):

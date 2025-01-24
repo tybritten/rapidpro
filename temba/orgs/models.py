@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import pycountry
 import pyotp
 import pytz
+from django_redis import get_redis_connection
 from packaging.version import Version
 from smartmin.models import SmartModel
 from timezone_field import TimeZoneField
@@ -307,6 +308,43 @@ class User(AuthUser):
 
     class Meta:
         proxy = True
+
+
+class UserSettings(models.Model):
+    """
+    Additional non-org specific fields for users
+    """
+
+    STATUS_UNVERIFIED = "U"
+    STATUS_VERIFIED = "V"
+    STATUS_FAILING = "F"
+    STATUS_CHOICES = (
+        (STATUS_UNVERIFIED, _("Unverified")),
+        (STATUS_VERIFIED, _("Verified")),
+        (STATUS_FAILING, _("Failing")),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name="settings")
+    language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
+    otp_secret = models.CharField(max_length=16, default=pyotp.random_base32)
+    two_factor_enabled = models.BooleanField(default=False)
+    last_auth_on = models.DateTimeField(null=True)
+    external_id = models.CharField(max_length=128, null=True)
+    verification_token = models.CharField(max_length=64, null=True)
+    email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
+    email_verification_secret = models.CharField(max_length=64, db_index=True)
+    avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=public_file_storage, null=True)
+    is_system = models.BooleanField(default=False)
+
+
+@receiver(post_save, sender=User)
+def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
+    """
+    Handle user post-save signals so that we can create user settings for them.
+    """
+
+    if created:
+        instance.settings = UserSettings.objects.create(user=instance, email_verification_secret=generate_secret(64))
 
 
 class OrgRole(Enum):
@@ -1407,10 +1445,20 @@ class OrgMembership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role_code = models.CharField(max_length=1)
     team = models.ForeignKey("tickets.Team", on_delete=models.PROTECT, null=True)
+    last_seen_on = models.DateTimeField(null=True)
 
     @property
     def role(self):
         return OrgRole.from_code(self.role_code)
+
+    def record_seen(self):
+        r = get_redis_connection()
+        r.sadd("org_members_seen", self.id)
+
+    @classmethod
+    def get_seen(self) -> list:
+        r = get_redis_connection()
+        return [k.decode() for k in r.spop("org_members_seen", r.scard("org_members_seen"))]
 
     class Meta:
         unique_together = (("org", "user"),)
@@ -1464,44 +1512,6 @@ class OrgImport(SmartModel):
         else:
             self.status = self.STATUS_COMPLETE
             self.save(update_fields=("status", "modified_on"))
-
-
-class UserSettings(models.Model):
-    """
-    Additional non-org specific fields for users
-    """
-
-    STATUS_UNVERIFIED = "U"
-    STATUS_VERIFIED = "V"
-    STATUS_FAILING = "F"
-    STATUS_CHOICES = (
-        (STATUS_UNVERIFIED, _("Unverified")),
-        (STATUS_VERIFIED, _("Verified")),
-        (STATUS_FAILING, _("Failing")),
-    )
-
-    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name="settings")
-    language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
-    otp_secret = models.CharField(max_length=16, default=pyotp.random_base32)
-    two_factor_enabled = models.BooleanField(default=False)
-    last_auth_on = models.DateTimeField(null=True)
-    external_id = models.CharField(max_length=128, null=True)
-    verification_token = models.CharField(max_length=64, null=True)
-    email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
-    email_verification_secret = models.CharField(max_length=64, db_index=True)
-    avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=public_file_storage, null=True)
-    is_system = models.BooleanField(default=False)
-    last_org = models.ForeignKey(Org, on_delete=models.SET_NULL, null=True)
-
-
-@receiver(post_save, sender=User)
-def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
-    """
-    Handle user post-save signals so that we can create user settings for them.
-    """
-
-    if created:
-        instance.settings = UserSettings.objects.create(user=instance, email_verification_secret=generate_secret(64))
 
 
 class Invitation(SmartModel):

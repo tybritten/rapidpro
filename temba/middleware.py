@@ -77,7 +77,13 @@ class OrgMiddleware:
             org = Org.objects.filter(is_active=True, id=org_id).select_related(*self.select_related).first()
 
             # only use if user actually belongs to this org
-            if org and (user.is_staff or org.has_user(user)):
+            if org:
+                if user.is_staff:
+                    return org
+
+                membership = org.get_membership(user)
+                if membership:
+                    membership.record_seen()
                 return org
 
         return None

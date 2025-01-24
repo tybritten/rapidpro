@@ -107,8 +107,6 @@ class OrgObjPermsMixin(OrgPermsMixin):
                     f"{reverse('staff.org_service')}?next={quote_plus(request.path)}&other_org={org.id}"
                 )
             else:
-
-                print("going to switch!", request.path)
                 return HttpResponseRedirect(
                     f"{reverse('orgs.org_switch')}?next={quote_plus(request.path)}&other_org={org.id}"
                 )

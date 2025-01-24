@@ -527,7 +527,7 @@ class ContactTest(TembaTest):
         )
 
         # empty query just returns up to 25 groups A-Z
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(9):
             self.assertEqual(
                 [
                     {"id": str(joe_and_frank.uuid), "name": "Joe and Frank", "type": "group", "count": 2},
@@ -538,7 +538,7 @@ class ContactTest(TembaTest):
                 omnibox_request(""),
             )
 
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(12):
             mr_mocks.contact_search(query='name ~ "250" OR urn ~ "250"', total=2, contacts=[self.billy, self.frank])
 
             self.assertEqual(

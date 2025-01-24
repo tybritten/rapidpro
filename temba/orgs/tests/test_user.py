@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from temba.api.models import APIToken
 from temba.orgs.models import OrgRole, User, UserSettings
+from temba.orgs.tasks import update_members_seen
 from temba.tests import TembaTest, mock_mailroom
 
 
@@ -148,3 +149,13 @@ class UserTest(TembaTest):
 
         token.refresh_from_db()
         self.assertFalse(token.is_active)
+
+    def test_last_seen(self):
+        membership = self.org.get_membership(self.admin)
+        membership.record_seen()
+        self.assertIsNone(membership.last_seen_on)
+
+        update_members_seen()
+
+        membership.refresh_from_db()
+        self.assertIsNotNone(membership.last_seen_on)
