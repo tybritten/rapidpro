@@ -1014,14 +1014,12 @@ class FlowSession(models.Model):
     STATUS_WAITING = "W"
     STATUS_COMPLETED = "C"
     STATUS_INTERRUPTED = "I"
-    STATUS_EXPIRED = "X"
     STATUS_FAILED = "F"
 
     STATUS_CHOICES = (
         (STATUS_WAITING, "Waiting"),
         (STATUS_COMPLETED, "Completed"),
         (STATUS_INTERRUPTED, "Interrupted"),
-        (STATUS_EXPIRED, "Expired"),
         (STATUS_FAILED, "Failed"),
     )
 

@@ -124,7 +124,7 @@ class FlowSessionTest(TembaTest):
         run2.status = FlowRun.STATUS_EXPIRED
         run2.exited_on = timezone.now()
         run2.save(update_fields=("status", "exited_on"))
-        run4.session.status = FlowSession.STATUS_EXPIRED
+        run4.session.status = FlowSession.STATUS_COMPLETED
         run2.session.ended_on = timezone.now()
         run2.session.save(update_fields=("status", "ended_on"))
 
