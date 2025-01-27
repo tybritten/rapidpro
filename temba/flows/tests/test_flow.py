@@ -1,29 +1,19 @@
-from datetime import datetime, timezone as tzone
 from unittest.mock import patch
 
 from django.urls import reverse
-from django.utils import timezone
 
 from temba.api.models import Resthook
 from temba.campaigns.models import Campaign, CampaignEvent
 from temba.classifiers.models import Classifier
 from temba.contacts.models import URN, ContactField, ContactGroup
-from temba.flows.models import (
-    Flow,
-    FlowSession,
-    FlowStart,
-    FlowStartCount,
-    FlowUserConflictException,
-    FlowVersionConflictException,
-)
-from temba.flows.tasks import squash_flow_counts, update_session_wait_expires
+from temba.flows.models import Flow, FlowStart, FlowStartCount, FlowUserConflictException, FlowVersionConflictException
+from temba.flows.tasks import squash_flow_counts
 from temba.globals.models import Global
 from temba.orgs.integrations.dtone import DTOneType
 from temba.tests import CRUDLTestMixin, TembaTest, matchers
 from temba.tests.engine import MockSessionWriter
 from temba.triggers.models import Trigger
 from temba.utils import json
-from temba.utils.uuid import uuid4
 
 
 class FlowTest(TembaTest, CRUDLTestMixin):
@@ -724,63 +714,3 @@ class FlowTest(TembaTest, CRUDLTestMixin):
         self.assertEqual(0, parent.field_dependencies.all().count())
         self.assertEqual(0, parent.flow_dependencies.all().count())
         self.assertEqual(0, parent.group_dependencies.all().count())
-
-    def test_update_expiration_task(self):
-        flow1 = self.create_flow("Test 1")
-        flow2 = self.create_flow("Test 2")
-
-        # create waiting session and run for flow 1
-        session1 = FlowSession.objects.create(
-            uuid=uuid4(),
-            org=self.org,
-            contact=self.contact,
-            current_flow=flow1,
-            status=FlowSession.STATUS_WAITING,
-            output_url="http://sessions.com/123.json",
-            wait_started_on=datetime(2022, 1, 1, 0, 0, 0, 0, tzone.utc),
-            wait_expires_on=datetime(2022, 1, 2, 0, 0, 0, 0, tzone.utc),
-            wait_resume_on_expire=False,
-        )
-
-        # create non-waiting session for flow 1
-        session2 = FlowSession.objects.create(
-            uuid=uuid4(),
-            org=self.org,
-            contact=self.contact,
-            current_flow=flow1,
-            status=FlowSession.STATUS_COMPLETED,
-            output_url="http://sessions.com/234.json",
-            wait_started_on=datetime(2022, 1, 1, 0, 0, 0, 0, tzone.utc),
-            wait_expires_on=None,
-            wait_resume_on_expire=False,
-            ended_on=timezone.now(),
-        )
-
-        # create waiting session for flow 2
-        session3 = FlowSession.objects.create(
-            uuid=uuid4(),
-            org=self.org,
-            contact=self.contact,
-            current_flow=flow2,
-            status=FlowSession.STATUS_WAITING,
-            output_url="http://sessions.com/345.json",
-            wait_started_on=datetime(2022, 1, 1, 0, 0, 0, 0, tzone.utc),
-            wait_expires_on=datetime(2022, 1, 2, 0, 0, 0, 0, tzone.utc),
-            wait_resume_on_expire=False,
-        )
-
-        # update flow 1 expires to 2 hours
-        flow1.expires_after_minutes = 120
-        flow1.save(update_fields=("expires_after_minutes",))
-
-        update_session_wait_expires(flow1.id)
-
-        # new session expiration should be wait_started_on + 1 hour
-        session1.refresh_from_db()
-        self.assertEqual(datetime(2022, 1, 1, 2, 0, 0, 0, tzone.utc), session1.wait_expires_on)
-
-        # other sessions should be unchanged
-        session2.refresh_from_db()
-        session3.refresh_from_db()
-        self.assertIsNone(session2.wait_expires_on)
-        self.assertEqual(datetime(2022, 1, 2, 0, 0, 0, 0, tzone.utc), session3.wait_expires_on)

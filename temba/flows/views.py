@@ -32,7 +32,6 @@ from temba import mailroom
 from temba.channels.models import Channel
 from temba.contacts.models import URN
 from temba.flows.models import Flow, FlowRun, FlowSession, FlowStart
-from temba.flows.tasks import update_session_wait_expires
 from temba.ivr.models import Call
 from temba.orgs.models import IntegrationType, Org
 from temba.orgs.views.base import (
@@ -45,7 +44,7 @@ from temba.orgs.views.base import (
 )
 from temba.orgs.views.mixins import BulkActionMixin, OrgObjPermsMixin, OrgPermsMixin
 from temba.triggers.models import Trigger
-from temba.utils import analytics, gettext, json, languages, on_transaction_commit
+from temba.utils import analytics, gettext, json, languages
 from temba.utils.fields import (
     CheckboxWidget,
     ContactSearchWidget,
@@ -584,8 +583,6 @@ class FlowCRUDL(SmartCRUDL):
 
             if keyword_triggers is not None:
                 self.update_triggers(obj, self.request.user, keyword_triggers)
-
-            on_transaction_commit(lambda: update_session_wait_expires.delay(obj.id))
 
             return obj
 
