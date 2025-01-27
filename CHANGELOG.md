@@ -1,3 +1,8 @@
+v10.1.24 (2025-01-27)
+-------------------------
+ * Remove updating session wait expirations when a flow is edited
+ * Remove no longer used session status EXPIRED
+
 v10.1.23 (2025-01-27)
 -------------------------
  * Make FlowSession.wait_resume_on_expire nullable
