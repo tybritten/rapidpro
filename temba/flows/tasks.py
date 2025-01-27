@@ -3,11 +3,9 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone as tzone
 
-from celery import shared_task
 from django_redis import get_redis_connection
 
 from django.conf import settings
-from django.db.models import F
 from django.utils import timezone
 from django.utils.timesince import timesince
 
@@ -15,23 +13,9 @@ from temba import mailroom
 from temba.utils.crons import cron_task
 from temba.utils.models import delete_in_batches
 
-from .models import Flow, FlowActivityCount, FlowResultCount, FlowRevision, FlowRun, FlowSession, FlowStartCount
+from .models import FlowActivityCount, FlowResultCount, FlowRevision, FlowRun, FlowSession, FlowStartCount
 
 logger = logging.getLogger(__name__)
-
-
-@shared_task
-def update_session_wait_expires(flow_id):
-    """
-    Update the wait_expires_on of any session currently waiting in the given flow
-    """
-
-    flow = Flow.objects.get(id=flow_id)
-    session_ids = flow.sessions.filter(status=FlowSession.STATUS_WAITING).values_list("id", flat=True)
-
-    for id_batch in itertools.batched(session_ids, 1000):
-        batch = FlowSession.objects.filter(id__in=id_batch)
-        batch.update(wait_expires_on=F("wait_started_on") + timedelta(minutes=flow.expires_after_minutes))
 
 
 @cron_task(lock_timeout=7200)
