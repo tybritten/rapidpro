@@ -1751,8 +1751,14 @@ class ContactFire(models.Model):
     contact = models.ForeignKey(Contact, on_delete=models.PROTECT, related_name="fires", db_index=False)  # index below
     fire_type = models.CharField(max_length=1, choices=TYPE_CHOICES)
     scope = models.CharField(max_length=64)  # e.g. campaign event id
-    extra = models.JSONField(default=dict)  # e.g. session id
     fire_on = models.DateTimeField(db_index=True)
+
+    # used to ensure wait events don't act on a session that's already changed
+    session_uuid = models.UUIDField(null=True)
+    sprint_uuid = models.UUIDField(null=True)
+
+    # TODO remove
+    extra = models.JSONField(null=True)
 
     class Meta:
         constraints = [
