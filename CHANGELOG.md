@@ -1,3 +1,8 @@
+v10.1.25 (2025-01-29)
+-------------------------
+ * Add session and sprint UUID fields to fires and last_sprint_uuid to sessions
+ * Tweak contact interrupt modal
+
 v10.1.24 (2025-01-27)
 -------------------------
  * Remove updating session wait expirations when a flow is edited
