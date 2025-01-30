@@ -1,3 +1,7 @@
+v10.1.26 (2025-01-30)
+-------------------------
+ * Label dropdown fixes
+
 v10.1.25 (2025-01-29)
 -------------------------
  * Add session and sprint UUID fields to fires and last_sprint_uuid to sessions
