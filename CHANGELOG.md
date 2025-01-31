@@ -1,3 +1,7 @@
+v10.1.28 (2025-01-31)
+-------------------------
+ * Fix dropdowns embedded in modals
+
 v10.1.27 (2025-01-30)
 -------------------------
  * Fix org switcher on safari
