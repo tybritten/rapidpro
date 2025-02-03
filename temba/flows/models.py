@@ -1156,6 +1156,7 @@ class FlowRun(models.Model):
 
     # session this run belongs to (can be null if session has been trimmed)
     session = models.ForeignKey(FlowSession, on_delete=models.PROTECT, related_name="runs", null=True)
+    session_uuid = models.UUIDField(null=True)  # to replace session_id above
 
     # when this run was created, last modified and exited
     created_on = models.DateTimeField(default=timezone.now)
