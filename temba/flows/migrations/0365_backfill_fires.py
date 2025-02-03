@@ -64,7 +64,7 @@ def backfill_fires(apps, schema_editor):
         num_fires_created += len(fires)
         try:
             ContactFire.objects.bulk_create(fires)
-        except Exception:
+        except Exception:  # pragma: no cover
             for fire in fires:
                 try:
                     fire.save()
