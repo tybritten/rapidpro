@@ -1,3 +1,7 @@
+v10.1.29 (2025-02-03)
+-------------------------
+ * Data migration to create fires for existing waiting sessions
+
 v10.1.28 (2025-01-31)
 -------------------------
  * Fix dropdowns embedded in modals
