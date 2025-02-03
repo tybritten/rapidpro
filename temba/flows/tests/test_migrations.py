@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from temba.contacts.models import ContactFire
 from temba.flows.models import FlowSession
+from temba.ivr.models import Call
 from temba.tests import MigrationTest
 
 
@@ -16,6 +17,17 @@ class BackfillFiresTest(MigrationTest):
     def setUpBeforeMigration(self, apps):
         self.contact1 = self.create_contact("Ann", phone="+1234567890")
         self.contact2 = self.create_contact("Bob", phone="+1234567891")
+        self.contact3 = self.create_contact("Cat", phone="+1234567892")
+        self.call = Call.objects.create(
+            org=self.org,
+            channel=self.channel,
+            direction=Call.DIRECTION_IN,
+            contact=self.contact3,
+            contact_urn=self.contact3.get_urn(),
+            status="A",
+            created_on=timezone.now(),
+            duration=15,
+        )
 
         self.session1 = FlowSession.objects.create(  # completed session
             uuid=uuid4(),
@@ -58,6 +70,17 @@ class BackfillFiresTest(MigrationTest):
             wait_expires_on=datetime(2025, 1, 3, 15, 24, 0, 0, tzone.utc),
             timeout_on=datetime(2025, 1, 3, 15, 25, 0, 0, tzone.utc),
         )
+        self.session5 = FlowSession.objects.create(  # IVR session with expiration
+            uuid=uuid4(),
+            org=self.org,
+            contact=self.contact3,
+            status="W",
+            session_type="V",
+            call_id=self.call.id,
+            responded=False,
+            output_url="http://session.json",
+            wait_expires_on=datetime(2025, 1, 3, 15, 26, 0, 0, tzone.utc),
+        )
 
     def test_migration(self):
         self.session1.refresh_from_db()
@@ -80,7 +103,12 @@ class BackfillFiresTest(MigrationTest):
         self.assertIsNone(self.session4.wait_expires_on)
         self.assertIsNone(self.session4.timeout_on)
 
-        self.assertEqual(4, ContactFire.objects.count())
+        self.session5.refresh_from_db()
+        self.assertIsNotNone(self.session5.last_sprint_uuid)
+        self.assertIsNone(self.session5.wait_expires_on)
+        self.assertIsNone(self.session5.timeout_on)
+
+        self.assertEqual(5, ContactFire.objects.count())
         self.assertTrue(
             ContactFire.objects.filter(
                 contact=self.contact1,
@@ -120,4 +148,24 @@ class BackfillFiresTest(MigrationTest):
                 session_uuid=self.session4.uuid,
                 sprint_uuid=self.session4.last_sprint_uuid,
             ).exists()
+        )
+        self.assertTrue(
+            ContactFire.objects.filter(
+                contact=self.contact3,
+                fire_type="E",
+                scope="",
+                fire_on=datetime(2025, 1, 3, 15, 26, 0, 0, tzone.utc),
+                session_uuid=self.session5.uuid,
+                sprint_uuid=self.session5.last_sprint_uuid,
+            ).exists()
+        )
+
+        fire = ContactFire.objects.get(contact=self.contact3)
+        self.assertEqual(
+            {
+                "call_id": self.call.id,
+                "session_id": self.session5.id,
+                "session_modified_on": self.session5.modified_on.isoformat(),
+            },
+            fire.extra,
         )

@@ -26,20 +26,22 @@ def backfill_fires(apps, schema_editor):
         for session in batch:
             if not session.last_sprint_uuid:
                 session.last_sprint_uuid = uuid4()
-                session.save(update_fields=["last_sprint_uuid"])
 
             if session.wait_expires_on:
-                fires.append(
-                    ContactFire(
-                        org_id=session.org_id,
-                        contact_id=session.contact_id,
-                        fire_type="E",
-                        scope="",
-                        fire_on=session.wait_expires_on,
-                        session_uuid=session.uuid,
-                        sprint_uuid=session.last_sprint_uuid,
-                    )
+                fire = ContactFire(
+                    org_id=session.org_id,
+                    contact_id=session.contact_id,
+                    fire_type="E",
+                    scope="",
+                    fire_on=session.wait_expires_on,
+                    session_uuid=session.uuid,
+                    sprint_uuid=session.last_sprint_uuid,
+                    extra={"session_id": session.id, "session_modified_on": session.modified_on.isoformat()},
                 )
+                if session.call_id:
+                    fire.extra["call_id"] = session.call_id
+
+                fires.append(fire)
                 session.wait_expires_on = None
 
             if session.timeout_on:
@@ -52,6 +54,7 @@ def backfill_fires(apps, schema_editor):
                         fire_on=session.timeout_on,
                         session_uuid=session.uuid,
                         sprint_uuid=session.last_sprint_uuid,
+                        extra={"session_id": session.id, "session_modified_on": session.modified_on.isoformat()},
                     )
                 )
                 session.timeout_on = None
@@ -63,6 +66,12 @@ def backfill_fires(apps, schema_editor):
 
         num_sessions_updated += len(batch)
         print(f"Updated {num_sessions_updated} sessions, created {num_fires_created} fires")
+
+
+def apply_manual():  # pragma: no cover
+    from django.apps import apps
+
+    backfill_fires(apps, None)
 
 
 class Migration(migrations.Migration):
