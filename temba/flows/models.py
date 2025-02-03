@@ -1048,16 +1048,14 @@ class FlowSession(models.Model):
     modified_on = models.DateTimeField(default=timezone.now)
     ended_on = models.DateTimeField(null=True)
 
-    # if session is waiting for input...
-    timeout_on = models.DateTimeField(null=True)  # when it should timeout (set by courier when last msg is sent)
-    wait_expires_on = models.DateTimeField(null=True)  # when waiting run can be expired
-
     # the flow of the waiting run
     current_flow = models.ForeignKey("flows.Flow", related_name="sessions", null=True, on_delete=models.PROTECT)
 
     # TODO drop
     wait_resume_on_expire = models.BooleanField(null=True)
     wait_started_on = models.DateTimeField(null=True)
+    wait_expires_on = models.DateTimeField(null=True)
+    timeout_on = models.DateTimeField(null=True)
 
     @property
     def output_json(self):

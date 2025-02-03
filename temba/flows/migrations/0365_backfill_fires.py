@@ -62,7 +62,14 @@ def backfill_fires(apps, schema_editor):
             session.save(update_fields=("last_sprint_uuid", "wait_expires_on", "timeout_on"))
 
         num_fires_created += len(fires)
-        ContactFire.objects.bulk_create(fires)
+        try:
+            ContactFire.objects.bulk_create(fires)
+        except Exception:
+            for fire in fires:
+                try:
+                    fire.save()
+                except Exception:
+                    print(f"Failed to save fire contact={fire.contact_id} type={fire.fire_type}")
 
         num_sessions_updated += len(batch)
         print(f"Updated {num_sessions_updated} sessions, created {num_fires_created} fires")
