@@ -1,3 +1,8 @@
+v10.1.30 (2025-02-04)
+-------------------------
+ * Add FlowRun.session_uuid to replace FlowRun.session_id
+ * Tweaks to previous data migration
+
 v10.1.29 (2025-02-03)
 -------------------------
  * Data migration to create fires for existing waiting sessions
