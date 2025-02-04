@@ -1,3 +1,7 @@
+v10.1.31 (2025-02-04)
+-------------------------
+ * Add deprecation notice for facebook topics
+
 v10.1.30 (2025-02-04)
 -------------------------
  * Add FlowRun.session_uuid to replace FlowRun.session_id
