@@ -1,3 +1,7 @@
+v10.1.32 (2025-02-04)
+-------------------------
+ * Drop no longer used indexes on flows_flowsession and make responded and modified_on nullable
+
 v10.1.31 (2025-02-04)
 -------------------------
  * Add deprecation notice for facebook topics
