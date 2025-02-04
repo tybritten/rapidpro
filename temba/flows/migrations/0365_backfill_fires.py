@@ -6,7 +6,7 @@ from django.db import migrations
 from django.db.models import Q
 
 
-def backfill_fires(apps, schema_editor):
+def backfill_fires(apps, schema_editor):  # pragma: no cover
     ContactFire = apps.get_model("contacts", "ContactFire")
     FlowSession = apps.get_model("flows", "FlowSession")
 

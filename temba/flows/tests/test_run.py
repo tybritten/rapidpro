@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone as tzone
+from datetime import datetime, timezone as tzone
 from unittest.mock import patch
 from uuid import UUID
 
@@ -25,7 +25,6 @@ class FlowRunTest(TembaTest):
             status=FlowSession.STATUS_COMPLETED,
             output_url="http://sessions.com/123.json",
             ended_on=timezone.now(),
-            wait_resume_on_expire=False,
         )
 
         # create run with old style path JSON
@@ -326,9 +325,6 @@ class FlowRunTest(TembaTest):
             status=FlowSession.STATUS_WAITING,
             output_url="http://sessions.com/123.json",
             created_on=timezone.now(),
-            wait_started_on=timezone.now(),
-            wait_expires_on=timezone.now() + timedelta(days=7),
-            wait_resume_on_expire=False,
         )
         FlowRun.objects.create(
             id=4_000_000_000,

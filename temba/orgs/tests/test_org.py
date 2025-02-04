@@ -1,5 +1,5 @@
 import io
-from datetime import date, datetime, timedelta, timezone as tzone
+from datetime import date, timedelta, timezone as tzone
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -525,9 +525,6 @@ class OrgDeleteTest(TembaTest):
                 current_flow=flow1,
                 status=FlowSession.STATUS_WAITING,
                 output_url="http://sessions.com/123.json",
-                wait_started_on=datetime(2022, 1, 1, 0, 0, 0, 0, tzone.utc),
-                wait_expires_on=datetime(2022, 1, 2, 0, 0, 0, 0, tzone.utc),
-                wait_resume_on_expire=False,
             )
         )
         add(
