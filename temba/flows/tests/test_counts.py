@@ -1,4 +1,4 @@
-from datetime import date, timedelta, timezone as tzone
+from datetime import date, timezone as tzone
 
 from django.db import connection
 from django.utils import timezone
@@ -20,9 +20,6 @@ class FlowActivityCountTest(TembaTest):
             status=FlowSession.STATUS_WAITING,
             output_url="http://sessions.com/123.json",
             created_on=timezone.now(),
-            wait_started_on=timezone.now(),
-            wait_expires_on=timezone.now() + timedelta(days=7),
-            wait_resume_on_expire=False,
         )
 
         def create_run(status, node_uuid):
@@ -85,9 +82,6 @@ class FlowActivityCountTest(TembaTest):
             status=FlowSession.STATUS_WAITING,
             output_url="http://sessions.com/123.json",
             created_on=timezone.now(),
-            wait_started_on=timezone.now(),
-            wait_expires_on=timezone.now() + timedelta(days=7),
-            wait_resume_on_expire=False,
         )
 
         def create_runs(flow_status_pairs: tuple) -> list:
