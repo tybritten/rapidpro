@@ -1,7 +1,5 @@
 from datetime import timedelta
 
-import iso8601
-
 from django.utils import timezone
 
 from temba.channels.models import Channel
@@ -271,27 +269,14 @@ class MockSessionWriter:
             )
 
         if self.output["status"] == "waiting":
-            wait_event = None
-            for evt in self.events:
-                if evt["type"].endswith("_wait"):
-                    wait_event = evt
-
-            wait_started_on = timezone.now()
-            wait_expires_on = iso8601.parse_date(wait_event["expires_on"]) if wait_event["expires_on"] else None
-            wait_resume_on_expire = False  # this doesn't support sub-flows
             ended_on = None
         else:
-            wait_started_on = None
-            wait_expires_on = None
-            wait_resume_on_expire = False
             ended_on = timezone.now()
 
         # create or update session object itself
         if self.session:
             self.session.output = self.output
             self.session.status = SESSION_STATUSES[self.output["status"]]
-            self.session.wait_started_on = wait_started_on
-            self.session.wait_expires_on = wait_expires_on
             self.session.ended_on = ended_on
             self.session.save(update_fields=("output", "status", "wait_started_on", "wait_expires_on", "ended_on"))
         else:
@@ -302,9 +287,6 @@ class MockSessionWriter:
                 session_type=db_flow_types[self.output["type"]],
                 output=self.output,
                 status=SESSION_STATUSES[self.output["status"]],
-                wait_started_on=wait_started_on,
-                wait_expires_on=wait_expires_on,
-                wait_resume_on_expire=wait_resume_on_expire,
                 ended_on=ended_on,
             )
 

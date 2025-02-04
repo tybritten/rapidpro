@@ -1036,22 +1036,20 @@ class FlowSession(models.Model):
     # the call used for flow sessions over IVR
     call = models.OneToOneField("ivr.Call", on_delete=models.PROTECT, null=True, related_name="session")
 
-    # whether the contact has responded in this session
-    responded = models.BooleanField(default=False)
-
     # the engine output of this session (either stored in this field or at the URL pointed to by output_url)
     output = JSONAsTextField(null=True, default=dict)
     output_url = models.URLField(null=True, max_length=2048)
 
     # when this session was created and ended
     created_on = models.DateTimeField(default=timezone.now)
-    modified_on = models.DateTimeField(default=timezone.now)
     ended_on = models.DateTimeField(null=True)
 
     # the flow of the waiting run
     current_flow = models.ForeignKey("flows.Flow", related_name="sessions", null=True, on_delete=models.PROTECT)
 
     # TODO drop
+    modified_on = models.DateTimeField(null=True)
+    responded = models.BooleanField(null=True)
     wait_resume_on_expire = models.BooleanField(null=True)
     wait_started_on = models.DateTimeField(null=True)
     wait_expires_on = models.DateTimeField(null=True)
@@ -1086,20 +1084,8 @@ class FlowSession(models.Model):
         indexes = [
             # for finding the waiting session for a contact
             models.Index(name="flowsessions_contact_waiting", fields=("contact_id",), condition=Q(status="W")),
-            # for finding wait timeouts to be resumed
-            models.Index(
-                name="flowsessions_timed_out",
-                fields=("timeout_on",),
-                condition=Q(timeout_on__isnull=False, status="W"),
-            ),
             # for trimming ended sessions
             models.Index(name="flowsessions_ended", fields=("ended_on",), condition=Q(ended_on__isnull=False)),
-            # for expiring waiting sessions
-            models.Index(
-                name="flows_session_waiting_expires",
-                fields=("wait_expires_on",),
-                condition=Q(status="W", wait_expires_on__isnull=False),
-            ),
         ]
         constraints = [
             # ensure that non-waiting sessions have an ended_on

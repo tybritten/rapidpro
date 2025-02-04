@@ -584,7 +584,6 @@ class TembaTest(SmartminTest):
             status=FlowSession.STATUS_COMPLETED,
             output_url="http://sessions.com/123.json",
             call=call,
-            wait_resume_on_expire=False,
             ended_on=timezone.now(),
         )
         FlowRun.objects.create(

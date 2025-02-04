@@ -53,7 +53,6 @@ class CallTest(TembaTest):
             call=call,
             status=FlowSession.STATUS_COMPLETED,
             output={"status": "waiting"},
-            wait_resume_on_expire=False,
             ended_on=timezone.now(),
         )
 
