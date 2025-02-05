@@ -126,7 +126,7 @@ class EndpointsTest(APITestMixin, TembaTest):
         endpoint_url = reverse("api.internal.orgs") + ".json"
         self.assertGet(
             endpoint_url,
-            [self.admin],
+            [self.agent, self.editor, self.admin],
             results=[{"id": self.org.id, "name": "Nyaruka"}],
             num_queries=NUM_BASE_QUERIES + 1,
         )
