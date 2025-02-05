@@ -1015,7 +1015,6 @@ class FlowSession(models.Model):
     STATUS_COMPLETED = "C"
     STATUS_INTERRUPTED = "I"
     STATUS_FAILED = "F"
-
     STATUS_CHOICES = (
         (STATUS_WAITING, "Waiting"),
         (STATUS_COMPLETED, "Completed"),
@@ -1046,14 +1045,6 @@ class FlowSession(models.Model):
 
     # the flow of the waiting run
     current_flow = models.ForeignKey("flows.Flow", related_name="sessions", null=True, on_delete=models.PROTECT)
-
-    # TODO drop
-    modified_on = models.DateTimeField(null=True)
-    responded = models.BooleanField(null=True)
-    wait_resume_on_expire = models.BooleanField(null=True)
-    wait_started_on = models.DateTimeField(null=True)
-    wait_expires_on = models.DateTimeField(null=True)
-    timeout_on = models.DateTimeField(null=True)
 
     @property
     def output_json(self):

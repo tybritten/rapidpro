@@ -278,7 +278,7 @@ class MockSessionWriter:
             self.session.output = self.output
             self.session.status = SESSION_STATUSES[self.output["status"]]
             self.session.ended_on = ended_on
-            self.session.save(update_fields=("output", "status", "wait_started_on", "wait_expires_on", "ended_on"))
+            self.session.save(update_fields=("output", "status", "ended_on"))
         else:
             self.session = FlowSession.objects.create(
                 uuid=self.output["uuid"],

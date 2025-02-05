@@ -21,9 +21,6 @@ class FlowSessionTest(TembaTest):
                 created_on=created_on,
                 output_url="http://sessions.com/123.json",
                 status=FlowSession.STATUS_WAITING,
-                wait_started_on=timezone.now(),
-                wait_expires_on=timezone.now() + timedelta(days=7),
-                wait_resume_on_expire=False,
             )
 
         create_session(self.org, timezone.now() - timedelta(days=88))
@@ -62,9 +59,6 @@ class FlowSessionTest(TembaTest):
             contact=contact,
             output_url="http://sessions.com/123.json",
             status=FlowSession.STATUS_WAITING,
-            wait_started_on=timezone.now(),
-            wait_expires_on=timezone.now() + timedelta(days=7),
-            wait_resume_on_expire=False,
         )
         session2 = FlowSession.objects.create(
             uuid=uuid4(),
@@ -72,9 +66,6 @@ class FlowSessionTest(TembaTest):
             contact=contact,
             output_url="http://sessions.com/234.json",
             status=FlowSession.STATUS_WAITING,
-            wait_started_on=timezone.now(),
-            wait_expires_on=timezone.now() + timedelta(days=7),
-            wait_resume_on_expire=False,
         )
         session3 = FlowSession.objects.create(
             uuid=uuid4(),
@@ -82,9 +73,6 @@ class FlowSessionTest(TembaTest):
             contact=contact,
             output_url="http://sessions.com/345.json",
             status=FlowSession.STATUS_WAITING,
-            wait_started_on=timezone.now(),
-            wait_expires_on=timezone.now() + timedelta(days=7),
-            wait_resume_on_expire=False,
         )
         run1 = FlowRun.objects.create(
             org=self.org, flow=flow, contact=contact, session=session1, status=FlowRun.STATUS_WAITING

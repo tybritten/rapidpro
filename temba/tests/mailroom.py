@@ -873,9 +873,6 @@ def exit_sessions(session_ids: list, status: str):
     FlowSession.objects.filter(id__in=session_ids).update(
         status=status,
         ended_on=timezone.now(),
-        wait_started_on=None,
-        wait_expires_on=None,
-        timeout_on=None,
         current_flow_id=None,
     )
 
