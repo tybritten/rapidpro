@@ -1,3 +1,7 @@
+v10.1.33 (2025-02-05)
+-------------------------
+ * Drop no longer used fields on FlowSession
+
 v10.1.32 (2025-02-04)
 -------------------------
  * Drop no longer used indexes on flows_flowsession and make responded and modified_on nullable
