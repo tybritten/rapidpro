@@ -12,7 +12,7 @@ from temba import mailroom
 from temba.airtime.models import AirtimeTransfer
 from temba.campaigns.models import Campaign, CampaignEvent, EventFire
 from temba.channels.models import ChannelEvent
-from temba.contacts.models import URN, Contact, ContactExport, ContactField
+from temba.contacts.models import URN, Contact, ContactExport, ContactField, ContactFire
 from temba.flows.models import FlowSession, FlowStart
 from temba.ivr.models import Call
 from temba.locations.models import AdminBoundary
@@ -1130,8 +1130,20 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
         event2_flow = self.create_flow("Reminder Flow")
         event1 = CampaignEvent.create_message_event(self.org, self.admin, campaign, joined, 2, unit="D", message="Hi")
         event2 = CampaignEvent.create_flow_event(self.org, self.admin, campaign, joined, 2, unit="D", flow=event2_flow)
-        fire1 = EventFire.objects.create(event=event1, contact=contact1, scheduled=timezone.now() + timedelta(days=2))
-        fire2 = EventFire.objects.create(event=event2, contact=contact1, scheduled=timezone.now() + timedelta(days=5))
+        fire1 = ContactFire.objects.create(
+            org=self.org,
+            contact=contact1,
+            fire_type=ContactFire.TYPE_CAMPAIGN,
+            scope=str(event1.id),
+            fire_on=timezone.now() + timedelta(days=2),
+        )
+        fire2 = ContactFire.objects.create(
+            org=self.org,
+            contact=contact1,
+            fire_type=ContactFire.TYPE_CAMPAIGN,
+            scope=str(event2.id),
+            fire_on=timezone.now() + timedelta(days=5),
+        )
 
         # create scheduled and regular broadcasts which send to both groups
         bcast1 = self.create_broadcast(
@@ -1181,7 +1193,7 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
                 "results": [
                     {
                         "type": "campaign_event",
-                        "scheduled": fire1.scheduled.isoformat(),
+                        "scheduled": fire1.fire_on.isoformat(),
                         "repeat_period": None,
                         "campaign": {"uuid": str(campaign.uuid), "name": "Reminders"},
                         "message": "Hi",
@@ -1200,7 +1212,7 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
                     },
                     {
                         "type": "campaign_event",
-                        "scheduled": fire2.scheduled.isoformat(),
+                        "scheduled": fire2.fire_on.isoformat(),
                         "repeat_period": None,
                         "campaign": {"uuid": str(campaign.uuid), "name": "Reminders"},
                         "flow": {"uuid": str(event2_flow.uuid), "name": "Reminder Flow"},

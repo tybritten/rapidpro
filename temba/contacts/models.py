@@ -668,30 +668,35 @@ class Contact(LegacyUUIDMixin, SmartModel):
             .select_related("schedule")
         )
 
-    def get_scheduled(self, *, reverse: bool = False) -> list:
+    def get_scheduled(self) -> list:
         """
-        Gets this contact's upcoming scheduled events
+        Gets this contact's upcoming activity
         """
         from temba.campaigns.models import CampaignEvent
 
-        fires = self.campaign_fires.filter(
-            event__is_active=True, event__campaign__is_archived=False, scheduled__gte=timezone.now()
-        ).select_related("event", "event__flow", "event__campaign")
+        fires = self.fires.filter(fire_type=ContactFire.TYPE_CAMPAIGN)
+        event_ids = {int(f.scope) for f in fires}
+        events = CampaignEvent.objects.filter(
+            campaign__org=self.org, campaign__is_archived=False, id__in=event_ids, is_active=True
+        )
+        events_by_id = {e.id: e for e in events}
 
         merged = []
         for fire in fires:
-            obj = {
-                "type": "campaign_event",
-                "scheduled": fire.scheduled.isoformat(),
-                "repeat_period": None,
-                "campaign": fire.event.campaign.as_export_ref(),
-            }
-            if fire.event.event_type == CampaignEvent.TYPE_FLOW:
-                obj["flow"] = fire.event.flow.as_export_ref()
-            else:
-                obj["message"] = fire.event.get_message(contact=self)
+            event = events_by_id.get(int(fire.scope))
+            if event:
+                obj = {
+                    "type": "campaign_event",
+                    "scheduled": fire.fire_on.isoformat(),
+                    "repeat_period": None,
+                    "campaign": event.campaign.as_export_ref(),
+                }
+                if event.event_type == CampaignEvent.TYPE_FLOW:
+                    obj["flow"] = event.flow.as_export_ref()
+                else:
+                    obj["message"] = event.get_message(contact=self)
 
-            merged.append(obj)
+                merged.append(obj)
 
         for broadcast in self.get_scheduled_broadcasts():
             merged.append(
@@ -713,7 +718,7 @@ class Contact(LegacyUUIDMixin, SmartModel):
                 }
             )
 
-        return sorted(merged, key=lambda k: k["scheduled"], reverse=reverse)
+        return sorted(merged, key=lambda k: k["scheduled"])
 
     def get_history(self, after: datetime, before: datetime, include_event_types: set, ticket, limit: int) -> list:
         """
