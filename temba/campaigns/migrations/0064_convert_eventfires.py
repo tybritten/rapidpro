@@ -33,6 +33,12 @@ def convert_eventfires(apps, schema_editor):
         print(f"Converted {num_converted} event fires")
 
 
+def apply_manual():  # pragma: no cover
+    from django.apps import apps
+
+    convert_eventfires(apps, None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
