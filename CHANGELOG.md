@@ -1,3 +1,8 @@
+v10.1.35 (2025-02-06)
+-------------------------
+ * Read scheduled acivity from new fire model instead of eventfire
+ * Data migration to convert old event fires to new contact fires model
+
 v10.1.34 (2025-02-05)
 -------------------------
  * Fix access to orgs internal API endpoint
