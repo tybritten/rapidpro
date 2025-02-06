@@ -352,7 +352,7 @@ class ContactCRUDL(SmartCRUDL):
 
     class Scheduled(BaseReadView):
         """
-        Merged list of upcoming scheduled events (campaign event fires and scheduled broadcasts)
+        Merged list of upcoming activity (campaign event fires and scheduled broadcasts)
         """
 
         permission = "contacts.contact_read"
