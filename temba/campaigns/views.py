@@ -492,15 +492,10 @@ class CampaignEventCRUDL(SmartCRUDL):
             event_fires = self.get_object().fires.all()
 
             fired_event_fires = event_fires.exclude(fired=None).order_by("-fired", "pk")
-            scheduled_event_fires = event_fires.filter(fired=None).order_by("scheduled", "pk")
 
             fired = fired_event_fires[:25]
             context["fired_event_fires"] = fired
             context["fired_event_fires_count"] = fired_event_fires.count() - len(fired)
-
-            scheduled = scheduled_event_fires[:25]
-            context["scheduled_event_fires"] = scheduled
-            context["scheduled_event_fires_count"] = scheduled_event_fires.count() - len(scheduled)
 
             return context
 

@@ -16,53 +16,6 @@
       </div>
     {% endif %}
   </div>
-  {% if not scheduled_event_fires %}
-    <table class="list">
-      <thead>
-        <tr>
-          <th colspan="99">{% trans "Upcoming Events" %}</th>
-        </tr>
-      </thead>
-      <body>
-        <tr class="empty_list">
-          <td>
-            <div class="ml-3">{% trans "No events scheduled" %}</div>
-          </td>
-        </tr>
-      </body>
-    </table>
-  {% else %}
-    <table class="list">
-      <thead>
-        <tr>
-          <th colspan="99">Next {{ scheduled_event_fires|length|intcomma }} Event{{ scheduled_event_fires|length|pluralize }}</th>
-        </tr>
-      </thead>
-      <body>
-        {% for fire in scheduled_event_fires %}
-          <tr class="event_fire">
-            <td>
-              <a href="{% url 'contacts.contact_read' fire.contact.uuid %}" class="name linked">{{ fire.contact|name_or_urn:user_org }}</a>
-              <div class="relative-to">
-                <div class="flex">
-                  {{ object.relative_to }}&nbsp;
-                  {{ fire.get_relative_to_value|duration }}
-                </div>
-              </div>
-            </td>
-            <td class="event_date">{{ fire.scheduled|duration }}</td>
-          </tr>
-        {% endfor %}
-        {% if scheduled_event_fires_count %}
-          <tr>
-            <td colspan="2">
-              <div class="total">{{ scheduled_event_fires_count }} more</div>
-            </td>
-          </tr>
-        {% endif %}
-      </body>
-    </table>
-  {% endif %}
   <div class="mt-6"></div>
   {% if not fired_event_fires %}
     <table class="list">
