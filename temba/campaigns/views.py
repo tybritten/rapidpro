@@ -489,14 +489,7 @@ class CampaignEventCRUDL(SmartCRUDL):
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
-            event_fires = self.get_object().fires.all()
-
-            fired_event_fires = event_fires.exclude(fired=None).order_by("-fired", "pk")
-
-            fired = fired_event_fires[:25]
-            context["fired_event_fires"] = fired
-            context["fired_event_fires_count"] = fired_event_fires.count() - len(fired)
-
+            context["recent_fires"] = self.object.get_recent_fires()
             return context
 
         def build_context_menu(self, menu):
