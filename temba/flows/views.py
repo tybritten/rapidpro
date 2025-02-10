@@ -31,7 +31,7 @@ from django.views.generic import FormView
 from temba import mailroom
 from temba.channels.models import Channel
 from temba.contacts.models import URN
-from temba.flows.models import Flow, FlowRun, FlowSession, FlowStart
+from temba.flows.models import Flow, FlowSession, FlowStart
 from temba.ivr.models import Call
 from temba.orgs.models import IntegrationType, Org
 from temba.orgs.views.base import (
@@ -147,19 +147,6 @@ class FlowSessionCRUDL(SmartCRUDL):
                 site=f"https://{session.org.get_brand_domain()}",
             )
             return JsonResponse(output, json_dumps_params=dict(indent=2))
-
-
-class FlowRunCRUDL(SmartCRUDL):
-    actions = ("delete",)
-    model = FlowRun
-
-    class Delete(ModalFormMixin, OrgObjPermsMixin, SmartDeleteView):
-        fields = ("id",)
-        success_message = None
-
-        def post(self, request, *args, **kwargs):
-            self.get_object().delete()
-            return HttpResponse()
 
 
 class FlowCRUDL(SmartCRUDL):

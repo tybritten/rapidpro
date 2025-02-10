@@ -1,10 +1,9 @@
 from datetime import datetime, timezone as tzone
-from unittest.mock import patch
 from uuid import UUID
 
 from django.utils import timezone
 
-from temba.flows.models import FlowRun, FlowSession, FlowStart, FlowStartCount
+from temba.flows.models import FlowRun, FlowSession
 from temba.tests import TembaTest, matchers
 from temba.tests.engine import MockSessionWriter
 from temba.utils.uuid import uuid4
@@ -174,146 +173,6 @@ class FlowRunTest(TembaTest):
         self.assertEqual(run.modified_on.isoformat(), run_json["modified_on"])
         self.assertIsNone(run_json["exit_type"])
         self.assertIsNone(run_json["exited_on"])
-
-    def _check_deletion(self, by_archiver: bool, expected: dict, session_completed=True):
-        """
-        Runs our favorites flow, then deletes the run and asserts our final state
-        """
-
-        flow = self.get_flow("favorites_v13")
-        flow_nodes = flow.get_definition()["nodes"]
-        color_prompt = flow_nodes[0]
-        color_split = flow_nodes[2]
-        beer_prompt = flow_nodes[3]
-        beer_split = flow_nodes[5]
-        name_prompt = flow_nodes[6]
-        name_split = flow_nodes[7]
-        end_prompt = flow_nodes[8]
-
-        start = FlowStart.create(flow, self.admin, contacts=[self.contact])
-        if session_completed:
-            (
-                MockSessionWriter(self.contact, flow, start)
-                .visit(color_prompt)
-                .send_msg("What is your favorite color?", self.channel)
-                .visit(color_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(self.contact, "blue"))
-                .set_result("Color", "blue", "Blue", "blue")
-                .visit(beer_prompt, exit_index=2)
-                .send_msg("Good choice, I like Blue too! What is your favorite beer?")
-                .visit(beer_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(self.contact, "primus"))
-                .set_result("Beer", "primus", "Primus", "primus")
-                .visit(name_prompt, exit_index=2)
-                .send_msg("Mmmmm... delicious Turbo King. Lastly, what is your name?")
-                .visit(name_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(self.contact, "Ryan Lewis"))
-                .visit(end_prompt)
-                .complete()
-                .save()
-            )
-        else:
-            (
-                MockSessionWriter(self.contact, flow, start)
-                .visit(color_prompt)
-                .send_msg("What is your favorite color?", self.channel)
-                .visit(color_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(self.contact, "blue"))
-                .set_result("Color", "blue", "Blue", "blue")
-                .visit(beer_prompt, exit_index=2)
-                .send_msg("Good choice, I like Blue too! What is your favorite beer?")
-                .visit(beer_split)
-                .wait()
-                .resume(msg=self.create_incoming_msg(self.contact, "primus"))
-                .set_result("Beer", "primus", "Primus", "primus")
-                .visit(name_prompt, exit_index=2)
-                .send_msg("Mmmmm... delicious Turbo King. Lastly, what is your name?")
-                .visit(name_split)
-                .wait()
-                .save()
-            )
-
-        run = FlowRun.objects.get(contact=self.contact)
-        if by_archiver:
-            super(FlowRun, run).delete()  # delete_from_counts left unset
-        else:
-            run.delete()  # delete_from_counts updated to true
-
-        self.assertEqual(expected["start_count"], FlowStartCount.get_count(start))
-        self.assertEqual(expected["run_count"], flow.get_run_stats())
-
-        self.assertFalse(FlowRun.objects.filter(id=run.id).exists())
-
-    @patch("temba.mailroom.queue_interrupt")
-    def test_delete_by_user_with_complete_session(self, mock_queue_interrupt):
-        self._check_deletion(
-            by_archiver=False,
-            expected={
-                "start_count": 1,  # unchanged
-                "run_count": {
-                    "total": 0,
-                    "status": {
-                        "active": 0,
-                        "waiting": 0,
-                        "completed": 0,
-                        "expired": 0,
-                        "interrupted": 0,
-                        "failed": 0,
-                    },
-                    "completion": 0,
-                },
-            },
-        )
-        self.assertFalse(mock_queue_interrupt.called)
-
-    @patch("temba.mailroom.queue_interrupt")
-    def test_delete_by_user_without_complete_session(self, mock_queue_interrupt):
-        self._check_deletion(
-            by_archiver=False,
-            expected={
-                "start_count": 1,  # unchanged
-                "run_count": {
-                    "total": 0,
-                    "status": {
-                        "active": 0,
-                        "waiting": 0,
-                        "completed": 0,
-                        "expired": 0,
-                        "interrupted": 0,
-                        "failed": 0,
-                    },
-                    "completion": 0,
-                },
-            },
-            session_completed=False,
-        )
-        mock_queue_interrupt.assert_called_once()
-
-    @patch("temba.mailroom.queue_interrupt")
-    def test_delete_by_archiver(self, mock_queue_interrupt):
-        self._check_deletion(
-            by_archiver=True,
-            expected={
-                "start_count": 1,  # unchanged
-                "run_count": {  # unchanged
-                    "total": 1,
-                    "status": {
-                        "active": 0,
-                        "waiting": 0,
-                        "completed": 1,
-                        "expired": 0,
-                        "interrupted": 0,
-                        "failed": 0,
-                    },
-                    "completion": 100,
-                },
-            },
-        )
-        self.assertFalse(mock_queue_interrupt.called)
 
     def test_big_ids(self):
         # create a session and run with big ids
