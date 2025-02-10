@@ -616,7 +616,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
             "completion": int(completed * 100 // total_runs) if total_runs else 0,
         }
 
-    def get_recent_contacts(self, exit_uuid: str, dest_uuid: str) -> list:
+    def get_recent_contacts(self, exit_uuid: str, dest_uuid: str) -> list[dict]:
         r = get_redis_connection()
         key = f"recent_contacts:{exit_uuid}:{dest_uuid}"
 
@@ -626,7 +626,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         for member, score in r.zrange(key, start=0, end=-1, desc=True, withscores=True):
             rand, contact_id, operand = member.decode().split("|", maxsplit=2)
             contact_ids.add(int(contact_id))
-            raw.append((int(contact_id), operand, datetime.utcfromtimestamp(score).replace(tzinfo=tzone.utc)))
+            raw.append((int(contact_id), operand, datetime.fromtimestamp(score, tzone.utc)))
 
         # lookup all the referenced contacts
         contacts_by_id = {c.id: c for c in self.org.contacts.filter(id__in=contact_ids, is_active=True)}
@@ -634,8 +634,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         # if contact still exists, include in results
         recent = []
         for r in raw:
-            contact = contacts_by_id.get(r[0])
-            if contact:
+            if contact := contacts_by_id.get(r[0]):
                 recent.append(
                     {
                         "contact": {"uuid": str(contact.uuid), "name": contact.get_display(org=self.org)},

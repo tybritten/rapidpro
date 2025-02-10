@@ -1,5 +1,5 @@
 {% extends "smartmin/read.html" %}
-{% load smartmin sms temba compress humanize contacts i18n %}
+{% load smartmin sms temba humanize contacts i18n %}
 
 {% block subtitle %}
   <div class="event-details p-4 bg-gray-200 rounded-lg mt-4">{{ object.offset_display }} {{ object.relative_to.name }}</div>
@@ -16,96 +16,27 @@
       </div>
     {% endif %}
   </div>
-  {% if not scheduled_event_fires %}
-    <table class="list">
-      <thead>
-        <tr>
-          <th colspan="99">{% trans "Upcoming Events" %}</th>
-        </tr>
-      </thead>
-      <body>
-        <tr class="empty_list">
+  <table class="list">
+    <thead>
+      <tr>
+        <th colspan="99">{% trans "Recent Events" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fire in recent_fires %}
+        <tr class="event_fire">
           <td>
-            <div class="ml-3">{% trans "No events scheduled" %}</div>
+            <a href="{% url 'contacts.contact_read' fire.contact.uuid %}" class="name linked">{{ fire.contact.name }}</a>
           </td>
+          <td style="text-align:right">{{ fire.time|timedate }}</td>
         </tr>
-      </body>
-    </table>
-  {% else %}
-    <table class="list">
-      <thead>
-        <tr>
-          <th colspan="99">Next {{ scheduled_event_fires|length|intcomma }} Event{{ scheduled_event_fires|length|pluralize }}</th>
-        </tr>
-      </thead>
-      <body>
-        {% for fire in scheduled_event_fires %}
-          <tr class="event_fire">
-            <td>
-              <a href="{% url 'contacts.contact_read' fire.contact.uuid %}" class="name linked">{{ fire.contact|name_or_urn:user_org }}</a>
-              <div class="relative-to">
-                <div class="flex">
-                  {{ object.relative_to }}&nbsp;
-                  {{ fire.get_relative_to_value|duration }}
-                </div>
-              </div>
-            </td>
-            <td class="event_date">{{ fire.scheduled|duration }}</td>
-          </tr>
-        {% endfor %}
-        {% if scheduled_event_fires_count %}
-          <tr>
-            <td colspan="2">
-              <div class="total">{{ scheduled_event_fires_count }} more</div>
-            </td>
-          </tr>
-        {% endif %}
-      </body>
-    </table>
-  {% endif %}
-  <div class="mt-6"></div>
-  {% if not fired_event_fires %}
-    <table class="list">
-      <thead>
-        <tr>
-          <th colspan="99">{% trans "Recent Events" %}</th>
-        </tr>
-      </thead>
-      <tbody>
+      {% empty %}
         <tr class="empty_list">
-          <td>
-            <div class="ml-3">No events yet</div>
-          </td>
+          <td colspan="99" class="text-center">{% trans "No recent contacts" %}</td>
         </tr>
-      </tbody>
-    </table>
-  {% else %}
-    <table class="list">
-      <thead>
-        <tr>
-          <th colspan="99">{% trans "Recent Events" %}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for fire in fired_event_fires %}
-          <tr class="event_fire">
-            <td>
-              <a href="{% url 'contacts.contact_read' fire.contact.uuid %}" class="name linked">{{ fire.contact.name }}</a>
-              <div class="relative-to">{{ object.relative_to }}</div>
-            </td>
-            <td class="event_date">{{ fire.fired|duration }}</td>
-          </tr>
-        {% endfor %}
-        {% if fired_event_fires_count %}
-          <tr>
-            <td colspan="2">
-              <div class="total">{{ fired_event_fires_count }} more</div>
-            </td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock content %}
 {% block extra-style %}
   {{ block.super }}
@@ -166,23 +97,6 @@
       font-size: 28px;
       color: #eee;
       margin-right: 4px;
-    }
-
-    span.strong {
-      font-weight: 400;
-    }
-
-    tr.event-fire td {
-      margin-bottom: 5px;
-    }
-
-    tr.empty_list td {
-      border-bottom: 0px solid #ccc;
-      padding: 10px;
-    }
-
-    table .event_date {
-      text-align: right;
     }
   </style>
 {% endblock extra-style %}
