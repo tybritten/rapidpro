@@ -1,14 +1,10 @@
 import json
-from datetime import timedelta
 from zoneinfo import ZoneInfo
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.utils import timezone
 
-from temba.campaigns.models import Campaign, CampaignEvent, EventFire
-from temba.campaigns.tasks import trim_event_fires
+from temba.campaigns.models import Campaign, CampaignEvent
 from temba.contacts.models import ContactField
 from temba.flows.models import Flow
 from temba.orgs.models import DefinitionExport, Org
@@ -221,76 +217,6 @@ class CampaignTest(TembaTest):
             },
             event.flow.get_definition(),
         )
-
-    def test_trim_event_fires(self):
-        campaign = Campaign.create(self.org, self.admin, "Planting Reminders", self.farmers)
-
-        # create a reminder for our first planting event
-        event = CampaignEvent.create_flow_event(
-            self.org, self.admin, campaign, relative_to=self.planting_date, offset=3, unit="D", flow=self.reminder_flow
-        )
-
-        # create a reminder for our first planting event
-        second_event = CampaignEvent.create_flow_event(
-            self.org, self.admin, campaign, relative_to=self.planting_date, offset=5, unit="D", flow=self.reminder_flow
-        )
-
-        trim_date = timezone.now() - (settings.RETENTION_PERIODS["eventfire"] + timedelta(days=1))
-
-        # manually create two event fires
-        EventFire.objects.create(event=event, contact=self.farmer1, scheduled=trim_date, fired=trim_date)
-        e2 = EventFire.objects.create(event=event, contact=self.farmer1, scheduled=timezone.now(), fired=timezone.now())
-
-        # create an unfired fire and release its event
-        EventFire.objects.create(event=second_event, contact=self.farmer1, scheduled=trim_date)
-        second_event.release(self.admin)
-
-        # trim our events, one fired and one inactive onfired
-        trim_event_fires()
-
-        # should now have only one event, e2
-        e = EventFire.objects.get()
-        self.assertEqual(e.id, e2.id)
-
-    def test_eventfire_get_relative_to_value(self):
-        campaign = Campaign.create(self.org, self.admin, "Planting Reminders", self.farmers)
-        created_on = self.org.fields.get(key="created_on")
-        last_seen_on = self.org.fields.get(key="last_seen_on")
-
-        # create a reminder for our first planting event
-        event = CampaignEvent.create_flow_event(
-            self.org, self.admin, campaign, relative_to=self.planting_date, offset=3, unit="D", flow=self.reminder_flow
-        )
-        self.set_contact_field(self.farmer1, "planting_date", self.org.format_datetime(timezone.now()))
-
-        trim_date = timezone.now() - (settings.RETENTION_PERIODS["eventfire"] + timedelta(days=1))
-        ev = EventFire.objects.create(event=event, contact=self.farmer1, scheduled=trim_date, fired=trim_date)
-        self.assertIsNotNone(ev.get_relative_to_value())
-
-        # create event relative to created_on
-        event2 = CampaignEvent.create_flow_event(
-            self.org, self.admin, campaign, relative_to=created_on, offset=3, unit="D", flow=self.reminder_flow
-        )
-
-        trim_date = timezone.now() - (settings.RETENTION_PERIODS["eventfire"] + timedelta(days=1))
-        ev2 = EventFire.objects.create(event=event2, contact=self.farmer1, scheduled=trim_date, fired=trim_date)
-        self.assertIsNotNone(ev2.get_relative_to_value())
-
-        # create event relative to last_seen_on
-        event3 = CampaignEvent.create_flow_event(
-            self.org, self.admin, campaign, relative_to=last_seen_on, offset=3, unit="D", flow=self.reminder_flow
-        )
-
-        trim_date = timezone.now() - (settings.RETENTION_PERIODS["eventfire"] + timedelta(days=1))
-        ev3 = EventFire.objects.create(event=event3, contact=self.farmer1, scheduled=trim_date, fired=trim_date)
-        self.assertIsNone(ev3.get_relative_to_value())
-
-        # give contact a last seen on value
-        self.farmer1.last_seen_on = timezone.now()
-        self.farmer1.save(update_fields=("last_seen_on",))
-
-        ev4 = EventFire.objects.create(event=event3, contact=self.farmer1, scheduled=trim_date, fired=trim_date)
-        self.assertIsNotNone(ev4.get_relative_to_value())
 
     def test_import(self):
         self.import_file("test_flows/the_clinic.json")

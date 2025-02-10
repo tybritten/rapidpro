@@ -2,7 +2,6 @@ import functools
 import re
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import timedelta
 from decimal import Decimal
 from functools import wraps
 from unittest.mock import call, patch
@@ -12,7 +11,7 @@ from django.db import connection
 from django.utils import timezone
 
 from temba import mailroom
-from temba.campaigns.models import CampaignEvent, EventFire
+from temba.campaigns.models import CampaignEvent
 from temba.channels.models import ChannelEvent
 from temba.contacts.models import URN, Contact, ContactField, ContactGroup, ContactURN
 from temba.flows.models import FlowRun, FlowSession
@@ -644,7 +643,6 @@ def update_fields_locally(user, contact, fields):
 
 
 def update_field_locally(user, contact, key, value, name=None):
-    org = contact.org
     field = ContactField.get_or_create(contact.org, user, key, name=name)
 
     field_uuid = str(field.uuid)
@@ -673,16 +671,6 @@ def update_field_locally(user, contact, key, value, name=None):
                 "UPDATE contacts_contact SET fields = COALESCE(fields,'{}'::jsonb) || %s::jsonb WHERE id = %s",
                 [json.dumps({field_uuid: contact.fields[field_uuid]}), contact.id],
             )
-
-    # very simplified version of mailroom's campaign event scheduling
-    events = CampaignEvent.objects.filter(relative_to=field, campaign__group__in=contact.groups.all())
-    for event in events:
-        EventFire.objects.filter(contact=contact, event=event).delete()
-        date_value = parse_datetime(org, value)
-        if date_value:
-            scheduled = date_value + timedelta(**{event_units[event.unit]: event.offset})
-            if scheduled > timezone.now():
-                EventFire.objects.create(contact=contact, event=event, scheduled=scheduled)
 
 
 def update_urns_locally(contact, urns: list[str]):
