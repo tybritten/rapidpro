@@ -1150,8 +1150,6 @@ class Contact(LegacyUUIDMixin, SmartModel):
             for call in self.calls.all():  # pragma: needs cover
                 call.release()
 
-            self.campaign_fires.all().delete()  # TODO remove
-
             delete_in_batches(self.fires.all())
 
             # take us out of broadcast addressed contacts
