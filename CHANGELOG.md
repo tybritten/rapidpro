@@ -1,3 +1,8 @@
+v10.1.36 (2025-02-10)
+-------------------------
+ * Update recent history part of campaign event page to read from redis
+ * Remove view of upcoming events from campaign event read page
+
 v10.1.35 (2025-02-06)
 -------------------------
  * Read scheduled acivity from new fire model instead of eventfire
