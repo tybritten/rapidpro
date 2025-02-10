@@ -1142,7 +1142,7 @@ class Contact(LegacyUUIDMixin, SmartModel):
             delete_in_batches(self.channel_events.all())
 
             for run in self.runs.all():
-                run.delete(interrupt=False)  # don't try interrupting sessions that are about to be deleted
+                run.delete()
 
             for session in self.sessions.all():
                 session.delete()
