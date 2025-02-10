@@ -9,9 +9,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from temba import mailroom
-from temba.campaigns.models import Campaign, CampaignEvent, EventFire
+from temba.campaigns.models import Campaign, CampaignEvent
 from temba.channels.models import ChannelEvent
-from temba.contacts.models import URN, Contact, ContactField, ContactGroup, ContactURN
+from temba.contacts.models import URN, Contact, ContactField, ContactFire, ContactGroup, ContactURN
 from temba.flows.models import Flow
 from temba.locations.models import AdminBoundary
 from temba.mailroom import modifiers
@@ -157,7 +157,13 @@ class ContactTest(TembaTest):
         campaign = Campaign.create(self.org, self.admin, "Reminders", group)
         joined = self.create_field("joined", "Joined On", value_type=ContactField.TYPE_DATETIME)
         event = CampaignEvent.create_message_event(self.org, self.admin, campaign, joined, 2, unit="D", message="Hi")
-        EventFire.objects.create(event=event, contact=contact, scheduled=timezone.now() + timedelta(days=2))
+        ContactFire.objects.create(
+            org=self.org,
+            contact=contact,
+            fire_type="C",
+            scope=str(event.id),
+            fire_on=timezone.now() + timedelta(days=2),
+        )
 
         self.create_incoming_call(msg_flow, contact)
 
@@ -172,7 +178,7 @@ class ContactTest(TembaTest):
         self.assertEqual(2, contact.runs.all().count())
         self.assertEqual(7, contact.msgs.all().count())
         self.assertEqual(2, len(contact.fields))
-        self.assertEqual(1, contact.campaign_fires.count())
+        self.assertEqual(1, contact.fires.count())
 
         self.assertEqual(2, Ticket.get_status_count(self.org, self.org.topics.all(), Ticket.STATUS_OPEN))
         self.assertEqual(1, Ticket.get_status_count(self.org, self.org.topics.all(), Ticket.STATUS_CLOSED))
@@ -207,7 +213,7 @@ class ContactTest(TembaTest):
         self.assertEqual(0, contact.urns.all().count())
         self.assertEqual(0, contact.runs.all().count())
         self.assertEqual(0, contact.msgs.all().count())
-        self.assertEqual(0, contact.campaign_fires.count())
+        self.assertEqual(0, contact.fires.count())
 
         # tickets deleted (only for this contact)
         self.assertEqual(0, contact.tickets.count())

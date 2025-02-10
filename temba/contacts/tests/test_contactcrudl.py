@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from temba import mailroom
 from temba.airtime.models import AirtimeTransfer
-from temba.campaigns.models import Campaign, CampaignEvent, EventFire
+from temba.campaigns.models import Campaign, CampaignEvent
 from temba.channels.models import ChannelEvent
 from temba.contacts.models import URN, Contact, ContactExport, ContactField, ContactFire
 from temba.flows.models import FlowSession, FlowStart
@@ -536,7 +536,7 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
         )
 
         # create some messages
-        for i in range(94):
+        for i in range(95):
             self.create_incoming_msg(
                 joe, "Inbound message %d" % i, created_on=timezone.now() - timedelta(days=(100 - i))
             )
@@ -583,10 +583,6 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
             desired_amount=Decimal("100"),
             actual_amount=Decimal("100"),
         )
-
-        # create an event from the past
-        scheduled = timezone.now() - timedelta(days=5)
-        EventFire.objects.create(event=self.planting_reminder, contact=joe, scheduled=scheduled, fired=scheduled)
 
         # two tickets for joe
         sales = Topic.create(self.org, self.admin, "Sales")
@@ -644,7 +640,7 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
 
         # fetch our contact history
         self.login(self.admin)
-        with self.assertNumQueries(24):
+        with self.assertNumQueries(23):
             response = self.client.get(history_url + "?limit=100")
 
         # history should include all messages in the last 90 days, the channel event, the call, and the flow run
@@ -673,7 +669,6 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
         assertHistoryEvent(
             history, 11, "msg_created", msg__text="A beautiful broadcast", created_by__email="editor@textit.com"
         )
-        assertHistoryEvent(history, 12, "campaign_fired", campaign__name="Planting Reminders")
         assertHistoryEvent(history, -1, "msg_received", msg__text="Inbound message 11")
 
         # revert back to reading only from DB
@@ -758,20 +753,6 @@ class ContactCRUDLTest(CRUDLTestMixin, TembaTest):
         assertHistoryEvent(history, 11, "airtime_transferred")
         assertHistoryEvent(history, 12, "msg_created", msg__text="What is your favorite color?")
         assertHistoryEvent(history, 13, "flow_entered")
-
-        # make our message event older than our planting reminder
-        self.message_event.created_on = self.planting_reminder.created_on - timedelta(days=1)
-        self.message_event.save()
-
-        # but fire it immediately
-        scheduled = timezone.now()
-        EventFire.objects.create(event=self.message_event, contact=joe, scheduled=scheduled, fired=scheduled)
-
-        # when fetched with limit of 1, it should be the only event we see
-        response = self.requestView(
-            history_url + "?limit=1&before=%d" % datetime_to_timestamp(scheduled + timedelta(minutes=5)), self.admin
-        )
-        assertHistoryEvent(response.json()["events"], 0, "campaign_fired", campaign_event__id=self.message_event.id)
 
         # now try the proper max history to test truncation
         response = self.requestView(history_url + "?before=%d" % datetime_to_timestamp(timezone.now()), self.admin)

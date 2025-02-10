@@ -14,7 +14,7 @@ from temba.flows.models import Flow
 from temba.msgs.models import Msg
 from temba.orgs.models import Org
 from temba.utils import json, on_transaction_commit
-from temba.utils.models import TembaModel, TembaUUIDMixin, TranslatableField, delete_in_batches
+from temba.utils.models import TembaModel, TembaUUIDMixin, TranslatableField
 
 
 class Campaign(TembaModel):
@@ -531,8 +531,6 @@ class CampaignEvent(TembaUUIDMixin, SmartModel):
         Deletes this event completely along with associated fires and starts.
         """
 
-        delete_in_batches(self.fires.all())
-
         for start in self.flow_starts.all():
             start.delete()
 
@@ -549,7 +547,7 @@ class CampaignEvent(TembaUUIDMixin, SmartModel):
 
 class EventFire(models.Model):
     """
-    A scheduled firing of a campaign event for a particular contact
+    TODO drop
     """
 
     RESULT_FIRED = "F"
@@ -557,24 +555,10 @@ class EventFire(models.Model):
     RESULTS = ((RESULT_FIRED, "Fired"), (RESULT_SKIPPED, "Skipped"))
 
     event = models.ForeignKey(CampaignEvent, on_delete=models.PROTECT, related_name="fires")
-
     contact = models.ForeignKey(Contact, on_delete=models.PROTECT, related_name="campaign_fires")
-
-    # when the event should be fired for this contact
     scheduled = models.DateTimeField()
-
-    # when the event was fired fir this contact or null if we haven't been fired
     fired = models.DateTimeField(null=True)
-
-    # result of this event fire or null if we haven't been fired
     fired_result = models.CharField(max_length=1, null=True, choices=RESULTS)
-
-    def get_relative_to_value(self):
-        value = self.contact.get_field_value(self.event.relative_to)
-        return value.replace(second=0, microsecond=0) if value else None
-
-    def __str__(self):  # pragma: no cover
-        return f"EventFire[event={self.event.uuid}, contact={self.contact.uuid}, scheduled={self.scheduled}]"
 
     class Meta:
         ordering = ("scheduled",)
@@ -582,7 +566,6 @@ class EventFire(models.Model):
             models.Index(name="eventfires_unfired", fields=("scheduled",), condition=Q(fired=None)),
         ]
         constraints = [
-            # used to prevent adding duplicate fires for the same event and contact
             models.UniqueConstraint(
                 name="eventfires_unfired_unique", fields=("event_id", "contact_id"), condition=Q(fired=None)
             )

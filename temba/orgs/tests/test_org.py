@@ -10,11 +10,11 @@ from django.utils import timezone
 
 from temba.api.models import Resthook, WebHookEvent
 from temba.archives.models import Archive
-from temba.campaigns.models import Campaign, CampaignEvent, EventFire
+from temba.campaigns.models import Campaign, CampaignEvent
 from temba.channels.models import ChannelLog, SyncEvent
 from temba.classifiers.models import Classifier
 from temba.classifiers.types.wit import WitType
-from temba.contacts.models import ContactExport, ContactField, ContactImport, ContactImportBatch
+from temba.contacts.models import ContactExport, ContactField, ContactFire, ContactImport, ContactImportBatch
 from temba.flows.models import FlowLabel, FlowRun, FlowSession, FlowStart, FlowStartCount, ResultsExport
 from temba.globals.models import Global
 from temba.locations.models import AdminBoundary
@@ -644,7 +644,11 @@ class OrgDeleteTest(TembaTest):
                 org, user, campaign, fields[1], offset=1, unit="W", flow=flows[0], delivery_hour="13"
             )
         )
-        add(EventFire.objects.create(event=event1, contact=contacts[0], scheduled=timezone.now()))
+        add(
+            ContactFire.objects.create(
+                org=org, contact=contacts[0], fire_type="C", scope=str(event1.id), fire_on=timezone.now()
+            )
+        )
         start1 = add(FlowStart.objects.create(org=org, flow=flows[0], campaign_event=event1))
         add(FlowStartCount.objects.create(start=start1, count=1))
 

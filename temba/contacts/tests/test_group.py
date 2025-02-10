@@ -1,10 +1,8 @@
-from datetime import timedelta
-
 from django.urls import reverse
 from django.utils import timezone
 
 from temba import mailroom
-from temba.campaigns.models import Campaign, CampaignEvent, EventFire
+from temba.campaigns.models import Campaign, CampaignEvent
 from temba.contacts.models import Contact, ContactField, ContactGroup, ContactGroupCount
 from temba.contacts.tasks import squash_group_counts
 from temba.schedules.models import Schedule
@@ -252,8 +250,7 @@ class ContactGroupTest(TembaTest):
         # create a campaign based on group 1 - a hard dependency
         campaign = Campaign.create(self.org, self.admin, "Reminders", group1)
         joined = self.create_field("joined", "Joined On", value_type=ContactField.TYPE_DATETIME)
-        event = CampaignEvent.create_message_event(self.org, self.admin, campaign, joined, 2, unit="D", message="Hi")
-        EventFire.objects.create(event=event, contact=self.joe, scheduled=timezone.now() + timedelta(days=2))
+        CampaignEvent.create_message_event(self.org, self.admin, campaign, joined, 2, unit="D", message="Hi")
         campaign.is_archived = True
         campaign.save()
 
@@ -273,7 +270,6 @@ class ContactGroupTest(TembaTest):
 
         self.assertFalse(group1.is_active)
         self.assertTrue(group1.name.startswith("deleted-"))
-        self.assertEqual(0, EventFire.objects.count())  # event fires will have been deleted
         self.assertEqual({group2}, set(bcast1.groups.all()))  # removed from scheduled broadcast
         self.assertEqual({group1, group2}, set(bcast2.groups.all()))  # regular broadcast unchanged
 

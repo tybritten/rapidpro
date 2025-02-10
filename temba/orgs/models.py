@@ -1360,7 +1360,7 @@ class Org(SmartModel):
             contact.delete()
             counts["contacts"] += 1
 
-        # delete all our URNs
+        # delete any remaining orphaned URNs
         self.urns.all().delete()
 
         # delete our fields

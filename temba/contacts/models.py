@@ -756,13 +756,6 @@ class Contact(LegacyUUIDMixin, SmartModel):
             .select_related("channel", "optin")[:limit]
         )
 
-        campaign_events = (
-            self.campaign_fires.filter(fired__gte=after, fired__lt=before)
-            .exclude(fired=None)
-            .order_by("-fired")
-            .select_related("event__campaign", "event__relative_to")[:limit]
-        )
-
         calls = (
             Call.objects.filter(contact=self, created_on__gte=after, created_on__lt=before)
             .exclude(status__in=[Call.STATUS_PENDING, Call.STATUS_WIRED])
@@ -800,7 +793,6 @@ class Contact(LegacyUUIDMixin, SmartModel):
             exited_runs,
             ticket_events,
             channel_events,
-            campaign_events,
             calls,
             transfers,
             session_events,
@@ -1092,8 +1084,8 @@ class Contact(LegacyUUIDMixin, SmartModel):
             for group in self.get_groups():
                 group.contacts.remove(self)
 
-            # delete any unfired campaign event fires
-            self.campaign_fires.filter(fired=None).delete()
+            # delete any upcoming fires
+            self.fires.all().delete()
 
             # remove from scheduled broadcasts
             for bc in self.addressed_broadcasts.exclude(schedule=None):
@@ -1158,8 +1150,7 @@ class Contact(LegacyUUIDMixin, SmartModel):
             for call in self.calls.all():  # pragma: needs cover
                 call.release()
 
-            # and any event fire history
-            self.campaign_fires.all().delete()
+            self.campaign_fires.all().delete()  # TODO remove
 
             delete_in_batches(self.fires.all())
 
@@ -1764,6 +1755,9 @@ class ContactFire(models.Model):
 
     # TODO remove
     extra = models.JSONField(null=True)
+
+    def __repr__(self):  # pragma: no cover
+        return f'<ContactFire: id={self.id} type="{self.fire_type}" fire_on="{self.fire_on.isoformat()}">'
 
     class Meta:
         constraints = [

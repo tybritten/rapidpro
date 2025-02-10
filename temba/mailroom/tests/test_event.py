@@ -2,7 +2,6 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from temba.campaigns.models import Campaign, CampaignEvent, EventFire
 from temba.channels.models import ChannelEvent
 from temba.ivr.models import Call
 from temba.mailroom.events import Event
@@ -322,38 +321,6 @@ class EventTest(TembaTest):
                 "logs_url": f"/flowsession/json/{run.session.uuid}/",
             },
             Event.from_flow_run(self.org, self.customer_support, run),
-        )
-
-    def test_from_event_fire(self):
-        flow = self.create_flow("Test")
-        group = self.create_group("Reporters", contacts=[])
-        registered = self.create_field("registered", "Registered", value_type="D")
-        campaign = Campaign.create(self.org, self.admin, "Welcomes", group)
-        event = CampaignEvent.create_flow_event(
-            self.org, self.admin, campaign, registered, offset=1, unit="W", flow=flow
-        )
-        contact = self.create_contact("Jim", phone="0979111111")
-        fire = EventFire.objects.create(
-            event=event,
-            contact=contact,
-            scheduled=timezone.now(),
-            fired=timezone.now(),
-            fired_result=EventFire.RESULT_FIRED,
-        )
-
-        self.assertEqual(
-            {
-                "type": "campaign_fired",
-                "created_on": fire.fired.isoformat(),
-                "campaign": {"id": campaign.id, "name": "Welcomes", "uuid": campaign.uuid},
-                "campaign_event": {
-                    "id": event.id,
-                    "offset_display": "1 week after",
-                    "relative_to": {"key": "registered", "name": "Registered"},
-                },
-                "fired_result": "F",
-            },
-            Event.from_event_fire(self.org, self.admin, fire),
         )
 
     def test_from_ticket_event(self):

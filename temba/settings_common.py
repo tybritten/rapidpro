@@ -872,7 +872,6 @@ RETENTION_PERIODS = {
     "channelevent": timedelta(days=90),
     "channellog": timedelta(days=7),
     "export": timedelta(days=90),
-    "eventfire": timedelta(days=90),
     "flowsession": timedelta(days=7),
     "httplog": timedelta(days=3),
     "notification": timedelta(days=30),

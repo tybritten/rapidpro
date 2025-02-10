@@ -3,7 +3,7 @@
 from django.db import migrations, transaction
 
 
-def convert_eventfires(apps, schema_editor):
+def convert_eventfires(apps, schema_editor):  # pragma: no cover
     EventFire = apps.get_model("campaigns", "EventFire")
     ContactFire = apps.get_model("contacts", "ContactFire")
 
