@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
 
+from temba.utils.text import generate_token
 from temba.utils.uuid import uuid4
 
 
@@ -18,6 +19,27 @@ class RecoveryToken(models.Model):
 class FailedLogin(models.Model):
     username = models.CharField(max_length=256)
     failed_on = models.DateTimeField(default=timezone.now)
+
+
+class BackupToken(models.Model):
+    """
+    A 2FA backup token for a user
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="backup_tokens", on_delete=models.PROTECT)
+    token = models.CharField(max_length=18, unique=True, default=generate_token)
+    is_used = models.BooleanField(default=False)
+    created_on = models.DateTimeField(default=timezone.now)
+
+    @classmethod
+    def generate_for_user(cls, user, count: int = 10):
+        # delete any existing tokens for this user
+        user.backup_tokens.all().delete()
+
+        return [cls.objects.create(user=user) for i in range(count)]
+
+    def __str__(self):
+        return self.token
 
 
 class User(AbstractUser):
@@ -93,8 +115,6 @@ class User(AbstractUser):
         """
         Enables 2FA for this user
         """
-
-        from temba.orgs.models import BackupToken
 
         self.settings.two_factor_enabled = True
         self.settings.save(update_fields=("two_factor_enabled",))

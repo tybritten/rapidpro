@@ -42,7 +42,7 @@ from temba.formax import FormaxMixin, FormaxSectionMixin
 from temba.notifications.mixins import NotificationTargetMixin
 from temba.orgs.tasks import send_user_verification_email
 from temba.tickets.models import Team
-from temba.users.models import FailedLogin, RecoveryToken
+from temba.users.models import BackupToken, FailedLogin, RecoveryToken
 from temba.utils import analytics, json, languages, on_transaction_commit, str_to_bool
 from temba.utils.email import EmailSender, parse_smtp_url
 from temba.utils.fields import (
@@ -67,7 +67,6 @@ from temba.utils.views.mixins import (
 )
 
 from ..models import (
-    BackupToken,
     DefinitionExport,
     Export,
     IntegrationType,

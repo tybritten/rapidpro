@@ -1399,23 +1399,13 @@ class Invitation(SmartModel):
 
 class BackupToken(models.Model):
     """
-    A 2FA backup token for a user
+    TODO drop
     """
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="backup_tokens", on_delete=models.PROTECT)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     token = models.CharField(max_length=18, unique=True, default=generate_token)
     is_used = models.BooleanField(default=False)
     created_on = models.DateTimeField(default=timezone.now)
-
-    @classmethod
-    def generate_for_user(cls, user, count: int = 10):
-        # delete any existing tokens for this user
-        user.backup_tokens.all().delete()
-
-        return [cls.objects.create(user=user) for i in range(count)]
-
-    def __str__(self):
-        return self.token
 
 
 class ExportType:
