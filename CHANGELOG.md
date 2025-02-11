@@ -1,3 +1,7 @@
+v10.1.40 (2025-02-11)
+-------------------------
+ * Add custom user model (migration must be faked)
+
 v10.1.38 (2025-02-11)
 -------------------------
  * Don't show times across date bondaries
