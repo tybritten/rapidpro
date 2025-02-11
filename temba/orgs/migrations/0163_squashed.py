@@ -144,18 +144,20 @@ class Migration(migrations.Migration):
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="settings",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
             model_name="orgmembership",
             name="user",
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="orgs.user"),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name="org",
             name="users",
-            field=models.ManyToManyField(related_name="orgs", through="orgs.OrgMembership", to="orgs.user"),
+            field=models.ManyToManyField(
+                related_name="orgs", through="orgs.OrgMembership", to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
             model_name="export",
@@ -163,7 +165,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="exports",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
@@ -172,7 +174,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="backup_tokens",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddIndex(

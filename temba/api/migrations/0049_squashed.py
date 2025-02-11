@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="api_tokens",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(

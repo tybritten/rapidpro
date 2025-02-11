@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="flow_saves",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="flow",
             name="user_dependencies",
-            field=models.ManyToManyField(related_name="dependent_flows", to="orgs.user"),
+            field=models.ManyToManyField(related_name="dependent_flows", to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name="flowactivitycount",
@@ -133,7 +133,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="revisions",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(

@@ -6,7 +6,6 @@ import iso8601
 import pyotp
 from django_redis import get_redis_connection
 from packaging.version import Version
-from smartmin.users.models import FailedLogin, RecoveryToken
 from smartmin.views import (
     SmartCreateView,
     SmartCRUDL,
@@ -43,6 +42,7 @@ from temba.formax import FormaxMixin, FormaxSectionMixin
 from temba.notifications.mixins import NotificationTargetMixin
 from temba.orgs.tasks import send_user_verification_email
 from temba.tickets.models import Team
+from temba.users.models import FailedLogin, RecoveryToken
 from temba.utils import analytics, json, languages, on_transaction_commit, str_to_bool
 from temba.utils.email import EmailSender, parse_smtp_url
 from temba.utils.fields import (
@@ -441,7 +441,7 @@ class UserCRUDL(SmartCRUDL):
             return context
 
     class Team(RequireFeatureMixin, SpaMixin, ContextMenuMixin, BaseListView):
-        permission = "orgs.user_list"
+        permission = "users.user_list"
         require_feature = Org.FEATURE_TEAMS
         menu_path = "/settings/teams"
         search_fields = ("email__icontains", "first_name__icontains", "last_name__icontains")
@@ -542,10 +542,10 @@ class UserCRUDL(SmartCRUDL):
             return obj
 
         def get_success_url(self):
-            return reverse("orgs.user_list") if self.has_org_perm("orgs.user_list") else reverse("orgs.org_start")
+            return reverse("orgs.user_list") if self.has_org_perm("users.user_list") else reverse("orgs.org_start")
 
     class Delete(RequireFeatureMixin, OrgObjPermsMixin, SmartDeleteView):
-        permission = "orgs.user_update"
+        permission = "users.user_update"
         require_feature = Org.FEATURE_USERS
         fields = ("id",)
         submit_button_name = _("Remove")
@@ -1138,11 +1138,15 @@ class OrgCRUDL(SmartCRUDL):
                         )
                     )
 
-                if Org.FEATURE_USERS in org.features and self.has_org_perm("orgs.user_list"):
+                if Org.FEATURE_USERS in org.features and self.has_org_perm("users.user_list"):
                     menu.append(self.create_divider())
                     menu.append(
                         self.create_menu_item(
-                            name=_("Users"), icon="users", href="orgs.user_list", count=org.users.count()
+                            name=_("Users"),
+                            icon="users",
+                            href="orgs.user_list",
+                            count=org.users.count(),
+                            perm="users.user_list",
                         )
                     )
                     menu.append(

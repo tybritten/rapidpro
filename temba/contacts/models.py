@@ -26,7 +26,7 @@ from temba import mailroom
 from temba.channels.models import Channel
 from temba.locations.models import AdminBoundary
 from temba.mailroom import ContactSpec, modifiers, queue_populate_dynamic_group
-from temba.orgs.models import DependencyMixin, Export, ExportType, Org, OrgRole, User
+from temba.orgs.models import DependencyMixin, Export, ExportType, Org, OrgRole
 from temba.utils import format_number, on_transaction_commit
 from temba.utils.export import MultiSheetExporter
 from temba.utils.models import JSONField, LegacyUUIDMixin, TembaModel, delete_in_batches
@@ -1711,7 +1711,7 @@ class ContactNote(models.Model):
     contact = models.ForeignKey(Contact, on_delete=models.PROTECT, related_name="notes")
     text = models.TextField(max_length=MAX_LENGTH, blank=True)
     created_on = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="contact_notes")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="contact_notes")
 
 
 class ContactGroupCount(BaseSquashableCount):

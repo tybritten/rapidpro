@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 from django_redis import get_redis_connection
-from smartmin.users.models import FailedLogin, RecoveryToken
 
 from django.core import mail
 from django.test.utils import override_settings
@@ -12,6 +11,7 @@ from temba.orgs.models import Invitation, Org, OrgRole
 from temba.orgs.tasks import send_user_verification_email
 from temba.tests import CRUDLTestMixin, TembaTest
 from temba.tickets.models import Team
+from temba.users.models import FailedLogin, RecoveryToken
 
 
 class UserCRUDLTest(TembaTest, CRUDLTestMixin):

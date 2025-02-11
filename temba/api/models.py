@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from temba.orgs.models import Org, OrgRole, User
+from temba.orgs.models import Org, OrgRole
 from temba.utils.models import JSONAsTextField
 from temba.utils.text import generate_secret
 
@@ -211,7 +211,7 @@ class APIToken(models.Model):
 
     key = models.CharField(max_length=40, primary_key=True)
     org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name="api_tokens")
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="api_tokens")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="api_tokens")
     created = models.DateTimeField(default=timezone.now)
     last_used_on = models.DateTimeField(null=True)
     is_active = models.BooleanField(default=True)

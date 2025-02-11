@@ -23,7 +23,7 @@ from django.utils.translation import gettext_lazy as _
 from temba import mailroom
 from temba.channels.models import Channel, ChannelLog
 from temba.contacts.models import Contact, ContactGroup, ContactURN
-from temba.orgs.models import DependencyMixin, Export, ExportType, Org, User
+from temba.orgs.models import DependencyMixin, Export, ExportType, Org
 from temba.schedules.models import Schedule
 from temba.utils import languages, on_transaction_commit
 from temba.utils.export.models import MultiSheetExporter
@@ -72,7 +72,7 @@ class Media(models.Model):
     width = models.IntegerField(default=0)  # pixels
     height = models.IntegerField(default=0)  # pixels
 
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     created_on = models.DateTimeField(default=timezone.now)
 
     @classmethod
@@ -220,9 +220,9 @@ class Broadcast(models.Model):
     template = models.ForeignKey("templates.Template", null=True, on_delete=models.PROTECT)
     template_variables = ArrayField(models.TextField(), null=True)
 
-    created_by = models.ForeignKey(User, null=True, on_delete=models.PROTECT, related_name="+")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="+")
     created_on = models.DateTimeField(default=timezone.now)
-    modified_by = models.ForeignKey(User, null=True, on_delete=models.PROTECT, related_name="+")
+    modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="+")
     modified_on = models.DateTimeField(default=timezone.now)
 
     # used for scheduled broadcasts which are never actually sent themselves but spawn child broadcasts which are
@@ -516,7 +516,7 @@ class Msg(models.Model):
     ticket = models.ForeignKey(
         "tickets.Ticket", on_delete=models.DO_NOTHING, null=True, db_index=False, db_constraint=False
     )
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, db_index=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, db_index=False)
 
     # message content
     text = models.TextField()

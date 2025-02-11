@@ -167,7 +167,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="contact_notes",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
