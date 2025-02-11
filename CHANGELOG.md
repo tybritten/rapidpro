@@ -1,3 +1,7 @@
+v10.1.42 (2025-02-11)
+-------------------------
+ * Add BackupToken in users app and copy records from model in orgs app
+
 v10.1.41 (2025-02-11)
 -------------------------
  * Remove auth_tweaks app
