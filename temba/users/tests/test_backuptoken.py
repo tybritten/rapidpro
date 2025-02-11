@@ -1,5 +1,5 @@
-from temba.orgs.models import BackupToken
 from temba.tests import TembaTest
+from temba.users.models import BackupToken
 
 
 class BackupTokenTest(TembaTest):
