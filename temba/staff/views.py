@@ -1,10 +1,5 @@
 from collections import OrderedDict
 
-<<<<<<< Updated upstream
-from smartmin.users.models import FailedLogin
-=======
-from smartmin.users.views import UserUpdateForm
->>>>>>> Stashed changes
 from smartmin.views import SmartCRUDL, SmartDeleteView, SmartFormView, SmartListView, SmartReadView, SmartUpdateView
 
 from django import forms

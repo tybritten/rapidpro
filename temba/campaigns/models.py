@@ -4,12 +4,11 @@ from django_redis import get_redis_connection
 from smartmin.models import SmartModel
 
 from django.db import models
-from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, ngettext
 
 from temba import mailroom
-from temba.contacts.models import Contact, ContactField, ContactGroup
+from temba.contacts.models import ContactField, ContactGroup
 from temba.flows.models import Flow
 from temba.msgs.models import Msg
 from temba.orgs.models import Org
@@ -543,30 +542,3 @@ class CampaignEvent(TembaUUIDMixin, SmartModel):
     class Meta:
         verbose_name = _("Campaign Event")
         verbose_name_plural = _("Campaign Events")
-
-
-class EventFire(models.Model):
-    """
-    TODO drop
-    """
-
-    RESULT_FIRED = "F"
-    RESULT_SKIPPED = "S"
-    RESULTS = ((RESULT_FIRED, "Fired"), (RESULT_SKIPPED, "Skipped"))
-
-    event = models.ForeignKey(CampaignEvent, on_delete=models.PROTECT, related_name="fires")
-    contact = models.ForeignKey(Contact, on_delete=models.PROTECT, related_name="campaign_fires")
-    scheduled = models.DateTimeField()
-    fired = models.DateTimeField(null=True)
-    fired_result = models.CharField(max_length=1, null=True, choices=RESULTS)
-
-    class Meta:
-        ordering = ("scheduled",)
-        indexes = [
-            models.Index(name="eventfires_unfired", fields=("scheduled",), condition=Q(fired=None)),
-        ]
-        constraints = [
-            models.UniqueConstraint(
-                name="eventfires_unfired_unique", fields=("event_id", "contact_id"), condition=Q(fired=None)
-            )
-        ]
