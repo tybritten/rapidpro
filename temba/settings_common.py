@@ -249,7 +249,6 @@ INSTALLED_APPS = (
     "temba.users",
     "temba.apks",
     "temba.archives",
-    "temba.auth_tweaks",
     "temba.api",
     "temba.request_logs",
     "temba.classifiers",
