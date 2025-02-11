@@ -1,3 +1,8 @@
+v10.1.41 (2025-02-11)
+-------------------------
+ * Remove auth_tweaks app
+ * Simplify validation of params field on flow starts endpoint to allow any JSON object up to 10K chars when encoded
+
 v10.1.40 (2025-02-11)
 -------------------------
  * Add custom user model (migration must be faked)
