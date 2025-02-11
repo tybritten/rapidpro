@@ -8,8 +8,8 @@ from temba.channels.models import Channel
 from temba.contacts.models import URN, Contact, ContactField as ContactFieldModel, ContactGroup, ContactURN
 from temba.flows.models import Flow
 from temba.msgs.models import Attachment, Label, Media, Msg
-from temba.orgs.models import User
 from temba.tickets.models import Ticket, Topic
+from temba.users.models import User
 from temba.utils import languages
 from temba.utils.uuid import find_uuid, is_uuid
 

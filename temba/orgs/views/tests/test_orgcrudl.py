@@ -11,8 +11,9 @@ from django.urls import reverse
 
 from temba.channels.models import Channel
 from temba.contacts.models import URN
-from temba.orgs.models import Invitation, Org, OrgRole, User
+from temba.orgs.models import Invitation, Org, OrgRole
 from temba.tests import CRUDLTestMixin, TembaTest
+from temba.users.models import User
 from temba.utils import languages
 
 

@@ -1,6 +1,6 @@
 from django.contrib.auth.backends import ModelBackend
 
-from temba.orgs.models import User
+from temba.users.models import User
 
 
 class AuthenticationBackend(ModelBackend):

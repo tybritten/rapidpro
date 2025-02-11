@@ -14,7 +14,8 @@ from django.utils.translation import gettext_lazy as _
 
 from temba import mailroom
 from temba.contacts.models import Contact
-from temba.orgs.models import DependencyMixin, Export, ExportType, Org, OrgMembership, User
+from temba.orgs.models import DependencyMixin, Export, ExportType, Org, OrgMembership
+from temba.users.models import User
 from temba.utils.dates import date_range
 from temba.utils.db.functions import SplitPart
 from temba.utils.export import MultiSheetExporter

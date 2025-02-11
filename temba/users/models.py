@@ -21,12 +21,6 @@ class FailedLogin(models.Model):
 
 
 class User(AbstractUser):
-    """
-    There's still no easy way to migrate an existing project to a custom user model, so this is a proxy which provides
-    extra functionality based on the same underlying auth.User model, and for additional fields we use the UserSettings
-    related model.
-    """
-
     SYSTEM_USER_USERNAME = "system"
 
     @classmethod

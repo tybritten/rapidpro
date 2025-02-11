@@ -21,8 +21,9 @@ from temba.globals.models import Global
 from temba.locations.models import AdminBoundary
 from temba.mailroom import modifiers
 from temba.msgs.models import Broadcast, Label, Media, Msg, OptIn
-from temba.orgs.models import Org, OrgRole, User
+from temba.orgs.models import Org, OrgRole
 from temba.tickets.models import Ticket, Topic
+from temba.users.models import User
 from temba.utils import json
 from temba.utils.fields import NameValidator
 

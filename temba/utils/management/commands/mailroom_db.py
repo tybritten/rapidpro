@@ -18,9 +18,10 @@ from temba.flows.models import Flow
 from temba.globals.models import Global
 from temba.locations.models import AdminBoundary
 from temba.msgs.models import Label
-from temba.orgs.models import Org, OrgRole, User
+from temba.orgs.models import Org, OrgRole
 from temba.templates.models import Template, TemplateTranslation
 from temba.tickets.models import Team, Topic
+from temba.users.models import User
 
 SPECS_FILE = "temba/utils/management/commands/data/mailroom_db.json"
 

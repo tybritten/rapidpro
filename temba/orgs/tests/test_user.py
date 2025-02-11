@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
 from temba.api.models import APIToken
-from temba.orgs.models import OrgRole, User, UserSettings
+from temba.orgs.models import OrgRole, UserSettings
 from temba.orgs.tasks import update_members_seen
 from temba.tests import TembaTest, mock_mailroom
+from temba.users.models import User
 
 
 class UserTest(TembaTest):

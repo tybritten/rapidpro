@@ -12,8 +12,9 @@ from temba.channels.models import Channel, ChannelEvent
 from temba.flows.models import FlowExit, FlowRun
 from temba.ivr.models import Call
 from temba.msgs.models import Msg, OptIn
-from temba.orgs.models import Org, User
+from temba.orgs.models import Org
 from temba.tickets.models import Ticket, TicketEvent, Topic
+from temba.users.models import User
 
 
 class Event:

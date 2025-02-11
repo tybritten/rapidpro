@@ -3,10 +3,11 @@ from datetime import timedelta
 from django.core import mail
 from django.utils import timezone
 
-from temba.orgs.models import Invitation, OrgRole, User
+from temba.orgs.models import Invitation, OrgRole
 from temba.orgs.tasks import expire_invitations
 from temba.tests import TembaTest
 from temba.tickets.models import Team
+from temba.users.models import User
 
 
 class InvitationTest(TembaTest):
