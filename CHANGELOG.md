@@ -1,3 +1,9 @@
+v10.1.38 (2025-02-11)
+-------------------------
+ * Don't show times across date bondaries
+ * Remove unused CSV imports functionality from smartmin
+ * Drop EventFire model
+
 v10.1.37 (2025-02-10)
 -------------------------
  * Remove deleting of flow runs
