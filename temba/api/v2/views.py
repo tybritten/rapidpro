@@ -3093,7 +3093,7 @@ class FlowStartsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **urns** - the URNs you want to start in this flow (array of up to 100 strings, optional)
      * **restart_participants** - whether to restart participants already in this flow (optional, defaults to true)
      * **exclude_active** - whether to exclude contacts currently in other flow (optional, defaults to false)
-     * **params** - extra parameters to pass to the flow start (object, accessible via `@trigger.params` in the flow)
+     * **params** - extra parameters to pass to the flow start (object, must be at most 10K characters, accessible via `@trigger.params` in the flow)
 
     Example:
 
