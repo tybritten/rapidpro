@@ -776,6 +776,10 @@ class UserCRUDL(SmartCRUDL):
             # get existing email address to know if it's changing
             obj._prev_email = User.objects.get(id=obj.id).email
 
+            if obj.email != obj._prev_email:
+                obj.email_status = UserSettings.STATUS_UNVERIFIED
+                obj.email_verification_secret = generate_secret(64)
+
             # figure out if password is being changed and if so update it
             new_password = self.form.cleaned_data["new_password"]
             current_password = self.form.cleaned_data["current_password"]
@@ -794,7 +798,7 @@ class UserCRUDL(SmartCRUDL):
 
             if obj.email != obj._prev_email:
                 obj.settings.email_status = UserSettings.STATUS_UNVERIFIED
-                obj.settings.email_verification_secret = generate_secret(64)  # make old verification links unusable
+                obj.settings.email_verification_secret = obj.email_verification_secret
 
                 RecoveryToken.objects.filter(user=obj).delete()  # make old password recovery links unusable
 
@@ -863,6 +867,9 @@ class UserCRUDL(SmartCRUDL):
             is_verified = self.request.user.settings.email_status == UserSettings.STATUS_VERIFIED
 
             if self.email_user == self.request.user and not is_verified:
+                self.request.user.email_status = UserSettings.STATUS_VERIFIED
+                self.request.user.save(update_fields=("email_status",))
+
                 self.request.user.settings.email_status = UserSettings.STATUS_VERIFIED
                 self.request.user.settings.save(update_fields=("email_status",))
 
