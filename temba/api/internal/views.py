@@ -7,9 +7,10 @@ from django.db.models import Prefetch, Q
 from temba.channels.models import Channel
 from temba.locations.models import AdminBoundary
 from temba.notifications.models import Notification
-from temba.orgs.models import Org, User
+from temba.orgs.models import Org
 from temba.templates.models import Template, TemplateTranslation
 from temba.tickets.models import Shortcut
+from temba.users.models import User
 
 from ..models import APIPermission, SSLPermission
 from ..support import APISessionAuthentication, CreatedOnCursorPagination, ModifiedOnCursorPagination

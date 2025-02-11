@@ -21,9 +21,10 @@ from temba.flows.models import Flow, FlowRun, FlowStart, FlowStartCount
 from temba.globals.models import Global
 from temba.locations.models import AdminBoundary, BoundaryAlias
 from temba.msgs.models import Broadcast, BroadcastMsgCount, Label, LabelCount, Media, Msg, MsgFolder, OptIn
-from temba.orgs.models import OrgMembership, User
+from temba.orgs.models import OrgMembership
 from temba.orgs.views.mixins import OrgPermsMixin
 from temba.tickets.models import Ticket, Topic
+from temba.users.models import User
 from temba.utils import str_to_bool
 from temba.utils.db.queries import SubqueryCount, or_list
 from temba.utils.uuid import is_uuid

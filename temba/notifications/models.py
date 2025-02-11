@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from temba.channels.models import Channel
 from temba.contacts.models import ContactImport
-from temba.orgs.models import Export, Org, User
+from temba.orgs.models import Export, Org
+from temba.users.models import User
 from temba.utils.email import EmailSender
 
 logger = logging.getLogger(__name__)

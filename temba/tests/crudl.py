@@ -4,7 +4,7 @@ from django.db.models import QuerySet
 from django.forms import model_to_dict
 from django.urls import reverse
 
-from temba.orgs.models import User
+from temba.users.models import User
 
 
 class CRUDLTestMixin:
