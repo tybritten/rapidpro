@@ -90,30 +90,6 @@
       document.querySelector("temba-flow-details").refresh();
     }
 
-    function deleteRun(id) {
-      var dialog = document.getElementById("confirm-run-delete");
-      dialog.runId = id;
-      dialog.open = true;
-    }
-
-    function performDelete(evt) {
-      var dialog = document.getElementById("confirm-run-delete");
-      dialog.open = false;
-
-      if (evt.detail.button.destructive) {
-        fetchAjax('/flowrun/delete/' + dialog.runId + '/', {
-          method: 'POST',
-        }).then(function(response) {
-          var runList = document.querySelector("temba-run-list");
-          if (runList) {
-            runList.removeRun(dialog.runId);
-            var details = document.querySelector("temba-flow-details");
-            details.refresh();
-          }
-        });
-      }
-    }
-
     function getChart(key, name) {
       var chart = charts[key];
       if (!chart) {

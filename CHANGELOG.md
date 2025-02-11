@@ -1,3 +1,8 @@
+v10.1.37 (2025-02-10)
+-------------------------
+ * Remove deleting of flow runs
+ * Remove event fires from contact history and remove trimming task
+
 v10.1.36 (2025-02-10)
 -------------------------
  * Update recent history part of campaign event page to read from redis

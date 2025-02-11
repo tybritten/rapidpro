@@ -37,7 +37,7 @@ class FlowActivityCountTest(TembaTest):
             )
 
         run1 = create_run(FlowRun.STATUS_ACTIVE, "ebb534e1-e2e0-40e9-8652-d195e87d832b")
-        run2 = create_run(FlowRun.STATUS_WAITING, "ebb534e1-e2e0-40e9-8652-d195e87d832b")
+        create_run(FlowRun.STATUS_WAITING, "ebb534e1-e2e0-40e9-8652-d195e87d832b")
         run3 = create_run(FlowRun.STATUS_WAITING, "bbb71aab-e026-442e-9971-6bc4f48941fb")
         create_run(FlowRun.STATUS_INTERRUPTED, "bbb71aab-e026-442e-9971-6bc4f48941fb")
 
@@ -56,17 +56,6 @@ class FlowActivityCountTest(TembaTest):
         self.assertEqual(
             {
                 "node:ebb534e1-e2e0-40e9-8652-d195e87d832b": 1,
-                "node:bbb71aab-e026-442e-9971-6bc4f48941fb": 0,
-                "node:85b0c928-4bd9-4a2e-84b2-164802c32486": 1,
-            },
-            flow.counts.prefix("node:").scope_totals(),
-        )
-
-        run2.delete()
-
-        self.assertEqual(
-            {
-                "node:ebb534e1-e2e0-40e9-8652-d195e87d832b": 0,
                 "node:bbb71aab-e026-442e-9971-6bc4f48941fb": 0,
                 "node:85b0c928-4bd9-4a2e-84b2-164802c32486": 1,
             },
@@ -154,19 +143,12 @@ class FlowActivityCountTest(TembaTest):
         self.assertEqual({"status:A": 2, "status:I": 4}, flow1.counts.scope_totals())
         self.assertEqual({"status:X": 1, "status:I": 2}, flow2.counts.scope_totals())
 
-        # do manual deletion of some runs
-        FlowRun.objects.filter(id__in=[r.id for r in runs2]).update(delete_from_results=True)
+        # delete some runs
         FlowRun.objects.filter(id__in=[r.id for r in runs2]).delete()
 
-        self.assertEqual({"status:A": 0, "status:I": 4}, flow1.counts.scope_totals())
-        self.assertEqual({"status:X": 0, "status:I": 2}, flow2.counts.scope_totals())
-
-        # do archival deletion of the rest
-        FlowRun.objects.filter(id__in=[r.id for r in runs1]).delete()
-
         # status counts are unchanged
-        self.assertEqual({"status:A": 0, "status:I": 4}, flow1.counts.scope_totals())
-        self.assertEqual({"status:X": 0, "status:I": 2}, flow2.counts.scope_totals())
+        self.assertEqual({"status:A": 2, "status:I": 4}, flow1.counts.scope_totals())
+        self.assertEqual({"status:X": 1, "status:I": 2}, flow2.counts.scope_totals())
 
     def test_msgsin_counts(self):
         flow1 = self.create_flow("Test 1")

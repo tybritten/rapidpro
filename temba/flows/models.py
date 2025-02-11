@@ -1156,7 +1156,7 @@ class FlowRun(models.Model):
     # current node location of this run in the flow
     current_node_uuid = models.UUIDField(null=True)
 
-    # set when deleting to signal to db triggers that result category counts should be decremented
+    # TODO drop
     delete_from_results = models.BooleanField(null=True)
 
     @dataclass
@@ -1196,19 +1196,6 @@ class FlowRun(models.Model):
             "exited_on": self.exited_on.isoformat() if self.exited_on else None,
             "exit_type": FlowRunReadSerializer.EXIT_TYPES.get(self.status),
         }
-
-    def delete(self, interrupt: bool = True):
-        """
-        Deletes this run, decrementing it from result category counts
-        """
-        with transaction.atomic():
-            self.delete_from_results = True
-            self.save(update_fields=("delete_from_results",))
-
-            if interrupt and self.session and self.session.status == FlowSession.STATUS_WAITING:
-                mailroom.queue_interrupt(self.org, sessions=[self.session])
-
-            super().delete()
 
     def __repr__(self):  # pragma: no cover
         return f"<FlowRun: id={self.id} flow={self.flow.name}>"

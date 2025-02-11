@@ -2,11 +2,13 @@ from unittest.mock import patch
 
 from django_redis import get_redis_connection
 
-from temba.flows.models import FlowRun, FlowStart
+from django.utils import timezone
+
+from temba.flows.models import FlowSession, FlowStart
 from temba.mailroom.queue import queue_interrupt
 from temba.tests import TembaTest, matchers
-from temba.tests.engine import MockSessionWriter
 from temba.utils import json
+from temba.utils.uuid import uuid4
 
 
 class MailroomQueueTest(TembaTest):
@@ -103,25 +105,17 @@ class MailroomQueueTest(TembaTest):
         )
 
     def test_queue_interrupt_by_session(self):
-        jim = self.create_contact("Jim", phone="+12065551212")
-
-        flow = self.get_flow("favorites")
-        flow_nodes = flow.get_definition()["nodes"]
-        color_prompt = flow_nodes[0]
-        color_split = flow_nodes[2]
-
-        (
-            MockSessionWriter(jim, flow)
-            .visit(color_prompt)
-            .send_msg("What is your favorite color?", self.channel)
-            .visit(color_split)
-            .wait()
-            .save()
+        contact = self.create_contact("Bob", phone="+1234567890")
+        session = FlowSession.objects.create(
+            uuid=uuid4(),
+            org=self.org,
+            contact=contact,
+            status=FlowSession.STATUS_WAITING,
+            output_url="http://sessions.com/123.json",
+            created_on=timezone.now(),
         )
 
-        run = FlowRun.objects.get(contact=jim)
-        session = run.session
-        run.delete()
+        queue_interrupt(self.org, sessions=[session])
 
         self.assert_org_queued(self.org)
         self.assert_queued_batch_task(
