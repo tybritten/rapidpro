@@ -1156,9 +1156,6 @@ class FlowRun(models.Model):
     # current node location of this run in the flow
     current_node_uuid = models.UUIDField(null=True)
 
-    # TODO drop
-    delete_from_results = models.BooleanField(null=True)
-
     @dataclass
     class Step:
         node: UUID
