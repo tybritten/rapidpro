@@ -191,11 +191,15 @@ class Ticket(models.Model):
 
     # the status of this ticket and who it's currently assigned to
     status = models.CharField(max_length=1, choices=STATUS_CHOICES)
-    assignee = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name="assigned_tickets")
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name="assigned_tickets"
+    )
 
     opened_on = models.DateTimeField(default=timezone.now)
     opened_in = models.ForeignKey("flows.Flow", null=True, on_delete=models.PROTECT, related_name="opened_tickets")
-    opened_by = models.ForeignKey(User, null=True, on_delete=models.PROTECT, related_name="opened_tickets")
+    opened_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="opened_tickets"
+    )
 
     # when this ticket was first replied to, closed, modified
     replied_on = models.DateTimeField(null=True)
@@ -317,7 +321,9 @@ class TicketEvent(models.Model):
     event_type = models.CharField(max_length=1, choices=TYPE_CHOICES)
     note = models.TextField(null=True, max_length=Ticket.MAX_NOTE_LENGTH)
     topic = models.ForeignKey(Topic, on_delete=models.PROTECT, null=True, related_name="ticket_events")
-    assignee = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name="ticket_assignee_events")
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name="ticket_assignee_events"
+    )
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name="ticket_events"

@@ -245,8 +245,8 @@ INSTALLED_APPS = (
     "rest_framework.authtoken",
     "compressor",
     "smartmin",
-    "smartmin.users",
     "timezone_field",
+    "temba.users",
     "temba.apks",
     "temba.archives",
     "temba.auth_tweaks",
@@ -477,8 +477,6 @@ GROUP_PERMISSIONS = {
         "orgs.org_update",
         "orgs.org_workspace",
         "orgs.orgimport.*",
-        "orgs.user_list",
-        "orgs.user_update",
         "request_logs.httplog_list",
         "request_logs.httplog_read",
         "request_logs.httplog_webhooks",
@@ -488,6 +486,8 @@ GROUP_PERMISSIONS = {
         "tickets.ticket.*",
         "tickets.topic.*",
         "triggers.trigger.*",
+        "users.user_list",
+        "users.user_update",
     ),
     "Editors": (
         "airtime.airtimetransfer_list",
@@ -590,7 +590,7 @@ GROUP_PERMISSIONS = {
 
 # extra permissions that only apply to API requests (wildcard notation not supported here)
 API_PERMISSIONS = {
-    "Editors": ("orgs.org_list", "orgs.user_list"),
+    "Editors": ("orgs.org_list", "users.user_list"),
     "Agents": (
         "contacts.contact_create",
         "contacts.contact_list",
@@ -602,8 +602,8 @@ API_PERMISSIONS = {
         "msgs.msg_create",
         "orgs.org_list",
         "orgs.org_read",
-        "orgs.user_list",
         "tickets.shortcut_list",
+        "users.user_list",
     ),
 }
 
@@ -616,6 +616,7 @@ LOGIN_REDIRECT_URL = "/org/choose/"
 
 AUTHENTICATION_BACKENDS = ("temba.orgs.backend.AuthenticationBackend",)
 
+AUTH_USER_MODEL = "users.User"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
 ]

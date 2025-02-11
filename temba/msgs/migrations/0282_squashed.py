@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
@@ -136,7 +136,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="media",
             name="created_by",
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="orgs.user"),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name="media",
@@ -204,7 +204,7 @@ class Migration(migrations.Migration):
                 db_index=False,
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
-                to="orgs.user",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(

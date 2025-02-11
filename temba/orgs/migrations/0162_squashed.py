@@ -421,19 +421,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name="User",
-            fields=[],
-            options={
-                "proxy": True,
-                "indexes": [],
-                "constraints": [],
-            },
-            bases=("auth.user",),
-            managers=[
-                ("objects", django.contrib.auth.models.UserManager()),
-            ],
-        ),
-        migrations.CreateModel(
             name="Invitation",
             fields=[
                 (

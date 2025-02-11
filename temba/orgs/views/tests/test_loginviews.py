@@ -1,13 +1,12 @@
 from datetime import timedelta
 from unittest.mock import patch
 
-from smartmin.users.models import FailedLogin
-
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from temba.tests import TembaTest
+from temba.users.models import FailedLogin
 
 
 class LoginViewsTest(TembaTest):
