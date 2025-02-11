@@ -269,9 +269,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
 
         granters = Group.objects.get(name="Granters")
         betas = Group.objects.get(name="Beta")
-        current_password = self.editor.password
 
-        # submit without new password
         response = self.requestView(
             update_url,
             self.customer_support,
@@ -287,12 +285,11 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.editor.refresh_from_db()
         self.assertEqual("eddy@textit.com", self.editor.email)
         self.assertEqual("eddy@textit.com", self.editor.username)  # should match email
-        self.assertEqual(current_password, self.editor.password)
         self.assertEqual("Edward", self.editor.first_name)
         self.assertEqual("", self.editor.last_name)
         self.assertEqual({granters, betas}, set(self.editor.groups.all()))
 
-        # submit with new password and one less group
+        # submit with one less group
         response = self.requestView(
             update_url,
             self.customer_support,
@@ -309,7 +306,6 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.editor.refresh_from_db()
         self.assertEqual("eddy@textit.com", self.editor.email)
         self.assertEqual("eddy@textit.com", self.editor.username)
-        self.assertNotEqual(current_password, self.editor.password)
         self.assertEqual("Edward", self.editor.first_name)
         self.assertEqual("", self.editor.last_name)
         self.assertEqual({granters}, set(self.editor.groups.all()))

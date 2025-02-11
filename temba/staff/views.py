@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from smartmin.users.models import FailedLogin, PasswordHistory
-from smartmin.users.views import UserUpdateForm
 from smartmin.views import SmartCRUDL, SmartDeleteView, SmartFormView, SmartListView, SmartReadView, SmartUpdateView
 
 from django import forms
@@ -286,7 +284,7 @@ class UserCRUDL(SmartCRUDL):
             )
 
     class Update(StaffOnlyMixin, ModalFormMixin, ComponentFormMixin, ContextMenuMixin, SmartUpdateView):
-        class Form(UserUpdateForm):
+        class Form(forms.ModelForm):
             groups = forms.ModelMultipleChoiceField(
                 widget=SelectMultipleWidget(
                     attrs={"placeholder": _("Optional: Select permissions groups."), "searchable": True}
@@ -297,7 +295,7 @@ class UserCRUDL(SmartCRUDL):
 
             class Meta:
                 model = User
-                fields = ("email", "new_password", "first_name", "last_name", "groups")
+                fields = ("email", "first_name", "last_name", "groups")
                 help_texts = {"new_password": _("You can reset the user's password by entering a new password here")}
 
         form_class = Form
@@ -316,11 +314,6 @@ class UserCRUDL(SmartCRUDL):
                 obj.groups.clear()
                 for group in self.form.cleaned_data["groups"]:
                     obj.groups.add(group)
-
-            # if a new password was set, reset our failed logins
-            if "new_password" in self.form.cleaned_data and self.form.cleaned_data["new_password"]:
-                FailedLogin.objects.filter(username__iexact=self.object.username).delete()
-                PasswordHistory.objects.create(user=obj, password=obj.password)
 
             return obj
 
