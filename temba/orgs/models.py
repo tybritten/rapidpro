@@ -166,7 +166,7 @@ class UserSettings(models.Model):
     is_system = models.BooleanField(default=False)
 
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
     """
     Handle user post-save signals so that we can create user settings for them.
