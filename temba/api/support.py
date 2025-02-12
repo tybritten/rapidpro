@@ -45,7 +45,7 @@ class APITokenAuthentication(RequestAttributesMixin, TokenAuthentication):
     """
 
     model = APIToken
-    select_related = ("user", "user__settings", "org", "org__parent")
+    select_related = ("user", "org", "org__parent")
 
     def authenticate_credentials(self, key):
         try:
