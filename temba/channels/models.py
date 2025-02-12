@@ -26,7 +26,14 @@ from django.utils.translation import gettext_lazy as _
 from temba import mailroom
 from temba.orgs.models import DependencyMixin, Org
 from temba.utils import analytics, dynamo, get_anonymous_user, on_transaction_commit, redact
-from temba.utils.models import JSONAsTextField, LegacyUUIDMixin, TembaModel, delete_in_batches, generate_uuid
+from temba.utils.models import (
+    JSONAsTextField,
+    LegacyUUIDMixin,
+    TembaModel,
+    TembaUUIDMixin,
+    delete_in_batches,
+    generate_uuid,
+)
 from temba.utils.models.counts import BaseSquashableCount
 from temba.utils.text import generate_secret
 
@@ -771,7 +778,7 @@ class ChannelCount(BaseSquashableCount):
         ]
 
 
-class ChannelEvent(models.Model):
+class ChannelEvent(TembaUUIDMixin, models.Model):
     """
     An event other than a message that occurs between a channel and a contact. Can be used to trigger flows etc.
     """
@@ -786,6 +793,7 @@ class ChannelEvent(models.Model):
     TYPE_WELCOME_MESSAGE = "welcome_message"
     TYPE_OPTIN = "optin"
     TYPE_OPTOUT = "optout"
+    TYPE_DELETE_CONTACT = "delete_contact"
 
     # single char flag, human readable name, API readable name
     TYPE_CONFIG = (
@@ -799,6 +807,7 @@ class ChannelEvent(models.Model):
         (TYPE_WELCOME_MESSAGE, _("Welcome Message"), "welcome-message"),
         (TYPE_OPTIN, _("Opt In"), "optin"),
         (TYPE_OPTOUT, _("Opt Out"), "optout"),
+        (TYPE_DELETE_CONTACT, _("Delete Contact"), "delete-contact"),
     )
 
     TYPE_CHOICES = [(t[0], t[1]) for t in TYPE_CONFIG]
@@ -809,6 +818,8 @@ class ChannelEvent(models.Model):
     STATUS_PENDING = "P"
     STATUS_HANDLED = "H"
     STATUS_CHOICES = ((STATUS_PENDING, "Pending"), (STATUS_HANDLED, "Handled"))
+
+    uuid = models.UUIDField(unique=True, null=True)
 
     org = models.ForeignKey(Org, on_delete=models.PROTECT)
     channel = models.ForeignKey(Channel, on_delete=models.PROTECT)
