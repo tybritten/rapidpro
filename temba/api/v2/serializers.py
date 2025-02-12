@@ -1741,8 +1741,7 @@ class UserReadSerializer(ReadSerializer):
     created_on = serializers.DateTimeField(default_timezone=tzone.utc, source="date_joined")
 
     def get_avatar(self, obj):
-        settings = obj.settings
-        return settings.avatar.url if settings and settings.avatar else None
+        return obj.avatar.url if obj.avatar else None
 
     def get_role(self, obj):
         return self.ROLES[self.context["memberships"][obj].role]
