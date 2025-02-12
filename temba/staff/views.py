@@ -360,7 +360,7 @@ class UserCRUDL(SmartCRUDL):
             elif obj_filter == "staff":
                 qs = qs.filter(is_staff=True)
 
-            return qs.select_related("settings")
+            return qs
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)

@@ -877,7 +877,7 @@ class Org(SmartModel):
         """
         Gets users in this org, filtered by role or permission.
         """
-        qs = self.users.filter(is_active=True).select_related("settings")
+        qs = self.users.filter(is_active=True)
 
         if roles is not None:
             qs = qs.filter(orgmembership__org=self, orgmembership__role_code__in=[r.code for r in roles])
