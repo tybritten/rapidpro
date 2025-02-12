@@ -66,17 +66,7 @@ from temba.utils.views.mixins import (
     SpaMixin,
 )
 
-from ..models import (
-    DefinitionExport,
-    Export,
-    IntegrationType,
-    Invitation,
-    Org,
-    OrgImport,
-    OrgMembership,
-    OrgRole,
-    User,
-)
+from ..models import DefinitionExport, Export, IntegrationType, Invitation, Org, OrgImport, OrgMembership, OrgRole, User
 from .base import BaseDeleteModal, BaseListView, BaseMenuView
 from .forms import SignupForm, SMTPForm
 from .mixins import InferOrgMixin, InferUserMixin, OrgObjPermsMixin, OrgPermsMixin, RequireFeatureMixin
