@@ -7,10 +7,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("orgs", "0168_delete_backuptoken"),
+        ("users", "0007_backfill_new_user_fields"),
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name="UserSettings",
-        ),
+        migrations.DeleteModel(name="UserSettings"),
     ]
