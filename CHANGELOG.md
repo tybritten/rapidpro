@@ -1,3 +1,8 @@
+v10.1.45 (2025-02-12)
+-------------------------
+ * Allow message text up to 4,096 characters.
+ * Data migration to copy user settings to new fields
+
 v10.1.44 (2025-02-12)
 -------------------------
  * Drop old backup token model in orgs app
