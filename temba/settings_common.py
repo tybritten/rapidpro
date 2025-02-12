@@ -848,7 +848,6 @@ MAILROOM_AUTH_TOKEN = None
 # Data Model
 # -----------------------------------------------------------------------------------
 
-MSG_FIELD_SIZE = 640  # used for broadcast text, message text, and message campaign events
 GLOBAL_VALUE_SIZE = 10_000  # max length of global values
 
 ORG_LIMIT_DEFAULTS = {
