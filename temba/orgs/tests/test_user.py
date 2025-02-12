@@ -12,6 +12,7 @@ class UserTest(TembaTest):
         user = User.create("jim@rapidpro.io", "Jim", "McFlow", password="super")
 
         self.assertTrue(UserSettings.objects.filter(user=user).exists())  # created by signal
+        self.assertEqual(UserSettings.objects.get(user=user).otp_secret, user.two_factor_secret)
 
         with self.assertNumQueries(0):
             self.assertIsNone(user.settings.last_auth_on)

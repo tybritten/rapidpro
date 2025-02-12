@@ -62,13 +62,17 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=storages["public"], null=True)
     is_system = models.BooleanField(default=False)
 
-    otp_secret = models.CharField(max_length=16, default=pyotp.random_base32)
-    two_factor_enabled = models.BooleanField(default=False)
-
-    external_id = models.CharField(max_length=128, null=True)
-    verification_token = models.CharField(max_length=64, null=True)
+    # email verification
     email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
     email_verification_secret = models.CharField(max_length=64, db_index=True, null=True)  # TODO make non-null
+
+    # 2FA support
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=16, default=pyotp.random_base32)
+
+    # optional customer support fields
+    external_id = models.CharField(max_length=128, null=True)
+    verification_token = models.CharField(max_length=64, null=True)
 
     @classmethod
     def create(cls, email: str, first_name: str, last_name: str, password: str, language: str = None):

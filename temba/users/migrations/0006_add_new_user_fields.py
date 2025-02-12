@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="user",
-            name="otp_secret",
+            name="two_factor_secret",
             field=models.CharField(default=pyotp.random_base32, max_length=16),
         ),
         migrations.AddField(

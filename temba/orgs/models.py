@@ -173,7 +173,9 @@ def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
     """
 
     if created:
-        instance.settings = UserSettings.objects.create(user=instance, email_verification_secret=generate_secret(64))
+        instance.settings = UserSettings.objects.create(
+            user=instance, otp_secret=instance.two_factor_secret, email_verification_secret=generate_secret(64)
+        )
 
 
 class OrgRole(Enum):
