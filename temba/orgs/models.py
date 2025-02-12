@@ -877,7 +877,7 @@ class Org(SmartModel):
         """
         Gets users in this org, filtered by role or permission.
         """
-        qs = self.users.filter(is_active=True).select_related("settings")
+        qs = self.users.filter(is_active=True)
 
         if roles is not None:
             qs = qs.filter(orgmembership__org=self, orgmembership__role_code__in=[r.code for r in roles])
@@ -888,7 +888,7 @@ class Org(SmartModel):
         """
         Convenience method for getting all org administrators, excluding system users
         """
-        return self.get_users(roles=[OrgRole.ADMINISTRATOR]).exclude(settings__is_system=True)
+        return self.get_users(roles=[OrgRole.ADMINISTRATOR]).exclude(is_system=True)
 
     def has_user(self, user: User) -> bool:
         """

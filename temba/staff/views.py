@@ -360,7 +360,7 @@ class UserCRUDL(SmartCRUDL):
             elif obj_filter == "staff":
                 qs = qs.filter(is_staff=True)
 
-            return qs.select_related("settings")
+            return qs
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
@@ -369,4 +369,4 @@ class UserCRUDL(SmartCRUDL):
             return context
 
         def get_2fa(self, obj):
-            return _("Yes") if obj.settings.two_factor_enabled else _("No")
+            return _("Yes") if obj.two_factor_enabled else _("No")

@@ -187,8 +187,7 @@ class User(AbstractUser):
         Verifies a user using a 2FA mechanism (OTP or backup token)
         """
         if otp:
-            secret = self.settings.otp_secret
-            return pyotp.TOTP(secret).verify(otp, valid_window=2)
+            return pyotp.TOTP(self.two_factor_secret).verify(otp, valid_window=2)
         elif backup_token:
             token = self.backup_tokens.filter(token=backup_token, is_used=False).first()
             if token:

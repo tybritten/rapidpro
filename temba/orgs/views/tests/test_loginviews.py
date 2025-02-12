@@ -15,7 +15,7 @@ class LoginViewsTest(TembaTest):
         verify_url = reverse("orgs.two_factor_verify")
         backup_url = reverse("orgs.two_factor_backup")
 
-        self.assertIsNone(self.admin.settings.last_auth_on)
+        self.assertIsNone(self.admin.last_auth_on)
 
         # try to access a non-public page
         response = self.client.get(reverse("msgs.msg_inbox"))
@@ -260,8 +260,8 @@ class LoginViewsTest(TembaTest):
             response = self.client.post(enable_url, {"otp": "123456", "confirm_password": "Qwerty123"})
         self.assertRedirect(response, tokens_url)
 
-        self.admin.settings.refresh_from_db()
-        self.assertTrue(self.admin.settings.two_factor_enabled)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.two_factor_enabled)
 
         # view backup tokens page
         response = self.client.get(tokens_url)
@@ -290,8 +290,8 @@ class LoginViewsTest(TembaTest):
         response = self.client.post(disable_url, {"confirm_password": "Qwerty123"})
         self.assertRedirect(response, reverse("orgs.user_account"))
 
-        self.admin.settings.refresh_from_db()
-        self.assertFalse(self.admin.settings.two_factor_enabled)
+        self.admin.refresh_from_db()
+        self.assertFalse(self.admin.two_factor_enabled)
 
         # trying to view the tokens page now takes us to the enable form
         response = self.client.get(tokens_url)

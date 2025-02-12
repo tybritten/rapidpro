@@ -88,7 +88,7 @@ class MiddlewareTest(TembaTest):
         # if we have an authenticated user, their setting takes priority
         self.login(self.admin)
 
-        self.admin.settings.language = "fr"
-        self.admin.settings.save(update_fields=("language",))
+        self.admin.language = "fr"
+        self.admin.save(update_fields=("language",))
 
         assert_text("Se connecter")

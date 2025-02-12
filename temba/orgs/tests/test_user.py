@@ -93,10 +93,12 @@ class UserTest(TembaTest):
                 )
 
     def test_two_factor(self):
+        self.assertFalse(self.admin.two_factor_enabled)
         self.assertFalse(self.admin.settings.two_factor_enabled)
 
         self.admin.enable_2fa()
 
+        self.assertTrue(self.admin.two_factor_enabled)
         self.assertTrue(self.admin.settings.two_factor_enabled)
         self.assertEqual(10, len(self.admin.backup_tokens.filter(is_used=False)))
 
@@ -124,6 +126,7 @@ class UserTest(TembaTest):
 
         self.admin.disable_2fa()
 
+        self.assertFalse(self.admin.two_factor_enabled)
         self.assertFalse(self.admin.settings.two_factor_enabled)
 
     @mock_mailroom
