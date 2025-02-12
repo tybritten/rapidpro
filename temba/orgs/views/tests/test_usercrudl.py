@@ -19,8 +19,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         list_url = reverse("orgs.user_list")
 
         system_user = self.create_user("system@textit.com")
-        system_user.settings.is_system = True
-        system_user.settings.save(update_fields=("is_system",))
+        system_user.is_system = True
+        system_user.save(update_fields=("is_system",))
 
         # add system user to workspace
         self.org.add_user(system_user, OrgRole.ADMINISTRATOR)
@@ -78,8 +78,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
 
     def test_update(self):
         system_user = self.create_user("system@textit.com")
-        system_user.settings.is_system = True
-        system_user.settings.save(update_fields=("is_system",))
+        system_user.is_system = True
+        system_user.save(update_fields=("is_system",))
 
         update_url = reverse("orgs.user_update", args=[self.agent.id])
 
@@ -156,8 +156,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
 
     def test_delete(self):
         system_user = self.create_user("system@textit.com")
-        system_user.settings.is_system = True
-        system_user.settings.save(update_fields=("is_system",))
+        system_user.is_system = True
+        system_user.save(update_fields=("is_system",))
 
         delete_url = reverse("orgs.user_delete", args=[self.agent.id])
 
@@ -246,9 +246,9 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
                 form_fields=["first_name", "last_name", "email", "avatar", "current_password", "new_password"],
             )
 
-        self.admin.settings.email_status = "V"  # mark user email as verified
-        self.admin.settings.email_verification_secret = "old-email-secret"
-        self.admin.settings.save()
+        self.admin.email_status = "V"  # mark user email as verified
+        self.admin.email_verification_secret = "old-email-secret"
+        self.admin.save()
 
         # try to submit without required fields
         self.assertUpdateSubmit(
@@ -282,16 +282,16 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
 
         self.admin.refresh_from_db()
         self.assertEqual("Admin User", self.admin.name)
-        self.assertEqual("V", self.admin.settings.email_status)  # unchanged
-        self.assertEqual("old-email-secret", self.admin.settings.email_verification_secret)  # unchanged
+        self.assertEqual("V", self.admin.email_status)  # unchanged
+        self.assertEqual("old-email-secret", self.admin.email_verification_secret)  # unchanged
         self.assertEqual(1, RecoveryToken.objects.filter(user=self.admin).count())  # unchanged
-        self.assertIsNotNone(self.admin.settings.avatar)
-        self.assertEqual("pt-br", self.admin.settings.language)
+        self.assertIsNotNone(self.admin.avatar)
+        self.assertEqual("pt-br", self.admin.language)
 
         self.assertEqual(0, self.admin.notifications.count())
 
-        self.admin.settings.language = "en-us"
-        self.admin.settings.save()
+        self.admin.language = "en-us"
+        self.admin.save()
 
         # try to change email without entering password
         self.assertUpdateSubmit(
@@ -323,11 +323,10 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         )
 
         self.admin.refresh_from_db()
-        self.admin.settings.refresh_from_db()
         self.assertEqual("admin@trileet.com", self.admin.username)
         self.assertEqual("admin@trileet.com", self.admin.email)
-        self.assertEqual("U", self.admin.settings.email_status)  # because email changed
-        self.assertNotEqual("old-email-secret", self.admin.settings.email_verification_secret)
+        self.assertEqual("U", self.admin.email_status)  # because email changed
+        self.assertNotEqual("old-email-secret", self.admin.email_verification_secret)
         self.assertEqual(0, RecoveryToken.objects.filter(user=self.admin).count())
 
         # should have a email changed notification using old address
@@ -407,9 +406,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
             )
 
             self.admin.refresh_from_db()
-            self.admin.settings.refresh_from_db()
             self.assertEqual("Andy", self.admin.first_name)
-            self.assertEqual("en-us", self.admin.settings.language)
+            self.assertEqual("en-us", self.admin.language)
 
     def test_forget(self):
         forget_url = reverse("orgs.user_forget")
@@ -545,11 +543,11 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertContains(response, "Please wait 10 minutes")
 
     def test_verify_email(self):
-        self.assertEqual(self.admin.settings.email_status, "U")
-        self.assertTrue(self.admin.settings.email_verification_secret)
+        self.assertEqual(self.admin.email_status, "U")
+        self.assertTrue(self.admin.email_verification_secret)
 
-        self.admin.settings.email_verification_secret = "SECRET"
-        self.admin.settings.save(update_fields=("email_verification_secret",))
+        self.admin.email_verification_secret = "SECRET"
+        self.admin.save(update_fields=("email_verification_secret",))
 
         verify_url = reverse("orgs.user_verify_email", args=["SECRET"])
 
@@ -568,8 +566,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertContains(response, "verified successfully")
         self.assertContains(response, reverse("orgs.org_start"))
 
-        self.admin.settings.refresh_from_db()
-        self.assertEqual(self.admin.settings.email_status, "V")
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.email_status, "V")
 
         # use the same link again
         response = self.client.get(verify_url)
@@ -578,7 +576,7 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertContains(response, reverse("orgs.org_start"))
 
         self.login(self.admin2)
-        self.assertEqual(self.admin2.settings.email_status, "U")
+        self.assertEqual(self.admin2.email_status, "U")
 
         # user is told to login as that user
         response = self.client.get(verify_url)
@@ -587,8 +585,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         self.assertContains(response, reverse("orgs.login"))
 
         # and isn't verified
-        self.admin2.settings.refresh_from_db()
-        self.assertEqual(self.admin2.settings.email_status, "U")
+        self.admin2.refresh_from_db()
+        self.assertEqual(self.admin2.email_status, "U")
 
     def test_send_verification_email(self):
         r = get_redis_connection()
@@ -627,8 +625,8 @@ class UserCRUDLTest(TembaTest, CRUDLTestMixin):
         # and one email sent
         self.assertEqual(1, len(mail.outbox))
 
-        self.admin.settings.email_status = "V"
-        self.admin.settings.save(update_fields=("email_status",))
+        self.admin.email_status = "V"
+        self.admin.save(update_fields=("email_status",))
 
         response = self.client.post(send_verification_email_url, {}, follow=True)
         self.assertEqual(200, response.status_code)

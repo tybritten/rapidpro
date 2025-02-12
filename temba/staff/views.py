@@ -369,4 +369,4 @@ class UserCRUDL(SmartCRUDL):
             return context
 
         def get_2fa(self, obj):
-            return _("Yes") if obj.settings.two_factor_enabled else _("No")
+            return _("Yes") if obj.two_factor_enabled else _("No")

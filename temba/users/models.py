@@ -9,7 +9,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from temba.utils.fields import UploadToIdPathAndRename
-from temba.utils.text import generate_token
+from temba.utils.text import generate_secret, generate_token
 from temba.utils.uuid import uuid4
 
 
@@ -85,6 +85,7 @@ class User(AbstractUser):
             last_name=last_name,
             password=password,
             language=language or settings.DEFAULT_LANGUAGE,
+            email_verification_secret=generate_secret(64),
         )
         if language:
             obj.settings.language = language
@@ -180,8 +181,7 @@ class User(AbstractUser):
         Verifies a user using a 2FA mechanism (OTP or backup token)
         """
         if otp:
-            secret = self.settings.otp_secret
-            return pyotp.TOTP(secret).verify(otp, valid_window=2)
+            return pyotp.TOTP(self.two_factor_secret).verify(otp, valid_window=2)
         elif backup_token:
             token = self.backup_tokens.filter(token=backup_token, is_used=False).first()
             if token:

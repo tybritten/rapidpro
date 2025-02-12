@@ -125,7 +125,7 @@ class LanguageMiddleware:
             language = request.branding.get("language", settings.DEFAULT_LANGUAGE)
             translation.activate(language)
         else:
-            translation.activate(user.settings.language)
+            translation.activate(user.language)
 
         response = self.get_response(request)
         response.headers.setdefault("Content-Language", translation.get_language())

@@ -46,7 +46,7 @@ def send_user_verification_email(org_id, user_id):
 
     assert user in org.get_users()
 
-    if user.settings.email_status == UserSettings.STATUS_VERIFIED:
+    if user.email_status == UserSettings.STATUS_VERIFIED:
         return
 
     key = f"send_verification_email:{user.email}".lower()
@@ -59,7 +59,7 @@ def send_user_verification_email(org_id, user_id):
         [user.email],
         _("%(name)s Email Verification") % org.branding,
         "orgs/email/email_verification",
-        {"org": org, "secret": user.settings.email_verification_secret},
+        {"org": org, "secret": user.email_verification_secret},
     )
 
     r.set(key, "1", ex=60 * 10)
