@@ -1,3 +1,9 @@
+v10.1.49 (2025-02-12)
+-------------------------
+ * Remove no longer needed custom auth backend
+ * Remove user settings prefetch
+ * Fix results preview on run list
+
 v10.1.48 (2025-02-12)
 -------------------------
  * Stop writing old user settings
