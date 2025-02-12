@@ -1,7 +1,7 @@
 import pyotp
 
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager as AuthUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.files.storage import storages
 from django.db import models
@@ -46,6 +46,15 @@ class BackupToken(models.Model):
         return self.token
 
 
+class UserManager(AuthUserManager):
+    """
+    Overrides the default user manager to make username lookups case insensitive
+    """
+
+    def get_by_natural_key(self, username):
+        return self.get(**{f"{self.model.USERNAME_FIELD}__iexact": username})
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     SYSTEM_USER_USERNAME = "system"
 
@@ -62,14 +71,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 
-    username_validator = UnicodeUsernameValidator()
-
     username = models.CharField(
         _("username"),
         max_length=150,
         unique=True,
         help_text=_("Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."),
-        validators=[username_validator],
+        validators=[UnicodeUsernameValidator()],
         error_messages={
             "unique": _("A user with that username already exists."),
         },
@@ -77,24 +84,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
     email = models.EmailField(_("email address"), blank=True)
-    is_staff = models.BooleanField(
-        _("staff status"),
-        default=False,
-        help_text=_("Designates whether the user can log into this admin site."),
-    )
-    is_active = models.BooleanField(
-        _("active"),
-        default=True,
-        help_text=_(
-            "Designates whether this user should be treated as active. " "Unselect this instead of deleting accounts."
-        ),
-    )
-    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
-
     language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
-    last_auth_on = models.DateTimeField(null=True)
     avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=storages["public"], null=True)
+
+    date_joined = models.DateTimeField(default=timezone.now)
+    last_auth_on = models.DateTimeField(null=True)
     is_system = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     # email verification
     email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)

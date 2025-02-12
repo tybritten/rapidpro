@@ -28,6 +28,9 @@ class UserTest(TembaTest):
         self.assertEqual("Jim", user.name)
         self.assertEqual({"email": "jim@rapidpro.io", "name": "Jim"}, user.as_engine_ref())
 
+        self.assertEqual(user, User.objects.get_by_natural_key("jim@rapidpro.io"))
+        self.assertEqual(user, User.objects.get_by_natural_key("JIM@rapidpro.io"))
+
     def test_has_org_perm(self):
         granter = self.create_user("jim@rapidpro.io", group_names=("Granters",))
 
