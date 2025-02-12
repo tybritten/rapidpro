@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.core import checks
 from django.db import connection, models
 from django.test import TestCase
@@ -8,6 +8,7 @@ from django.test import TestCase
 from temba.contacts.models import Contact
 from temba.flows.models import Flow
 from temba.tests import TembaTest
+from temba.users.models import User
 
 from .base import delete_in_batches, patch_queryset_count, update_if_changed
 from .es import IDSliceQuerySet
@@ -89,7 +90,7 @@ class IDSliceQuerySetTest(TembaTest):
         users = IDSliceQuerySet(User, [self.agent.id, self.editor.id], offset=0, total=3)
 
         self.assertEqual(
-            f"""SELECT t.* FROM auth_user t JOIN (VALUES (1, {self.agent.id}), (2, {self.editor.id})) tmp_resultset (seq, model_id) ON t.id = tmp_resultset.model_id ORDER BY tmp_resultset.seq""",
+            f"""SELECT t.* FROM users_user t JOIN (VALUES (1, {self.agent.id}), (2, {self.editor.id})) tmp_resultset (seq, model_id) ON t.id = tmp_resultset.model_id ORDER BY tmp_resultset.seq""",
             users.raw_query,
         )
 
@@ -102,7 +103,7 @@ class IDSliceQuerySetTest(TembaTest):
         users = IDSliceQuerySet(User, [self.agent.id, self.editor.id], only=("id", "first_name"), offset=0, total=3)
 
         self.assertEqual(
-            f"""SELECT t.id, t.first_name FROM auth_user t JOIN (VALUES (1, {self.agent.id}), (2, {self.editor.id})) tmp_resultset (seq, model_id) ON t.id = tmp_resultset.model_id ORDER BY tmp_resultset.seq""",
+            f"""SELECT t.id, t.first_name FROM users_user t JOIN (VALUES (1, {self.agent.id}), (2, {self.editor.id})) tmp_resultset (seq, model_id) ON t.id = tmp_resultset.model_id ORDER BY tmp_resultset.seq""",
             users.raw_query,
         )
 

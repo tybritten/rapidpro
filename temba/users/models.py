@@ -245,6 +245,3 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.name or self.username
-
-    class Meta:
-        db_table = "auth_user"
