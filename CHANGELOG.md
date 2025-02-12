@@ -1,3 +1,8 @@
+v10.1.47 (2025-02-12)
+-------------------------
+ * Make email_verification_secret not-null
+ * Read from new user fields instead of settings
+
 v10.1.46 (2025-02-12)
 -------------------------
  * Tweak how randomly generated values on user are saved
