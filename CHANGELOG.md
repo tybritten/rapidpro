@@ -1,3 +1,7 @@
+v10.1.43 (2025-02-12)
+-------------------------
+ * Rename auth_user to users_user
+
 v10.1.42 (2025-02-11)
 -------------------------
  * Add BackupToken in users app and copy records from model in orgs app
