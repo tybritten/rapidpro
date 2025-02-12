@@ -46,7 +46,7 @@ from temba.utils.fields import UploadToIdPathAndRename
 from temba.utils.models import JSONField, TembaUUIDMixin, delete_in_batches
 from temba.utils.models.counts import BaseScopedCount
 from temba.utils.s3 import public_file_storage
-from temba.utils.text import generate_secret, generate_token
+from temba.utils.text import generate_secret
 from temba.utils.timezones import timezone_to_country_code
 from temba.utils.uuid import uuid4
 
@@ -1397,17 +1397,6 @@ class Invitation(SmartModel):
         self.modified_on = timezone.now()
         self.modified_by = user or self.modified_by
         self.save(update_fields=("is_active", "modified_by", "modified_on"))
-
-
-class BackupToken(models.Model):
-    """
-    TODO drop
-    """
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-    token = models.CharField(max_length=18, unique=True, default=generate_token)
-    is_used = models.BooleanField(default=False)
-    created_on = models.DateTimeField(default=timezone.now)
 
 
 class ExportType:

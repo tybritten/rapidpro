@@ -5,6 +5,8 @@ from django.db import migrations
 
 def copy_settings(apps, schema_editor):
     UserSettings = apps.get_model("orgs", "UserSettings")
+
+    num_updated = 0
     for settings in UserSettings.objects.all().select_related("user"):
         settings.user.language = settings.language
         settings.user.last_auth_on = settings.last_auth_on
@@ -30,6 +32,10 @@ def copy_settings(apps, schema_editor):
                 "verification_token",
             )
         )
+        num_updated += 1
+
+    if num_updated:
+        print(f"Updated {num_updated} users")
 
 
 class Migration(migrations.Migration):

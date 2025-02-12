@@ -1,3 +1,8 @@
+v10.1.44 (2025-02-12)
+-------------------------
+ * Drop old backup token model in orgs app
+ * Add fields to custom user model to replace UserSettings and start writing them
+
 v10.1.43 (2025-02-12)
 -------------------------
  * Rename auth_user to users_user
