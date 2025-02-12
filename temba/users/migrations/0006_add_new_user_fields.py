@@ -11,7 +11,7 @@ import temba.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("users", "0004_copy_backup_token"),
+        ("users", "0005_alter_user_options_alter_user_table"),
     ]
 
     operations = [
