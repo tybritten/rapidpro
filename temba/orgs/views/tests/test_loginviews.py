@@ -54,6 +54,7 @@ class LoginViewsTest(TembaTest):
         response = self.client.post(login_url, {"username": "admin@textit.com", "password": "Qwerty123"})
         self.assertRedirect(response, reverse("orgs.org_choose"))
 
+        self.admin.refresh_from_db()
         self.admin.settings.refresh_from_db()
         self.assertIsNotNone(self.admin.last_auth_on)
         self.assertIsNotNone(self.admin.settings.last_auth_on)
