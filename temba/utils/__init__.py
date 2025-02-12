@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from .checks import *  # noqa
@@ -91,7 +92,5 @@ def get_anonymous_user():
 
     global _anon_user
     if _anon_user is None:
-        from django.contrib.auth.models import User
-
-        _anon_user = User.objects.get(username=settings.ANONYMOUS_USER_NAME)
+        _anon_user = get_user_model().objects.get(username=settings.ANONYMOUS_USER_NAME)
     return _anon_user

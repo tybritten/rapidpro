@@ -6,7 +6,6 @@ import iso8601
 import pyotp
 from django_redis import get_redis_connection
 from packaging.version import Version
-from smartmin.users.models import FailedLogin, RecoveryToken
 from smartmin.views import (
     SmartCreateView,
     SmartCRUDL,
@@ -43,6 +42,7 @@ from temba.formax import FormaxMixin, FormaxSectionMixin
 from temba.notifications.mixins import NotificationTargetMixin
 from temba.orgs.tasks import send_user_verification_email
 from temba.tickets.models import Team
+from temba.users.models import BackupToken, FailedLogin, RecoveryToken
 from temba.utils import analytics, json, languages, on_transaction_commit, str_to_bool
 from temba.utils.email import EmailSender, parse_smtp_url
 from temba.utils.fields import (
@@ -66,19 +66,7 @@ from temba.utils.views.mixins import (
     SpaMixin,
 )
 
-from ..models import (
-    BackupToken,
-    DefinitionExport,
-    Export,
-    IntegrationType,
-    Invitation,
-    Org,
-    OrgImport,
-    OrgMembership,
-    OrgRole,
-    User,
-    UserSettings,
-)
+from ..models import DefinitionExport, Export, IntegrationType, Invitation, Org, OrgImport, OrgMembership, OrgRole, User
 from .base import BaseDeleteModal, BaseListView, BaseMenuView
 from .forms import SignupForm, SMTPForm
 from .mixins import InferOrgMixin, InferUserMixin, OrgObjPermsMixin, OrgPermsMixin, RequireFeatureMixin
@@ -196,7 +184,7 @@ class LoginView(AuthLoginView):
     def form_valid(self, form):
         user = form.get_user()
 
-        if self.two_factor and user.settings.two_factor_enabled:
+        if self.two_factor and user.two_factor_enabled:
             self.request.session[TWO_FACTOR_USER_SESSION_KEY] = str(user.id)
             self.request.session[TWO_FACTOR_STARTED_SESSION_KEY] = timezone.now().isoformat()
 
@@ -414,11 +402,10 @@ class UserCRUDL(SmartCRUDL):
                 .derive_queryset(**kwargs)
                 .filter(id__in=self.request.org.get_users().values_list("id", flat=True))
                 .order_by(Lower("email"))
-                .select_related("settings")
             )
 
             if not self.request.user.is_staff:
-                qs = qs.exclude(settings__is_system=True)
+                qs = qs.exclude(is_system=True)
 
             return qs
 
@@ -435,13 +422,13 @@ class UserCRUDL(SmartCRUDL):
 
             admins = self.request.org.get_users(roles=[OrgRole.ADMINISTRATOR])
             if not self.request.user.is_staff:
-                admins = admins.exclude(settings__is_system=True)
+                admins = admins.exclude(is_system=True)
             context["admin_count"] = admins.count()
 
             return context
 
     class Team(RequireFeatureMixin, SpaMixin, ContextMenuMixin, BaseListView):
-        permission = "orgs.user_list"
+        permission = "users.user_list"
         require_feature = Org.FEATURE_TEAMS
         menu_path = "/settings/teams"
         search_fields = ("email__icontains", "first_name__icontains", "last_name__icontains")
@@ -514,7 +501,7 @@ class UserCRUDL(SmartCRUDL):
             return self.request.org
 
         def get_queryset(self):
-            return self.request.org.get_users().exclude(settings__is_system=True)
+            return self.request.org.get_users().exclude(is_system=True)
 
         def derive_exclude(self):
             return [] if Org.FEATURE_TEAMS in self.request.org.features else ["team"]
@@ -542,10 +529,10 @@ class UserCRUDL(SmartCRUDL):
             return obj
 
         def get_success_url(self):
-            return reverse("orgs.user_list") if self.has_org_perm("orgs.user_list") else reverse("orgs.org_start")
+            return reverse("orgs.user_list") if self.has_org_perm("users.user_list") else reverse("orgs.org_start")
 
     class Delete(RequireFeatureMixin, OrgObjPermsMixin, SmartDeleteView):
-        permission = "orgs.user_update"
+        permission = "users.user_update"
         require_feature = Org.FEATURE_USERS
         fields = ("id",)
         submit_button_name = _("Remove")
@@ -556,7 +543,7 @@ class UserCRUDL(SmartCRUDL):
             return self.request.org
 
         def get_queryset(self):
-            return self.request.org.get_users().exclude(settings__is_system=True)
+            return self.request.org.get_users().exclude(is_system=True)
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
@@ -764,8 +751,8 @@ class UserCRUDL(SmartCRUDL):
 
         def derive_initial(self):
             initial = super().derive_initial()
-            initial["language"] = self.object.settings.language
-            initial["avatar"] = self.object.settings.avatar
+            initial["language"] = self.object.language
+            initial["avatar"] = self.object.avatar
             return initial
 
         def pre_save(self, obj):
@@ -776,6 +763,10 @@ class UserCRUDL(SmartCRUDL):
 
             # get existing email address to know if it's changing
             obj._prev_email = User.objects.get(id=obj.id).email
+
+            if obj.email != obj._prev_email:
+                obj.email_status = User.STATUS_UNVERIFIED
+                obj.email_verification_secret = generate_secret(64)
 
             # figure out if password is being changed and if so update it
             new_password = self.form.cleaned_data["new_password"]
@@ -794,9 +785,6 @@ class UserCRUDL(SmartCRUDL):
             obj = super().post_save(obj)
 
             if obj.email != obj._prev_email:
-                obj.settings.email_status = UserSettings.STATUS_UNVERIFIED
-                obj.settings.email_verification_secret = generate_secret(64)  # make old verification links unusable
-
                 RecoveryToken.objects.filter(user=obj).delete()  # make old password recovery links unusable
 
                 UserEmailNotificationType.create(self.request.org, self.request.user, obj._prev_email)
@@ -806,12 +794,6 @@ class UserCRUDL(SmartCRUDL):
 
                 UserPasswordNotificationType.create(self.request.org, self.request.user)
 
-            language = self.form.cleaned_data.get("language")
-            if language:
-                obj.settings.language = language
-
-            obj.settings.avatar = self.form.cleaned_data["avatar"]
-            obj.settings.save(update_fields=("language", "email_status", "email_verification_secret", "avatar"))
             return obj
 
     class SendVerificationEmail(SpaMixin, PostOnlyMixin, InferUserMixin, SmartUpdateView):
@@ -831,7 +813,7 @@ class UserCRUDL(SmartCRUDL):
 
         def pre_process(self, request, *args, **kwargs):
             r = get_redis_connection()
-            if request.user.settings.email_status == UserSettings.STATUS_VERIFIED:
+            if request.user.email_status == User.STATUS_VERIFIED:
                 return HttpResponseRedirect(reverse("orgs.user_account"))
             elif r.exists(f"send_verification_email:{request.user.email}".lower()):
                 messages.info(request, _("Verification email already sent. You can retry in 10 minutes."))
@@ -857,15 +839,14 @@ class UserCRUDL(SmartCRUDL):
 
         @cached_property
         def email_user(self, **kwargs):
-            user_settings = UserSettings.objects.filter(email_verification_secret=self.kwargs["secret"]).first()
-            return user_settings.user if user_settings else None
+            return User.objects.filter(email_verification_secret=self.kwargs["secret"], is_active=True).first()
 
         def pre_process(self, request, *args, **kwargs):
-            is_verified = self.request.user.settings.email_status == UserSettings.STATUS_VERIFIED
+            is_verified = self.request.user.email_status == User.STATUS_VERIFIED
 
             if self.email_user == self.request.user and not is_verified:
-                self.request.user.settings.email_status = UserSettings.STATUS_VERIFIED
-                self.request.user.settings.save(update_fields=("email_status",))
+                self.request.user.email_status = User.STATUS_VERIFIED
+                self.request.user.save(update_fields=("email_status",))
 
             return super().pre_process(request, *args, **kwargs)
 
@@ -929,7 +910,7 @@ class UserCRUDL(SmartCRUDL):
 
             brand = self.request.branding["name"]
             user = self.request.user
-            secret_url = pyotp.TOTP(user.settings.otp_secret).provisioning_uri(user.username, issuer_name=brand)
+            secret_url = pyotp.TOTP(user.two_factor_secret).provisioning_uri(user.username, issuer_name=brand)
 
             context["secret_url"] = secret_url
             return context
@@ -989,7 +970,7 @@ class UserCRUDL(SmartCRUDL):
 
         def pre_process(self, request, *args, **kwargs):
             # if 2FA isn't enabled for this user, take them to the enable view instead
-            if not self.request.user.settings.two_factor_enabled:
+            if not self.request.user.two_factor_enabled:
                 return HttpResponseRedirect(reverse("orgs.user_two_factor_enable"))
 
             return super().pre_process(request, *args, **kwargs)
@@ -1017,7 +998,7 @@ class UserCRUDL(SmartCRUDL):
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
-            context["two_factor_enabled"] = self.request.user.settings.two_factor_enabled
+            context["two_factor_enabled"] = self.request.user.two_factor_enabled
             context["num_api_tokens"] = self.request.user.get_api_tokens(self.request.org).count()
             return context
 
@@ -1138,11 +1119,15 @@ class OrgCRUDL(SmartCRUDL):
                         )
                     )
 
-                if Org.FEATURE_USERS in org.features and self.has_org_perm("orgs.user_list"):
+                if Org.FEATURE_USERS in org.features and self.has_org_perm("users.user_list"):
                     menu.append(self.create_divider())
                     menu.append(
                         self.create_menu_item(
-                            name=_("Users"), icon="users", href="orgs.user_list", count=org.users.count()
+                            name=_("Users"),
+                            icon="users",
+                            href="orgs.user_list",
+                            count=org.users.count(),
+                            perm="users.user_list",
                         )
                     )
                     menu.append(

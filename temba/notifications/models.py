@@ -1,6 +1,7 @@
 import logging
 from abc import abstractmethod
 
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -8,7 +9,8 @@ from django.utils import timezone
 
 from temba.channels.models import Channel
 from temba.contacts.models import ContactImport
-from temba.orgs.models import Export, Org, User
+from temba.orgs.models import Export, Org
+from temba.users.models import User
 from temba.utils.email import EmailSender
 
 logger = logging.getLogger(__name__)
@@ -171,7 +173,7 @@ class Notification(models.Model):
     # types like channel alerts, it will be the UUID of an object.
     scope = models.CharField(max_length=36)
 
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="notifications")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="notifications")
     is_seen = models.BooleanField(default=False)
     email_address = models.EmailField(null=True)  # only used when dest email != current user email
     email_status = models.CharField(choices=EMAIL_STATUS_CHOICES, max_length=1, default=EMAIL_STATUS_NONE)

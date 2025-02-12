@@ -175,7 +175,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
     has_issues = models.BooleanField(default=False)
 
     saved_on = models.DateTimeField(auto_now_add=True)
-    saved_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="flow_saves")
+    saved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="flow_saves")
 
     # dependencies on other assets
     channel_dependencies = models.ManyToManyField(Channel, related_name="dependent_flows")
@@ -188,7 +188,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
     optin_dependencies = models.ManyToManyField(OptIn, related_name="dependent_flows")
     template_dependencies = models.ManyToManyField(Template, related_name="dependent_flows")
     topic_dependencies = models.ManyToManyField(Topic, related_name="dependent_flows")
-    user_dependencies = models.ManyToManyField(User, related_name="dependent_flows")
+    user_dependencies = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="dependent_flows")
 
     soft_dependent_types = {"flow", "campaign_event", "trigger"}  # it's all soft for flows
 
@@ -1255,7 +1255,7 @@ class FlowRevision(models.Model):
     definition = JSONAsTextField(default=dict)
     spec_version = models.CharField(default=Flow.FINAL_LEGACY_VERSION, max_length=8)
     revision = models.IntegerField()
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="revisions")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="revisions")
     created_on = models.DateTimeField(default=timezone.now)
 
     @classmethod

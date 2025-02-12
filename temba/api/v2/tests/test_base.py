@@ -44,7 +44,7 @@ class EndpointsTest(APITest):
         )
         self.assertContains(response, "Server Error. Site administrators have been notified.", status_code=500)
 
-    @override_settings(FLOW_START_PARAMS_SIZE=4)
+    @patch("temba.api.v2.serializers.FLOW_START_EXTRA_SIZE", 4)
     def test_normalize_extra(self):
         self.assertEqual(OrderedDict(), normalize_extra({}))
         self.assertEqual(

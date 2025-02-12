@@ -28,7 +28,7 @@
             {% if obj.team and has_teams %}({{ obj.team.name }}){% endif %}
           </td>
           <td>
-            {% if obj.settings.two_factor_enabled %}
+            {% if obj.two_factor_enabled %}
               {% trans "Yes" %}
             {% else %}
               {% trans "No" %}

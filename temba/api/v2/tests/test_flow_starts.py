@@ -161,7 +161,7 @@ class FlowStartsEndpointTest(APITest):
             errors={"params": "Must be a valid JSON object"},
         )
 
-        # a list is valid JSON, but extra has to be a dict
+        # a list is valid JSON, but params has to be a dict
         self.assertPost(
             endpoint_url,
             self.admin,
@@ -174,6 +174,21 @@ class FlowStartsEndpointTest(APITest):
                 "params": [1],
             },
             errors={"params": "Must be a valid JSON object"},
+        )
+
+        # params can be at most 10K characters encoded
+        self.assertPost(
+            endpoint_url,
+            self.admin,
+            {
+                "urns": ["tel:+12067791212"],
+                "contacts": [joe.uuid],
+                "groups": [hans_group.uuid],
+                "flow": flow.uuid,
+                "restart_participants": False,
+                "params": {"foo": "a" * 10000},
+            },
+            errors={"params": "Cannot exceed 10,000 characters encoded."},
         )
 
         # invalid URN

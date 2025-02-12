@@ -28,9 +28,10 @@ from temba.flows.models import Flow, FlowRun, FlowSession
 from temba.ivr.models import Call
 from temba.locations.models import AdminBoundary, BoundaryAlias
 from temba.msgs.models import Broadcast, Label, Msg, OptIn
-from temba.orgs.models import Org, OrgRole, User
+from temba.orgs.models import Org, OrgRole
 from temba.templates.models import Template
 from temba.tickets.models import Ticket, TicketEvent
+from temba.users.models import User
 from temba.utils import dynamo, json
 from temba.utils.uuid import UUID, uuid4, uuid7
 

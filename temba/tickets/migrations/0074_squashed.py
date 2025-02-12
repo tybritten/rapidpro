@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="assigned_tickets",
-                        to="orgs.user",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
@@ -75,7 +75,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="opened_tickets",
-                        to="orgs.user",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
@@ -260,7 +260,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="ticket_assignee_events",
-                        to="orgs.user",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (

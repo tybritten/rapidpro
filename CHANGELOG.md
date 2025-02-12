@@ -1,3 +1,41 @@
+v10.1.47 (2025-02-12)
+-------------------------
+ * Make email_verification_secret not-null
+ * Read from new user fields instead of settings
+
+v10.1.46 (2025-02-12)
+-------------------------
+ * Tweak how randomly generated values on user are saved
+ * Fix aspect ratio for thumbnail zooming
+ * Add UUID field to channel event and delete_contact type
+
+v10.1.45 (2025-02-12)
+-------------------------
+ * Allow message text up to 4,096 characters.
+ * Data migration to copy user settings to new fields
+
+v10.1.44 (2025-02-12)
+-------------------------
+ * Drop old backup token model in orgs app
+ * Add fields to custom user model to replace UserSettings and start writing them
+
+v10.1.43 (2025-02-12)
+-------------------------
+ * Rename auth_user to users_user
+
+v10.1.42 (2025-02-11)
+-------------------------
+ * Add BackupToken in users app and copy records from model in orgs app
+
+v10.1.41 (2025-02-11)
+-------------------------
+ * Remove auth_tweaks app
+ * Simplify validation of params field on flow starts endpoint to allow any JSON object up to 10K chars when encoded
+
+v10.1.40 (2025-02-11)
+-------------------------
+ * Add custom user model (migration must be faked)
+
 v10.1.38 (2025-02-11)
 -------------------------
  * Don't show times across date bondaries

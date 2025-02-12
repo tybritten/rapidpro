@@ -4,7 +4,7 @@ from django.db.models import QuerySet
 from django.forms import model_to_dict
 from django.urls import reverse
 
-from temba.orgs.models import User
+from temba.users.models import User
 
 
 class CRUDLTestMixin:
@@ -278,9 +278,11 @@ class ObjectUnchanged(BaseCheck):
             if isinstance(v, list):
                 d[k] = list(sorted(v, key=lambda x: str(x)))
 
-        # logging in to request the view changes a user object so ignore that
-        if isinstance(obj, User) and "last_login" in d:
+        # ignore some User fields which are modified by logging in or can't be compared
+        if isinstance(obj, User):
             del d["last_login"]
+            del d["last_auth_on"]
+            del d["avatar"]
 
         return d
 

@@ -8,8 +8,6 @@ import pycountry
 import regex
 from rest_framework import serializers
 
-from django.conf import settings
-
 from temba import mailroom
 from temba.archives.models import Archive
 from temba.campaigns.models import Campaign, CampaignEvent
@@ -21,8 +19,9 @@ from temba.globals.models import Global
 from temba.locations.models import AdminBoundary
 from temba.mailroom import modifiers
 from temba.msgs.models import Broadcast, Label, Media, Msg, OptIn
-from temba.orgs.models import Org, OrgRole, User
+from temba.orgs.models import Org, OrgRole
 from temba.tickets.models import Ticket, Topic
+from temba.users.models import User
 from temba.utils import json
 from temba.utils.fields import NameValidator
 
@@ -31,6 +30,7 @@ from ..validators import UniqueForOrgValidator
 from . import fields
 
 INVALID_EXTRA_KEY_CHARS = regex.compile(r"[^a-zA-Z0-9_]")
+FLOW_START_EXTRA_SIZE = 256  # used for extra passed to flow start API endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def _normalize_extra(extra, count):
         for k, v in extra.items():
             (normalized[normalize_key(k)], count) = _normalize_extra(v, count)
 
-            if count >= settings.FLOW_START_PARAMS_SIZE:
+            if count >= FLOW_START_EXTRA_SIZE:
                 break
 
         return normalized, count
@@ -78,7 +78,7 @@ def _normalize_extra(extra, count):
         for i, v in enumerate(extra):
             (normalized[str(i)], count) = _normalize_extra(v, count)
 
-            if count >= settings.FLOW_START_PARAMS_SIZE:
+            if count >= FLOW_START_EXTRA_SIZE:
                 break
 
         return normalized, count
@@ -1135,6 +1135,8 @@ class FlowStartReadSerializer(ReadSerializer):
 
 
 class FlowStartWriteSerializer(WriteSerializer):
+    PARAMS_MAX_LENGTH = 10_000
+
     flow = fields.FlowField()
     contacts = fields.ContactField(many=True, required=False)
     groups = fields.ContactGroupField(many=True, required=False)
@@ -1153,7 +1155,13 @@ class FlowStartWriteSerializer(WriteSerializer):
         return normalize_extra(value)
 
     def validate_params(self, value):
-        return self.validate_extra(value)
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Must be a valid JSON object")
+
+        if len(json.dumps(value)) > self.PARAMS_MAX_LENGTH:
+            raise serializers.ValidationError("Cannot exceed 10,000 characters encoded.")
+
+        return value
 
     def validate(self, data):
         # need at least one of urns, groups or contacts
@@ -1733,8 +1741,7 @@ class UserReadSerializer(ReadSerializer):
     created_on = serializers.DateTimeField(default_timezone=tzone.utc, source="date_joined")
 
     def get_avatar(self, obj):
-        settings = obj.settings
-        return settings.avatar.url if settings and settings.avatar else None
+        return obj.avatar.url if obj.avatar else None
 
     def get_role(self, obj):
         return self.ROLES[self.context["memberships"][obj].role]

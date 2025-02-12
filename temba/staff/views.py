@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from smartmin.users.models import FailedLogin, PasswordHistory
-from smartmin.users.views import UserUpdateForm
 from smartmin.views import SmartCRUDL, SmartDeleteView, SmartFormView, SmartListView, SmartReadView, SmartUpdateView
 
 from django import forms
@@ -13,8 +11,9 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
-from temba.orgs.models import Org, OrgRole, User
+from temba.orgs.models import Org, OrgRole
 from temba.orgs.views import switch_to_org
+from temba.users.models import User
 from temba.utils import get_anonymous_user
 from temba.utils.fields import SelectMultipleWidget
 from temba.utils.views.mixins import ComponentFormMixin, ContextMenuMixin, ModalFormMixin, SpaMixin, StaffOnlyMixin
@@ -286,7 +285,7 @@ class UserCRUDL(SmartCRUDL):
             )
 
     class Update(StaffOnlyMixin, ModalFormMixin, ComponentFormMixin, ContextMenuMixin, SmartUpdateView):
-        class Form(UserUpdateForm):
+        class Form(forms.ModelForm):
             groups = forms.ModelMultipleChoiceField(
                 widget=SelectMultipleWidget(
                     attrs={"placeholder": _("Optional: Select permissions groups."), "searchable": True}
@@ -297,7 +296,7 @@ class UserCRUDL(SmartCRUDL):
 
             class Meta:
                 model = User
-                fields = ("email", "new_password", "first_name", "last_name", "groups")
+                fields = ("email", "first_name", "last_name", "groups")
                 help_texts = {"new_password": _("You can reset the user's password by entering a new password here")}
 
         form_class = Form
@@ -316,11 +315,6 @@ class UserCRUDL(SmartCRUDL):
                 obj.groups.clear()
                 for group in self.form.cleaned_data["groups"]:
                     obj.groups.add(group)
-
-            # if a new password was set, reset our failed logins
-            if "new_password" in self.form.cleaned_data and self.form.cleaned_data["new_password"]:
-                FailedLogin.objects.filter(username__iexact=self.object.username).delete()
-                PasswordHistory.objects.create(user=obj, password=obj.password)
 
             return obj
 
@@ -366,7 +360,7 @@ class UserCRUDL(SmartCRUDL):
             elif obj_filter == "staff":
                 qs = qs.filter(is_staff=True)
 
-            return qs.select_related("settings")
+            return qs
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
@@ -375,4 +369,4 @@ class UserCRUDL(SmartCRUDL):
             return context
 
         def get_2fa(self, obj):
-            return _("Yes") if obj.settings.two_factor_enabled else _("No")
+            return _("Yes") if obj.two_factor_enabled else _("No")
