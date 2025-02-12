@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def copy_settings(apps, schema_editor):
+def copy_settings(apps, schema_editor):  # pragma: no cover
     UserSettings = apps.get_model("orgs", "UserSettings")
 
     num_updated = 0

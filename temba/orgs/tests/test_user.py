@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from temba.api.models import APIToken
-from temba.orgs.models import OrgRole, UserSettings
+from temba.orgs.models import OrgRole
 from temba.orgs.tasks import update_members_seen
 from temba.tests import TembaTest, mock_mailroom
 from temba.users.models import User
@@ -10,24 +10,8 @@ from temba.users.models import User
 class UserTest(TembaTest):
     def test_model(self):
         user = User.create("jim@rapidpro.io", "Jim", "McFlow", password="super")
-
-        self.assertTrue(UserSettings.objects.filter(user=user).exists())  # created by signal
-        self.assertEqual(UserSettings.objects.get(user=user).otp_secret, user.two_factor_secret)
-
-        with self.assertNumQueries(0):
-            self.assertIsNone(user.settings.last_auth_on)
-
-        # reload the user instance - now accessing settings should lazily trigger a query
-        user = User.objects.get(id=user.id)
-        with self.assertNumQueries(1):
-            self.assertIsNone(user.settings.last_auth_on)
-        with self.assertNumQueries(0):
-            self.assertIsNone(user.settings.last_auth_on)
-
-        # unless we prefetch
-        user = User.objects.select_related("settings").get(id=user.id)
-        with self.assertNumQueries(0):
-            self.assertIsNone(user.settings.last_auth_on)
+        self.assertIsNotNone(user.email_verification_secret)
+        self.assertIsNotNone(user.two_factor_secret)
 
         self.org.add_user(user, OrgRole.EDITOR)
         self.org2.add_user(user, OrgRole.AGENT)
@@ -94,12 +78,10 @@ class UserTest(TembaTest):
 
     def test_two_factor(self):
         self.assertFalse(self.admin.two_factor_enabled)
-        self.assertFalse(self.admin.settings.two_factor_enabled)
 
         self.admin.enable_2fa()
 
         self.assertTrue(self.admin.two_factor_enabled)
-        self.assertTrue(self.admin.settings.two_factor_enabled)
         self.assertEqual(10, len(self.admin.backup_tokens.filter(is_used=False)))
 
         # try to verify with.. nothing
@@ -127,7 +109,6 @@ class UserTest(TembaTest):
         self.admin.disable_2fa()
 
         self.assertFalse(self.admin.two_factor_enabled)
-        self.assertFalse(self.admin.settings.two_factor_enabled)
 
     @mock_mailroom
     def test_release(self, mr_mocks):
