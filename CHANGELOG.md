@@ -1,3 +1,7 @@
+v10.1.51 (2025-02-12)
+-------------------------
+ * Override user manager to lookup username case insensitively
+
 v10.1.49 (2025-02-12)
 -------------------------
  * Remove no longer needed custom auth backend
