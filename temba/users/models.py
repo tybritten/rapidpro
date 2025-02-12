@@ -2,10 +2,13 @@ import pyotp
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.files.storage import storages
 from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 
+from temba.utils.fields import UploadToIdPathAndRename
 from temba.utils.text import generate_token
 from temba.utils.uuid import uuid4
 
@@ -45,12 +48,43 @@ class BackupToken(models.Model):
 class User(AbstractUser):
     SYSTEM_USER_USERNAME = "system"
 
+    STATUS_UNVERIFIED = "U"
+    STATUS_VERIFIED = "V"
+    STATUS_FAILING = "F"
+    STATUS_CHOICES = (
+        (STATUS_UNVERIFIED, _("Unverified")),
+        (STATUS_VERIFIED, _("Verified")),
+        (STATUS_FAILING, _("Failing")),
+    )
+
+    language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
+    last_auth_on = models.DateTimeField(null=True)
+    avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=storages["public"], null=True)
+    is_system = models.BooleanField(default=False)
+
+    # email verification
+    email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
+    email_verification_secret = models.CharField(max_length=64, db_index=True, null=True)  # TODO make non-null
+
+    # 2FA support
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=16, default=pyotp.random_base32)
+
+    # optional customer support fields
+    external_id = models.CharField(max_length=128, null=True)
+    verification_token = models.CharField(max_length=64, null=True)
+
     @classmethod
     def create(cls, email: str, first_name: str, last_name: str, password: str, language: str = None):
         assert not cls.get_by_email(email), "user with this email already exists"
 
         obj = cls.objects.create_user(
-            username=email, email=email, first_name=first_name, last_name=last_name, password=password
+            username=email,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            language=language or settings.DEFAULT_LANGUAGE,
         )
         if language:
             obj.settings.language = language
@@ -108,6 +142,10 @@ class User(AbstractUser):
         """
         Records that this user authenticated
         """
+
+        self.last_auth_on = timezone.now()
+        self.save(update_fields=("last_auth_on",))
+
         self.settings.last_auth_on = timezone.now()
         self.settings.save(update_fields=("last_auth_on",))
 
@@ -115,6 +153,9 @@ class User(AbstractUser):
         """
         Enables 2FA for this user
         """
+
+        self.two_factor_enabled = True
+        self.save(update_fields=("two_factor_enabled",))
 
         self.settings.two_factor_enabled = True
         self.settings.save(update_fields=("two_factor_enabled",))
@@ -125,6 +166,10 @@ class User(AbstractUser):
         """
         Disables 2FA for this user
         """
+
+        self.two_factor_enabled = False
+        self.save(update_fields=("two_factor_enabled",))
+
         self.settings.two_factor_enabled = False
         self.settings.save(update_fields=("two_factor_enabled",))
 
