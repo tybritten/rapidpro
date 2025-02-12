@@ -68,11 +68,18 @@ class User(AbstractUser):
 
     # 2FA support
     two_factor_enabled = models.BooleanField(default=False)
-    two_factor_secret = models.CharField(max_length=16, default=pyotp.random_base32)
+    two_factor_secret = models.CharField(max_length=16)
 
     # optional customer support fields
     external_id = models.CharField(max_length=128, null=True)
     verification_token = models.CharField(max_length=64, null=True)
+
+    def save(self, **kwargs):
+        if not self.id:
+            self.two_factor_secret = pyotp.random_base32()
+            self.email_verification_secret = generate_secret(64)
+
+        return super().save(**kwargs)
 
     @classmethod
     def create(cls, email: str, first_name: str, last_name: str, password: str, language: str = None):
@@ -85,7 +92,6 @@ class User(AbstractUser):
             last_name=last_name,
             password=password,
             language=language or settings.DEFAULT_LANGUAGE,
-            email_verification_secret=generate_secret(64),
         )
         if language:
             obj.settings.language = language

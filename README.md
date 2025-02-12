@@ -1,7 +1,7 @@
 # RapidPro
 
 [![tag](https://img.shields.io/github/tag/nyaruka/rapidpro.svg)](https://github.com/nyaruka/rapidpro/releases)
-[![Build Status](https://github.com/nyaruka/rapidpro/workflows/CI/badge.svg)](https://github.com/nyaruka/rapidpro/actions?query=workflow%3ACI)
+[![Build Status](https://github.com/nyaruka/rapidpro/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nyaruka/rapidpro/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/nyaruka/rapidpro/branch/main/graph/badge.svg)](https://codecov.io/gh/nyaruka/rapidpro)
 
 RapidPro is a cloud based SaaS developed by [TextIt](https://textit.com) for visually building interactive messaging applications. You can signup at

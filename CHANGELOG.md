@@ -1,3 +1,14 @@
+v10.1.46 (2025-02-12)
+-------------------------
+ * Tweak how randomly generated values on user are saved
+ * Fix aspect ratio for thumbnail zooming
+ * Add UUID field to channel event and delete_contact type
+
+v10.1.45 (2025-02-12)
+-------------------------
+ * Allow message text up to 4,096 characters.
+ * Data migration to copy user settings to new fields
+
 v10.1.44 (2025-02-12)
 -------------------------
  * Drop old backup token model in orgs app

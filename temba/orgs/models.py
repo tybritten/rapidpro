@@ -888,7 +888,7 @@ class Org(SmartModel):
         """
         Convenience method for getting all org administrators, excluding system users
         """
-        return self.get_users(roles=[OrgRole.ADMINISTRATOR]).exclude(settings__is_system=True)
+        return self.get_users(roles=[OrgRole.ADMINISTRATOR]).exclude(is_system=True)
 
     def has_user(self, user: User) -> bool:
         """
