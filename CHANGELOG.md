@@ -1,3 +1,7 @@
+v10.1.48 (2025-02-12)
+-------------------------
+ * Stop writing old user settings
+
 v10.1.47 (2025-02-12)
 -------------------------
  * Make email_verification_secret not-null
