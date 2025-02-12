@@ -76,7 +76,6 @@ from ..models import (
     OrgMembership,
     OrgRole,
     User,
-    UserSettings,
 )
 from .base import BaseDeleteModal, BaseListView, BaseMenuView
 from .forms import SignupForm, SMTPForm
@@ -796,9 +795,6 @@ class UserCRUDL(SmartCRUDL):
             obj = super().post_save(obj)
 
             if obj.email != obj._prev_email:
-                obj.settings.email_status = UserSettings.STATUS_UNVERIFIED
-                obj.settings.email_verification_secret = obj.email_verification_secret
-
                 RecoveryToken.objects.filter(user=obj).delete()  # make old password recovery links unusable
 
                 UserEmailNotificationType.create(self.request.org, self.request.user, obj._prev_email)
@@ -808,12 +804,6 @@ class UserCRUDL(SmartCRUDL):
 
                 UserPasswordNotificationType.create(self.request.org, self.request.user)
 
-            language = self.form.cleaned_data.get("language")
-            if language:
-                obj.settings.language = language
-
-            obj.settings.avatar = self.form.cleaned_data["avatar"]
-            obj.settings.save(update_fields=("language", "email_status", "email_verification_secret", "avatar"))
             return obj
 
     class SendVerificationEmail(SpaMixin, PostOnlyMixin, InferUserMixin, SmartUpdateView):
@@ -867,9 +857,6 @@ class UserCRUDL(SmartCRUDL):
             if self.email_user == self.request.user and not is_verified:
                 self.request.user.email_status = User.STATUS_VERIFIED
                 self.request.user.save(update_fields=("email_status",))
-
-                self.request.user.settings.email_status = User.STATUS_VERIFIED
-                self.request.user.settings.save(update_fields=("email_status",))
 
             return super().pre_process(request, *args, **kwargs)
 

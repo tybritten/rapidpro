@@ -85,7 +85,7 @@ class User(AbstractUser):
     def create(cls, email: str, first_name: str, last_name: str, password: str, language: str = None):
         assert not cls.get_by_email(email), "user with this email already exists"
 
-        obj = cls.objects.create_user(
+        return cls.objects.create_user(
             username=email,
             email=email,
             first_name=first_name,
@@ -93,10 +93,6 @@ class User(AbstractUser):
             password=password,
             language=language or settings.DEFAULT_LANGUAGE,
         )
-        if language:
-            obj.settings.language = language
-            obj.settings.save(update_fields=("language",))
-        return obj
 
     @classmethod
     def get_or_create(cls, email: str, first_name: str, last_name: str, password: str, language: str = None):
@@ -153,9 +149,6 @@ class User(AbstractUser):
         self.last_auth_on = timezone.now()
         self.save(update_fields=("last_auth_on",))
 
-        self.settings.last_auth_on = timezone.now()
-        self.settings.save(update_fields=("last_auth_on",))
-
     def enable_2fa(self):
         """
         Enables 2FA for this user
@@ -163,9 +156,6 @@ class User(AbstractUser):
 
         self.two_factor_enabled = True
         self.save(update_fields=("two_factor_enabled",))
-
-        self.settings.two_factor_enabled = True
-        self.settings.save(update_fields=("two_factor_enabled",))
 
         BackupToken.generate_for_user(self)
 
@@ -176,9 +166,6 @@ class User(AbstractUser):
 
         self.two_factor_enabled = False
         self.save(update_fields=("two_factor_enabled",))
-
-        self.settings.two_factor_enabled = False
-        self.settings.save(update_fields=("two_factor_enabled",))
 
         self.backup_tokens.all().delete()
 
