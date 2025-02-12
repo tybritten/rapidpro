@@ -64,7 +64,7 @@ class User(AbstractUser):
 
     # email verification
     email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
-    email_verification_secret = models.CharField(max_length=64, db_index=True, null=True)  # TODO make non-null
+    email_verification_secret = models.CharField(max_length=64, db_index=True)
 
     # 2FA support
     two_factor_enabled = models.BooleanField(default=False)
