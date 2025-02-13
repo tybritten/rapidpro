@@ -1337,6 +1337,7 @@ class MsgReadSerializer(ReadSerializer):
     direction = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
+    quick_replies = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     archived = serializers.SerializerMethodField()
     visibility = serializers.SerializerMethodField()
@@ -1361,6 +1362,9 @@ class MsgReadSerializer(ReadSerializer):
 
     def get_attachments(self, obj):
         return [a.as_json() for a in obj.get_attachments()]
+
+    def get_quick_replies(self, obj):
+        return obj.quick_replies or []
 
     def get_media(self, obj):
         return obj.attachments[0] if obj.attachments else None
@@ -1395,6 +1399,7 @@ class MsgReadSerializer(ReadSerializer):
             "labels",
             "flow",
             "attachments",
+            "quick_replies",
             "created_on",
             "sent_on",
             "modified_on",
@@ -1406,6 +1411,7 @@ class MsgWriteSerializer(WriteSerializer):
     contact = fields.ContactField()
     text = serializers.CharField(required=False, max_length=Msg.MAX_TEXT_LEN)
     attachments = fields.MediaField(required=False, many=True, max_items=Msg.MAX_ATTACHMENTS)
+    quick_replies = serializers.ListField(required=False, max_length=10, child=serializers.CharField(max_length=64))
     ticket = fields.TicketField(required=False)
 
     def validate(self, data):
@@ -1420,9 +1426,10 @@ class MsgWriteSerializer(WriteSerializer):
         contact = self.validated_data["contact"]
         text = self.validated_data.get("text")
         attachments = [str(m) for m in self.validated_data.get("attachments", [])]
+        quick_replies = [str(qr) for qr in self.validated_data.get("quick_replies", [])]
         ticket = self.validated_data.get("ticket")
 
-        resp = mailroom.get_client().msg_send(org, user, contact, text or "", attachments, ticket)
+        resp = mailroom.get_client().msg_send(org, user, contact, text or "", attachments, quick_replies, ticket)
 
         # to avoid fetching the new msg from the database, construct transient instances to pass to the serializer
         channel = Channel(uuid=resp["channel"]["uuid"], name=resp["channel"]["name"]) if resp.get("channel") else None
@@ -1446,6 +1453,7 @@ class MsgWriteSerializer(WriteSerializer):
             visibility=Msg.VISIBILITY_VISIBLE,
             text=resp.get("text"),
             attachments=resp.get("attachments"),
+            quick_replies=resp.get("quick_replies") or [],
             created_on=iso8601.parse_date(resp["created_on"]),
             modified_on=iso8601.parse_date(resp["modified_on"]),
         )

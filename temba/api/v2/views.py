@@ -2247,6 +2247,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **visibility** - the visibility of the message (one of `visible`, `archived` or `deleted`)
      * **text** - the text of the message received (string). Note this is the logical view and the message may have been received as multiple physical messages.
      * **attachments** - the attachments on the message (array of objects).
+     * **quick_replies** - the quick_replies on the message (array of strings).
      * **labels** - any labels set on this message (array of objects), filterable as `label` with label name or UUID.
      * **flow** - the UUID and name of the flow if message was part of a flow (object, optional).
      * **created_on** - when this message was either received by the channel or created (datetime) (filterable as `before` and `after`).
@@ -2282,6 +2283,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
                 "visibility": "visible",
                 "text": "How are you?",
                 "attachments": [{"content_type": "audio/wav" "url": "http://domain.com/recording.wav"}],
+                "quick_replies": ["Great", "Improving"],
                 "labels": [{"name": "Important", "uuid": "5a4eb79e-1b1f-4ae3-8700-09384cca385f"}],
                 "flow": {"uuid": "254fd2ff-4990-4621-9536-0a448d313692", "name": "Registration"},
                 "created_on": "2016-01-06T15:33:00.813162Z",
@@ -2299,6 +2301,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **contact** - the UUID of the contact (string)
      * **text** - the text of the message (string)
      * **attachments** - the attachments of the message (list of strings, maximum 10)
+     * **quick_replies** - the quick_replies of the message (list of strings, maximum 10)
 
     Example:
 
@@ -2323,6 +2326,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
             "visibility": "visible",
             "text": "Hi Bob",
             "attachments": [],
+            "quick_replies": [],
             "labels": [],
             "flow": null,
             "created_on": "2023-01-06T15:33:00.813162Z",
