@@ -1,7 +1,8 @@
 import pyotp
 
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager as AuthUserManager
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.files.storage import storages
 from django.db import models
 from django.utils import timezone
@@ -45,7 +46,16 @@ class BackupToken(models.Model):
         return self.token
 
 
-class User(AbstractUser):
+class UserManager(AuthUserManager):
+    """
+    Overrides the default user manager to make username lookups case insensitive
+    """
+
+    def get_by_natural_key(self, username):
+        return self.get(**{f"{self.model.USERNAME_FIELD}__iexact": username})
+
+
+class User(AbstractBaseUser, PermissionsMixin):
     SYSTEM_USER_USERNAME = "system"
 
     STATUS_UNVERIFIED = "U"
@@ -57,10 +67,31 @@ class User(AbstractUser):
         (STATUS_FAILING, _("Failing")),
     )
 
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
+
+    username = models.CharField(
+        _("username"),
+        max_length=150,
+        unique=True,
+        help_text=_("Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."),
+        validators=[UnicodeUsernameValidator()],
+        error_messages={
+            "unique": _("A user with that username already exists."),
+        },
+    )
+    first_name = models.CharField(_("first name"), max_length=150, blank=True)
+    last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    email = models.EmailField(_("email address"), blank=True)
     language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
-    last_auth_on = models.DateTimeField(null=True)
     avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=storages["public"], null=True)
+
+    date_joined = models.DateTimeField(default=timezone.now)
+    last_auth_on = models.DateTimeField(null=True)
     is_system = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     # email verification
     email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
@@ -73,6 +104,13 @@ class User(AbstractUser):
     # optional customer support fields
     external_id = models.CharField(max_length=128, null=True)
     verification_token = models.CharField(max_length=64, null=True)
+
+    objects = UserManager()
+
+    def clean(self):
+        super().clean()
+
+        self.email = self.__class__.objects.normalize_email(self.email)
 
     def save(self, **kwargs):
         if not self.id:
@@ -127,6 +165,13 @@ class User(AbstractUser):
     @property
     def name(self) -> str:
         return self.get_full_name()
+
+    def get_full_name(self):
+        """
+        Return the first_name plus the last_name, with a space in between.
+        """
+        full_name = "%s %s" % (self.first_name, self.last_name)
+        return full_name.strip()
 
     def get_orgs(self):
         return self.orgs.filter(is_active=True).order_by("name")
@@ -242,3 +287,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.name or self.username
+
+    class Meta:
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
