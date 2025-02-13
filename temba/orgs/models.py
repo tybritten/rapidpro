@@ -11,7 +11,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 import pycountry
-import pyotp
 import pytz
 from django_redis import get_redis_connection
 from packaging.version import Version
@@ -27,8 +26,6 @@ from django.core.files import File
 from django.core.files.storage import default_storage
 from django.db import models, transaction
 from django.db.models import Count, Prefetch, Q
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.functional import cached_property
@@ -42,10 +39,8 @@ from temba.users.models import User
 from temba.utils import json, languages, on_transaction_commit
 from temba.utils.dates import datetime_to_str
 from temba.utils.email import EmailSender
-from temba.utils.fields import UploadToIdPathAndRename
 from temba.utils.models import JSONField, TembaUUIDMixin, delete_in_batches
 from temba.utils.models.counts import BaseScopedCount
-from temba.utils.s3 import public_file_storage
 from temba.utils.text import generate_secret
 from temba.utils.timezones import timezone_to_country_code
 from temba.utils.uuid import uuid4
@@ -137,47 +132,6 @@ class IntegrationType(metaclass=ABCMeta):
         from .integrations import TYPES
 
         return [t for t in TYPES.values() if not category or t.category == category]
-
-
-class UserSettings(models.Model):
-    """
-    Additional non-org specific fields for users
-    """
-
-    STATUS_UNVERIFIED = "U"
-    STATUS_VERIFIED = "V"
-    STATUS_FAILING = "F"
-    STATUS_CHOICES = (
-        (STATUS_UNVERIFIED, _("Unverified")),
-        (STATUS_VERIFIED, _("Verified")),
-        (STATUS_FAILING, _("Failing")),
-    )
-
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="settings")
-    language = models.CharField(max_length=8, choices=settings.LANGUAGES, default=settings.DEFAULT_LANGUAGE)
-    otp_secret = models.CharField(max_length=16, default=pyotp.random_base32)
-    two_factor_enabled = models.BooleanField(default=False)
-    last_auth_on = models.DateTimeField(null=True)
-    external_id = models.CharField(max_length=128, null=True)
-    verification_token = models.CharField(max_length=64, null=True)
-    email_status = models.CharField(max_length=1, default=STATUS_UNVERIFIED, choices=STATUS_CHOICES)
-    email_verification_secret = models.CharField(max_length=64, db_index=True)
-    avatar = models.ImageField(upload_to=UploadToIdPathAndRename("avatars/"), storage=public_file_storage, null=True)
-    is_system = models.BooleanField(default=False)
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def on_user_post_save(sender, instance: User, created: bool, *args, **kwargs):
-    """
-    Handle user post-save signals so that we can create user settings for them.
-    """
-
-    if created:
-        instance.settings = UserSettings.objects.create(
-            user=instance,
-            otp_secret=instance.two_factor_secret,
-            email_verification_secret=instance.email_verification_secret,
-        )
 
 
 class OrgRole(Enum):
