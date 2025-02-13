@@ -436,6 +436,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **groups** - the groups that received the broadcast (array of objects).
      * **text** - the message text translations (dict of strings).
      * **attachments** - the attachment translations (dict of lists of strings).
+     * **quick_replies** - the quick_replies translations (dict of lists of strings).
      * **base_language** - the default translation language (string).
      * **status** - the status, one of `pending`, `queued`, `started`, `completed`, `failed`, `interrupted`.
      * **created_on** - when this broadcast was either created (datetime) (filterable as `before` and `after`).
@@ -457,6 +458,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
                     "groups": [],
                     "text": {"eng", "hello world"},
                     "attachments": {"eng", []},
+                    "quick_replies": {"eng", []},
                     "base_language": "eng",
                     "created_on": "2013-03-02T17:28:12.123456Z"
                 },
@@ -472,6 +474,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
       * **groups** - the UUIDs of contact groups to send to (array of up to 100 strings, optional)
       * **text** - the message text translations (dict of strings)
       * **attachments** - the attachment translations (dict of lists of strings)
+      * **quick_replies** - the quick_replies translations (dict of lists of strings)
       * **base_language** - the default translation language (string, optional)
 
     Example:
@@ -492,7 +495,8 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
             "contacts": [{"uuid": "09d23a05-47fe-11e4-bfe9-b8f6b119e9ab", "name": "Joe"}]
             "groups": [],
             "text": {"eng": "Hello @contact.name!", "spa": "Hola @contact.name!"},
-            "attachments": {"eng", [], "spa": []},
+            "attachments": {"eng": [], "spa": []},
+            "quick_replies": {"eng": [], "spa": []},
             "base_language": "eng",
             "created_on": "2013-03-02T17:28:12.123456Z"
         }

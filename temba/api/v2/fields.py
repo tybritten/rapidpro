@@ -118,6 +118,25 @@ class TranslatedAttachmentsField(LanguageDictField):
         return super().to_internal_value(data)
 
 
+class TranslatedQuickRepliesField(LanguageDictField):
+    """
+    A field which is either a list of strings or a language -> list of strings translations dict
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            allow_empty=False,
+            child=serializers.ListField(child=serializers.CharField(max_length=50)),
+            **kwargs,
+        )
+
+    def to_internal_value(self, data):
+        if isinstance(data, list):
+            data = {self.context["org"].flow_languages[0]: data}
+
+        return super().to_internal_value(data)
+
+
 class LimitedManyRelatedField(serializers.ManyRelatedField):
     """
     Adds max_length to the standard DRF ManyRelatedField

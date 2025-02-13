@@ -172,6 +172,7 @@ class BroadcastReadSerializer(ReadSerializer):
     groups = fields.ContactGroupField(many=True)
     text = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
+    quick_replies = serializers.SerializerMethodField()
     base_language = fields.LanguageField()
     created_on = serializers.DateTimeField(default_timezone=tzone.utc)
 
@@ -180,6 +181,9 @@ class BroadcastReadSerializer(ReadSerializer):
 
     def get_attachments(self, obj):
         return {lang: trans.get("attachments", []) for lang, trans in obj.translations.items()}
+
+    def get_quick_replies(self, obj):
+        return {lang: trans.get("quick_replies", []) for lang, trans in obj.translations.items()}
 
     def get_status(self, obj):
         return self.STATUSES[obj.status]
@@ -204,6 +208,7 @@ class BroadcastReadSerializer(ReadSerializer):
             "groups",
             "text",
             "attachments",
+            "quick_replies",
             "base_language",
             "created_on",
         )
@@ -215,11 +220,13 @@ class BroadcastWriteSerializer(WriteSerializer):
     groups = fields.ContactGroupField(many=True, required=False)
     text = fields.TranslatedTextField(required=False, max_length=Msg.MAX_TEXT_LEN)
     attachments = fields.TranslatedAttachmentsField(required=False)
+    quick_replies = fields.TranslatedQuickRepliesField(required=False)
     base_language = fields.LanguageField(required=False)
 
     def validate(self, data):
         text = data.get("text")
         attachments = data.get("attachments")
+        quick_replies = data.get("quick_replies")
         base_language = data.get("base_language")
 
         if not (data.get("text") or data.get("attachments")):
@@ -235,6 +242,9 @@ class BroadcastWriteSerializer(WriteSerializer):
             if attachments and base_language not in attachments:
                 raise serializers.ValidationError("No attachment translations provided in base language.")
 
+            if quick_replies and base_language not in quick_replies:
+                raise serializers.ValidationError("No quick_replies translations provided in base language.")
+
         return data
 
     def save(self):
@@ -245,6 +255,7 @@ class BroadcastWriteSerializer(WriteSerializer):
 
         text = self.validated_data.get("text")
         attachments = self.validated_data.get("attachments", {})
+        quick_replies = self.validated_data.get("quick_replies", {})
 
         # merge text and attachments into single dict of translations
         translations = {}
@@ -258,6 +269,13 @@ class BroadcastWriteSerializer(WriteSerializer):
 
                 # TODO update broadcast sending to allow media objects to stay as UUIDs for longer
                 translations[lang]["attachments"] = [str(m) for m in atts]
+
+        if quick_replies:
+            for lang, qrs in quick_replies.items():
+                if lang not in translations:
+                    translations[lang] = {}
+
+                translations[lang]["quick_replies"] = [str(qr) for qr in qrs]
 
         if not base_language:
             base_language = next(iter(translations))
