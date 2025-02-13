@@ -139,6 +139,35 @@ class FieldsTest(APITest):
                 },
             )
 
+    def test_quick_replies(self):
+        field = fields.TranslatedQuickRepliesField(source="test")
+        field._context = {"org": self.org}
+
+        self.assertEqual(field.run_validation({"eng": ["Red", "Green", "Blue"]}), {"eng": ["Red", "Green", "Blue"]})
+        self.assertEqual(field.run_validation(["Red", "Green", "Blue"]), {"eng": ["Red", "Green", "Blue"]})
+        self.assertEqual(
+            field.run_validation({"eng": ["Red", "Green", "Blue"], "fra": ["Rouge", "Vert", "Bleu"]}),
+            {"eng": ["Red", "Green", "Blue"], "fra": ["Rouge", "Vert", "Bleu"]},
+        )
+        self.assertRaises(serializers.ValidationError, field.run_validation, {"eng": ""})  # empty
+        self.assertRaises(serializers.ValidationError, field.run_validation, "")  # empty
+        self.assertRaises(serializers.ValidationError, field.run_validation, "  ")  # blank
+        self.assertRaises(serializers.ValidationError, field.run_validation, 123)  # not a string or dict
+        self.assertRaises(serializers.ValidationError, field.run_validation, {})  # no translations
+        self.assertRaises(serializers.ValidationError, field.run_validation, {"eng": {"foo": "bar"}})  # not an array
+        self.assertRaises(serializers.ValidationError, field.run_validation, {123: "Hello"})  # lang not a str
+        self.assertRaises(
+            serializers.ValidationError, field.run_validation, {"base": ["Red", "Green", "Blue"]}
+        )  # lang not valid
+        self.assertRaises(
+            serializers.ValidationError,
+            field.run_validation,
+            {"eng": ["Red", "Green", "Blue", "Foo", "Bar", "Baz", "abc", "bcd", "cde", "def", "efg"]},
+        )  # too many items, we allow up to 10
+        self.assertRaises(
+            serializers.ValidationError, field.run_validation, {"eng": ["a" * 65, "Green", "Blue"]}
+        )  # too long for item not valid
+
     def test_language_and_translations(self):
         self.assert_field(
             fields.LanguageField(source="test"),
