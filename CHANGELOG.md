@@ -1,3 +1,8 @@
+v10.1.53 (2025-02-13)
+-------------------------
+ * Add Contact.current_session_uuid
+ * Drop UserSettings
+
 v10.1.52 (2025-02-13)
 -------------------------
  * Drop FlowRun.delete_from_results
