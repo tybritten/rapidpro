@@ -163,7 +163,7 @@ class BroadcastsEndpointTest(APITest):
             self.admin,
             {
                 "text": {"eng": "Hello"},
-                "quick_replies": {"spa": ["Si", "No"]},
+                "quick_replies": {"spa": [{"text": "Si"}, {"text": "No"}]},
                 "base_language": "eng",
                 "contacts": [joe.uuid],
             },
@@ -180,7 +180,10 @@ class BroadcastsEndpointTest(APITest):
                     "eng": [str(media1.uuid), f"video/mp4:http://example.com/{media2.uuid}.mp4"],
                     "kin": [str(media2.uuid)],
                 },
-                "quick_replies": {"eng": ["Red", "Green", "Blue"], "fra": ["Rouge", "Vert", "Bleu"]},
+                "quick_replies": {
+                    "eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                    "fra": [{"text": "Rouge"}, {"text": "Vert"}, {"text": "Bleu"}],
+                },
                 "base_language": "eng",
                 "urns": ["facebook:12345"],
                 "contacts": [joe.uuid, frank.uuid],
@@ -195,11 +198,11 @@ class BroadcastsEndpointTest(APITest):
                 "eng": {
                     "text": "Hello @contact.name",
                     "attachments": [f"image/jpeg:{media1.url}", f"video/mp4:{media2.url}"],
-                    "quick_replies": ["Red", "Green", "Blue"],
+                    "quick_replies": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
                 },
                 "spa": {"text": "Hola @contact.name"},
                 "kin": {"attachments": [f"video/mp4:{media2.url}"]},
-                "fra": {"quick_replies": ["Rouge", "Vert", "Bleu"]},
+                "fra": {"quick_replies": [{"text": "Rouge"}, {"text": "Vert"}, {"text": "Bleu"}]},
             },
             broadcast.translations,
         )

@@ -296,11 +296,23 @@ class MessagesEndpointTest(APITest):
         response = self.assertPost(
             endpoint_url,
             self.admin,
-            {"contact": joe.uuid, "text": "What is your preferred color?", "quick_replies": ["Red", "Green", "Blue"]},
+            {
+                "contact": joe.uuid,
+                "text": "What is your preferred color?",
+                "quick_replies": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+            },
             status=201,
         )
         self.assertEqual(
-            call(self.org, self.admin, joe, "What is your preferred color?", [], ["Red", "Green", "Blue"], None),
+            call(
+                self.org,
+                self.admin,
+                joe,
+                "What is your preferred color?",
+                [],
+                [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                None,
+            ),
             mr_mocks.calls["msg_send"][-1],
         )
         msg = Msg.objects.order_by("id").last()
@@ -313,7 +325,7 @@ class MessagesEndpointTest(APITest):
                 "urn": "tel:+250788123123",
                 "text": "What is your preferred color?",
                 "attachments": [],
-                "quick_replies": ["Red", "Green", "Blue"],
+                "quick_replies": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
                 "archived": False,
                 "broadcast": None,
                 "created_on": format_datetime(msg.created_on),

@@ -143,11 +143,25 @@ class FieldsTest(APITest):
         field = fields.TranslatedQuickRepliesField(source="test")
         field._context = {"org": self.org}
 
-        self.assertEqual(field.run_validation({"eng": ["Red", "Green", "Blue"]}), {"eng": ["Red", "Green", "Blue"]})
-        self.assertEqual(field.run_validation(["Red", "Green", "Blue"]), {"eng": ["Red", "Green", "Blue"]})
         self.assertEqual(
-            field.run_validation({"eng": ["Red", "Green", "Blue"], "fra": ["Rouge", "Vert", "Bleu"]}),
-            {"eng": ["Red", "Green", "Blue"], "fra": ["Rouge", "Vert", "Bleu"]},
+            field.run_validation({"eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]}),
+            {"eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]},
+        )
+        self.assertEqual(
+            field.run_validation([{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]),
+            {"eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]},
+        )
+        self.assertEqual(
+            field.run_validation(
+                {
+                    "eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                    "fra": [{"text": "Rouge"}, {"text": "Vert"}, {"text": "Bleu"}],
+                }
+            ),
+            {
+                "eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                "fra": [{"text": "Rouge"}, {"text": "Vert"}, {"text": "Bleu"}],
+            },
         )
         self.assertRaises(serializers.ValidationError, field.run_validation, {"eng": ""})  # empty
         self.assertRaises(serializers.ValidationError, field.run_validation, "")  # empty
@@ -157,15 +171,33 @@ class FieldsTest(APITest):
         self.assertRaises(serializers.ValidationError, field.run_validation, {"eng": {"foo": "bar"}})  # not an array
         self.assertRaises(serializers.ValidationError, field.run_validation, {123: "Hello"})  # lang not a str
         self.assertRaises(
-            serializers.ValidationError, field.run_validation, {"base": ["Red", "Green", "Blue"]}
+            serializers.ValidationError,
+            field.run_validation,
+            {"base": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]},
         )  # lang not valid
         self.assertRaises(
             serializers.ValidationError,
             field.run_validation,
-            {"eng": ["Red", "Green", "Blue", "Foo", "Bar", "Baz", "abc", "bcd", "cde", "def", "efg"]},
+            {
+                "eng": [
+                    {"text": "Red"},
+                    {"text": "Green"},
+                    {"text": "Blue"},
+                    {"text": "Foo"},
+                    {"text": "Bar"},
+                    {"text": "Baz"},
+                    {"text": "abc"},
+                    {"text": "bcd"},
+                    {"text": "cde"},
+                    {"text": "def"},
+                    {"text": "efg"},
+                ]
+            },
         )  # too many items, we allow up to 10
         self.assertRaises(
-            serializers.ValidationError, field.run_validation, {"eng": ["a" * 65, "Green", "Blue"]}
+            serializers.ValidationError,
+            field.run_validation,
+            {"eng": [{"text": "a" * 65}, {"text": "Green"}, {"text": "Blue"}]},
         )  # too long for item not valid
 
     def test_language_and_translations(self):

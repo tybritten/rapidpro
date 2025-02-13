@@ -126,7 +126,9 @@ class TranslatedQuickRepliesField(LanguageDictField):
     def __init__(self, **kwargs):
         super().__init__(
             allow_empty=False,
-            child=serializers.ListField(max_length=10, child=serializers.CharField(max_length=64)),
+            child=serializers.ListField(
+                max_length=10, child=serializers.DictField(child=serializers.CharField(max_length=64))
+            ),
             **kwargs,
         )
 
