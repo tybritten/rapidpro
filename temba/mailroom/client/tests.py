@@ -576,7 +576,7 @@ class MailroomClientTest(TembaTest):
         ann = self.create_contact("Ann", urns=["tel:+12340000001"])
         ticket = self.create_ticket(ann)
         mock_post.return_value = MockJsonResponse(200, {"id": 12345})
-        response = self.client.msg_send(self.org, self.admin, ann, "hi", [], ticket)
+        response = self.client.msg_send(self.org, self.admin, ann, "hi", [], [], ticket)
 
         self.assertEqual({"id": 12345}, response)
 
@@ -589,6 +589,7 @@ class MailroomClientTest(TembaTest):
                 "contact_id": ann.id,
                 "text": "hi",
                 "attachments": [],
+                "quick_replies": [],
                 "ticket_id": ticket.id,
             },
         )

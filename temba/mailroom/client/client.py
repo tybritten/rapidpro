@@ -236,7 +236,7 @@ class MailroomClient:
     def msg_resend(self, org, msgs):
         return self._request("msg/resend", {"org_id": org.id, "msg_ids": [m.id for m in msgs]})
 
-    def msg_send(self, org, user, contact, text: str, attachments: list[str], ticket):
+    def msg_send(self, org, user, contact, text: str, attachments: list[str], quick_replies: list[dict], ticket):
         return self._request(
             "msg/send",
             {
@@ -245,6 +245,7 @@ class MailroomClient:
                 "contact_id": contact.id,
                 "text": text,
                 "attachments": attachments,
+                "quick_replies": quick_replies,
                 "ticket_id": ticket.id if ticket else None,
             },
         )

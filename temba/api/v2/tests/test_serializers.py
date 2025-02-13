@@ -139,6 +139,67 @@ class FieldsTest(APITest):
                 },
             )
 
+    def test_quick_replies(self):
+        field = fields.TranslatedQuickRepliesField(source="test")
+        field._context = {"org": self.org}
+
+        self.assertEqual(
+            field.run_validation({"eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]}),
+            {"eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]},
+        )
+        self.assertEqual(
+            field.run_validation([{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]),
+            {"eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]},
+        )
+        self.assertEqual(
+            field.run_validation(
+                {
+                    "eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                    "fra": [{"text": "Rouge"}, {"text": "Vert"}, {"text": "Bleu"}],
+                }
+            ),
+            {
+                "eng": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                "fra": [{"text": "Rouge"}, {"text": "Vert"}, {"text": "Bleu"}],
+            },
+        )
+        self.assertRaises(serializers.ValidationError, field.run_validation, {"eng": ""})  # empty
+        self.assertRaises(serializers.ValidationError, field.run_validation, "")  # empty
+        self.assertRaises(serializers.ValidationError, field.run_validation, "  ")  # blank
+        self.assertRaises(serializers.ValidationError, field.run_validation, 123)  # not a string or dict
+        self.assertRaises(serializers.ValidationError, field.run_validation, {})  # no translations
+        self.assertRaises(serializers.ValidationError, field.run_validation, {"eng": {"foo": "bar"}})  # not an array
+        self.assertRaises(serializers.ValidationError, field.run_validation, {123: "Hello"})  # lang not a str
+        self.assertRaises(
+            serializers.ValidationError,
+            field.run_validation,
+            {"base": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}]},
+        )  # lang not valid
+        self.assertRaises(
+            serializers.ValidationError,
+            field.run_validation,
+            {
+                "eng": [
+                    {"text": "Red"},
+                    {"text": "Green"},
+                    {"text": "Blue"},
+                    {"text": "Foo"},
+                    {"text": "Bar"},
+                    {"text": "Baz"},
+                    {"text": "abc"},
+                    {"text": "bcd"},
+                    {"text": "cde"},
+                    {"text": "def"},
+                    {"text": "efg"},
+                ]
+            },
+        )  # too many items, we allow up to 10
+        self.assertRaises(
+            serializers.ValidationError,
+            field.run_validation,
+            {"eng": [{"text": "a" * 65}, {"text": "Green"}, {"text": "Blue"}]},
+        )  # too long for item not valid
+
     def test_language_and_translations(self):
         self.assert_field(
             fields.LanguageField(source="test"),

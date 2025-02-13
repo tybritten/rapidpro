@@ -87,6 +87,7 @@ class MessagesEndpointTest(APITest):
                     "urn": "facebook:123456",
                     "text": "Bonjour",
                     "attachments": [],
+                    "quick_replies": [],
                     "archived": False,
                     "broadcast": None,
                     "created_on": format_datetime(frank_msg1.created_on),
@@ -212,6 +213,7 @@ class MessagesEndpointTest(APITest):
                 "urn": "tel:+250788123123",
                 "text": "Interesting",
                 "attachments": [],
+                "quick_replies": [],
                 "archived": False,
                 "broadcast": None,
                 "created_on": format_datetime(msg.created_on),
@@ -228,7 +230,7 @@ class MessagesEndpointTest(APITest):
         )
 
         self.assertEqual(
-            call(self.org, self.admin, joe, "Interesting", [], None),
+            call(self.org, self.admin, joe, "Interesting", [], [], None),
             mr_mocks.calls["msg_send"][-1],
         )
 
@@ -253,7 +255,7 @@ class MessagesEndpointTest(APITest):
         # create a new message with an attachment as the media UUID...
         self.assertPost(endpoint_url, self.admin, {"contact": joe.uuid, "attachments": [str(upload.uuid)]}, status=201)
         self.assertEqual(  # check that was sent via mailroom
-            call(self.org, self.admin, joe, "", [f"image/jpeg:{upload.url}"], None),
+            call(self.org, self.admin, joe, "", [f"image/jpeg:{upload.url}"], [], None),
             mr_mocks.calls["msg_send"][-1],
         )
 
@@ -265,7 +267,7 @@ class MessagesEndpointTest(APITest):
             status=201,
         )
         self.assertEqual(
-            call(self.org, self.admin, joe, "", [f"image/jpeg:{upload.url}"], None),
+            call(self.org, self.admin, joe, "", [f"image/jpeg:{upload.url}"], [], None),
             mr_mocks.calls["msg_send"][-1],
         )
 
@@ -290,3 +292,51 @@ class MessagesEndpointTest(APITest):
         self.assertIsNone(msg_json["channel"])
         self.assertIsNone(msg_json["urn"])
         self.assertEqual("failed", msg_json["status"])
+
+        response = self.assertPost(
+            endpoint_url,
+            self.admin,
+            {
+                "contact": joe.uuid,
+                "text": "What is your preferred color?",
+                "quick_replies": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+            },
+            status=201,
+        )
+        self.assertEqual(
+            call(
+                self.org,
+                self.admin,
+                joe,
+                "What is your preferred color?",
+                [],
+                [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                None,
+            ),
+            mr_mocks.calls["msg_send"][-1],
+        )
+        msg = Msg.objects.order_by("id").last()
+        self.assertEqual(
+            {
+                "id": msg.id,
+                "type": "text",
+                "channel": {"uuid": str(self.channel.uuid), "name": "Test Channel"},
+                "contact": {"uuid": str(joe.uuid), "name": "Joe Blow"},
+                "urn": "tel:+250788123123",
+                "text": "What is your preferred color?",
+                "attachments": [],
+                "quick_replies": [{"text": "Red"}, {"text": "Green"}, {"text": "Blue"}],
+                "archived": False,
+                "broadcast": None,
+                "created_on": format_datetime(msg.created_on),
+                "direction": "out",
+                "flow": None,
+                "labels": [],
+                "media": None,
+                "modified_on": format_datetime(msg.modified_on),
+                "sent_on": None,
+                "status": "queued",
+                "visibility": "visible",
+            },
+            response.json(),
+        )

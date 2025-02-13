@@ -172,6 +172,7 @@ class BroadcastReadSerializer(ReadSerializer):
     groups = fields.ContactGroupField(many=True)
     text = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
+    quick_replies = serializers.SerializerMethodField()
     base_language = fields.LanguageField()
     created_on = serializers.DateTimeField(default_timezone=tzone.utc)
 
@@ -180,6 +181,9 @@ class BroadcastReadSerializer(ReadSerializer):
 
     def get_attachments(self, obj):
         return {lang: trans.get("attachments", []) for lang, trans in obj.translations.items()}
+
+    def get_quick_replies(self, obj):
+        return {lang: trans.get("quick_replies", []) for lang, trans in obj.translations.items()}
 
     def get_status(self, obj):
         return self.STATUSES[obj.status]
@@ -204,6 +208,7 @@ class BroadcastReadSerializer(ReadSerializer):
             "groups",
             "text",
             "attachments",
+            "quick_replies",
             "base_language",
             "created_on",
         )
@@ -215,11 +220,13 @@ class BroadcastWriteSerializer(WriteSerializer):
     groups = fields.ContactGroupField(many=True, required=False)
     text = fields.TranslatedTextField(required=False, max_length=Msg.MAX_TEXT_LEN)
     attachments = fields.TranslatedAttachmentsField(required=False)
+    quick_replies = fields.TranslatedQuickRepliesField(required=False)
     base_language = fields.LanguageField(required=False)
 
     def validate(self, data):
         text = data.get("text")
         attachments = data.get("attachments")
+        quick_replies = data.get("quick_replies")
         base_language = data.get("base_language")
 
         if not (data.get("text") or data.get("attachments")):
@@ -235,6 +242,9 @@ class BroadcastWriteSerializer(WriteSerializer):
             if attachments and base_language not in attachments:
                 raise serializers.ValidationError("No attachment translations provided in base language.")
 
+            if quick_replies and base_language not in quick_replies:
+                raise serializers.ValidationError("No quick_replies translations provided in base language.")
+
         return data
 
     def save(self):
@@ -245,6 +255,7 @@ class BroadcastWriteSerializer(WriteSerializer):
 
         text = self.validated_data.get("text")
         attachments = self.validated_data.get("attachments", {})
+        quick_replies = self.validated_data.get("quick_replies", {})
 
         # merge text and attachments into single dict of translations
         translations = {}
@@ -258,6 +269,13 @@ class BroadcastWriteSerializer(WriteSerializer):
 
                 # TODO update broadcast sending to allow media objects to stay as UUIDs for longer
                 translations[lang]["attachments"] = [str(m) for m in atts]
+
+        if quick_replies:
+            for lang, qrs in quick_replies.items():
+                if lang not in translations:
+                    translations[lang] = {}
+
+                translations[lang]["quick_replies"] = [qr for qr in qrs]
 
         if not base_language:
             base_language = next(iter(translations))
@@ -1319,6 +1337,7 @@ class MsgReadSerializer(ReadSerializer):
     direction = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
+    quick_replies = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     archived = serializers.SerializerMethodField()
     visibility = serializers.SerializerMethodField()
@@ -1343,6 +1362,9 @@ class MsgReadSerializer(ReadSerializer):
 
     def get_attachments(self, obj):
         return [a.as_json() for a in obj.get_attachments()]
+
+    def get_quick_replies(self, obj):
+        return [{"text": qr} for qr in (obj.quick_replies or [])]
 
     def get_media(self, obj):
         return obj.attachments[0] if obj.attachments else None
@@ -1377,6 +1399,7 @@ class MsgReadSerializer(ReadSerializer):
             "labels",
             "flow",
             "attachments",
+            "quick_replies",
             "created_on",
             "sent_on",
             "modified_on",
@@ -1388,6 +1411,9 @@ class MsgWriteSerializer(WriteSerializer):
     contact = fields.ContactField()
     text = serializers.CharField(required=False, max_length=Msg.MAX_TEXT_LEN)
     attachments = fields.MediaField(required=False, many=True, max_items=Msg.MAX_ATTACHMENTS)
+    quick_replies = serializers.ListField(
+        required=False, max_length=10, child=serializers.DictField(child=serializers.CharField(max_length=64))
+    )
     ticket = fields.TicketField(required=False)
 
     def validate(self, data):
@@ -1402,9 +1428,10 @@ class MsgWriteSerializer(WriteSerializer):
         contact = self.validated_data["contact"]
         text = self.validated_data.get("text")
         attachments = [str(m) for m in self.validated_data.get("attachments", [])]
+        quick_replies = [{"text": qr["text"]} for qr in self.validated_data.get("quick_replies", [])]
         ticket = self.validated_data.get("ticket")
 
-        resp = mailroom.get_client().msg_send(org, user, contact, text or "", attachments, ticket)
+        resp = mailroom.get_client().msg_send(org, user, contact, text or "", attachments, quick_replies, ticket)
 
         # to avoid fetching the new msg from the database, construct transient instances to pass to the serializer
         channel = Channel(uuid=resp["channel"]["uuid"], name=resp["channel"]["name"]) if resp.get("channel") else None
@@ -1415,6 +1442,8 @@ class MsgWriteSerializer(WriteSerializer):
             contact_urn = ContactURN(scheme=urn_scheme, path=urn_path, display=urn_display)
         else:
             contact_urn = None
+
+        msg_quick_replies = [qr["text"] for qr in resp.get("quick_replies")]
 
         return Msg(
             id=resp["id"],
@@ -1428,6 +1457,7 @@ class MsgWriteSerializer(WriteSerializer):
             visibility=Msg.VISIBILITY_VISIBLE,
             text=resp.get("text"),
             attachments=resp.get("attachments"),
+            quick_replies=msg_quick_replies,
             created_on=iso8601.parse_date(resp["created_on"]),
             modified_on=iso8601.parse_date(resp["modified_on"]),
         )
