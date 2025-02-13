@@ -12,7 +12,7 @@ from temba.contacts.models import URN, ContactURN
 from temba.utils.crons import cron_task
 from temba.utils.email import EmailSender
 
-from .models import Export, Invitation, ItemCount, Org, OrgImport, OrgMembership, User, UserSettings
+from .models import Export, Invitation, ItemCount, Org, OrgImport, OrgMembership, User
 
 
 @cron_task()
@@ -46,7 +46,7 @@ def send_user_verification_email(org_id, user_id):
 
     assert user in org.get_users()
 
-    if user.email_status == UserSettings.STATUS_VERIFIED:
+    if user.email_status == User.STATUS_VERIFIED:
         return
 
     key = f"send_verification_email:{user.email}".lower()

@@ -1,3 +1,7 @@
+v10.1.52 (2025-02-13)
+-------------------------
+ * Drop FlowRun.delete_from_results
+
 v10.1.51 (2025-02-12)
 -------------------------
  * Override user manager to lookup username case insensitively

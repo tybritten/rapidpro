@@ -578,20 +578,17 @@ class Contact(LegacyUUIDMixin, SmartModel):
     }
 
     org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name="contacts")
-
     name = models.CharField(verbose_name=_("Name"), max_length=128, blank=True, null=True)
-
     language = models.CharField(
         max_length=3,
         verbose_name=_("Language"),
         null=True,
         blank=True,
     )
-
-    # custom field values for this contact, keyed by field UUID
-    fields = JSONField(null=True)
-
+    fields = JSONField(null=True)  # custom field values for this contact, keyed by field UUID
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+
+    current_session_uuid = models.UUIDField(null=True)  # waiting session if any
     current_flow = models.ForeignKey("flows.Flow", on_delete=models.PROTECT, null=True, db_index=False)
     ticket_count = models.IntegerField(default=0)
     last_seen_on = models.DateTimeField(null=True)
