@@ -436,7 +436,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **groups** - the groups that received the broadcast (array of objects).
      * **text** - the message text translations (dict of strings).
      * **attachments** - the attachment translations (dict of lists of strings).
-     * **quick_replies** - the quick_replies translations (dict of lists of strings).
+     * **quick_replies** - the quick_replies translations (dict of lists of objects).
      * **base_language** - the default translation language (string).
      * **status** - the status, one of `pending`, `queued`, `started`, `completed`, `failed`, `interrupted`.
      * **created_on** - when this broadcast was either created (datetime) (filterable as `before` and `after`).
@@ -458,7 +458,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
                     "groups": [],
                     "text": {"eng", "hello world"},
                     "attachments": {"eng", []},
-                    "quick_replies": {"eng", []},
+                    "quick_replies": {"eng", [{"text": "Hey"}, {"text": "Hello!"}]},
                     "base_language": "eng",
                     "created_on": "2013-03-02T17:28:12.123456Z"
                 },
@@ -474,7 +474,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
       * **groups** - the UUIDs of contact groups to send to (array of up to 100 strings, optional)
       * **text** - the message text translations (dict of strings)
       * **attachments** - the attachment translations (dict of lists of strings)
-      * **quick_replies** - the quick_replies translations (dict of lists of strings)
+      * **quick_replies** - the quick_replies translations (dict of lists of objects)
       * **base_language** - the default translation language (string, optional)
 
     Example:
@@ -484,6 +484,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
             "urns": ["tel:+250788123123", "tel:+250788123124"],
             "contacts": ["09d23a05-47fe-11e4-bfe9-b8f6b119e9ab"],
             "text": {"eng": "Hello @contact.name!", "spa": "Hola @contact.name!"},
+            "quick_replies": {"eng": [{"text": "Hey"}, {"text": "Hello!"}]}
             "base_language": "eng"
         }
 
@@ -496,7 +497,7 @@ class BroadcastsEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
             "groups": [],
             "text": {"eng": "Hello @contact.name!", "spa": "Hola @contact.name!"},
             "attachments": {"eng": [], "spa": []},
-            "quick_replies": {"eng": [], "spa": []},
+            "quick_replies": {"eng": [{"text": "Hey"}, {"text": "Hello!"}], "spa": []},
             "base_language": "eng",
             "created_on": "2013-03-02T17:28:12.123456Z"
         }
@@ -2247,7 +2248,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **visibility** - the visibility of the message (one of `visible`, `archived` or `deleted`)
      * **text** - the text of the message received (string). Note this is the logical view and the message may have been received as multiple physical messages.
      * **attachments** - the attachments on the message (array of objects).
-     * **quick_replies** - the quick_replies on the message (array of strings).
+     * **quick_replies** - the quick_replies on the message (array of objects).
      * **labels** - any labels set on this message (array of objects), filterable as `label` with label name or UUID.
      * **flow** - the UUID and name of the flow if message was part of a flow (object, optional).
      * **created_on** - when this message was either received by the channel or created (datetime) (filterable as `before` and `after`).
@@ -2283,7 +2284,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
                 "visibility": "visible",
                 "text": "How are you?",
                 "attachments": [{"content_type": "audio/wav" "url": "http://domain.com/recording.wav"}],
-                "quick_replies": ["Great", "Improving"],
+                "quick_replies": [{"text": "Great"}, {"text": "Improving"}],
                 "labels": [{"name": "Important", "uuid": "5a4eb79e-1b1f-4ae3-8700-09384cca385f"}],
                 "flow": {"uuid": "254fd2ff-4990-4621-9536-0a448d313692", "name": "Registration"},
                 "created_on": "2016-01-06T15:33:00.813162Z",
@@ -2301,7 +2302,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
      * **contact** - the UUID of the contact (string)
      * **text** - the text of the message (string)
      * **attachments** - the attachments of the message (list of strings, maximum 10)
-     * **quick_replies** - the quick_replies of the message (list of strings, maximum 10)
+     * **quick_replies** - the quick_replies of the message (list of objects, maximum 10)
 
     Example:
 
@@ -2309,7 +2310,9 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
         {
             "contact": "d33e9ad5-5c35-414c-abd4-e7451c69ff1d",
             "text": "Hi Bob",
-            "attachments": []
+            "attachments": [],
+            "quick_repies": [{"text": "Hey"}, {"text": "Hi"}]
+
         }
 
     You will receive the new message object as a response if successful:
@@ -2326,7 +2329,7 @@ class MessagesEndpoint(ListAPIMixin, WriteAPIMixin, BaseEndpoint):
             "visibility": "visible",
             "text": "Hi Bob",
             "attachments": [],
-            "quick_replies": [],
+            "quick_replies": [{"text": "Hey"}, {"text": "Hi"}],
             "labels": [],
             "flow": null,
             "created_on": "2023-01-06T15:33:00.813162Z",

@@ -909,7 +909,7 @@ def send_to_contact(org, contact, text, attachments, quick_replies) -> Msg:
         failed_reason=failed_reason,
         text=text or "",
         attachments=attachments or [],
-        quick_replies=msg_quick_replies or [],
+        quick_replies=msg_quick_replies,
         msg_type=Msg.TYPE_TEXT,
         is_android=False,
         created_on=timezone.now(),
