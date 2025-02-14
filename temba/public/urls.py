@@ -4,21 +4,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 from temba.settings import DEBUG
 
-from .sitemaps import PublicViewSitemap, VideoSitemap
-from .views import (
-    Android,
-    DemoGenerateCoupon,
-    DemoOrderStatus,
-    IndexView,
-    LeadCRUDL,
-    LeadViewer,
-    Style,
-    VideoCRUDL,
-    Welcome,
-    WelcomeRedirect,
-)
+from .sitemaps import PublicViewSitemap
+from .views import Android, DemoGenerateCoupon, DemoOrderStatus, IndexView, Style, Welcome, WelcomeRedirect
 
-sitemaps = {"public": PublicViewSitemap, "video": VideoSitemap}
+sitemaps = {"public": PublicViewSitemap}
 
 urlpatterns = [
     re_path(r"^$", IndexView.as_view(), {}, "public.public_index"),
@@ -32,8 +21,3 @@ urlpatterns = [
 
 if DEBUG:  # pragma: needs cover
     urlpatterns.append(re_path(r"^style/$", Style.as_view(), {}, "public.public_style")),
-
-
-urlpatterns += LeadCRUDL().as_urlpatterns()
-urlpatterns += LeadViewer().as_urlpatterns()
-urlpatterns += VideoCRUDL().as_urlpatterns()

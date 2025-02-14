@@ -224,7 +224,7 @@ ROOT_URLCONF = "temba.urls"
 # other urls to add
 APP_URLS = []
 
-SITEMAP = ("public.public_index", "public.video_list", "api")
+SITEMAP = ("public.public_index", "api")
 
 INSTALLED_APPS = (
     "django.contrib.auth",

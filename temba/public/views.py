@@ -1,17 +1,12 @@
-from urllib.parse import parse_qs, urlencode
-
-from smartmin.views import SmartCreateView, SmartCRUDL, SmartFormView, SmartListView, SmartReadView, SmartTemplateView
+from smartmin.views import SmartTemplateView
 
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import RedirectView, View
 
 from temba import __version__ as temba_version
 from temba.apks.models import Apk
-from temba.public.models import Lead, Video
-from temba.utils import analytics, get_anonymous_user, json
+from temba.utils import analytics, json
 from temba.utils.text import generate_secret
 from temba.utils.views.mixins import NoNavMixin, SpaMixin
 
@@ -32,13 +27,6 @@ class IndexView(NoNavMixin, SmartTemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["version"] = temba_version
-        context["thanks"] = "thanks" in self.request.GET
-        context["errors"] = "errors" in self.request.GET
-        if context["errors"]:
-            errors = parse_qs(context["url_params"][1:]).get("errors")
-            if isinstance(errors, list) and len(errors) > 0:
-                context["error_msg"] = errors[0]
-
         return context
 
 
@@ -91,71 +79,6 @@ class Welcome(SpaMixin, SmartTemplateView):
 
     def has_permission(self, request, *args, **kwargs):
         return request.user.is_authenticated
-
-
-class LeadViewer(SmartCRUDL):
-    actions = ("list",)
-    model = Lead
-    permissions = True
-
-    class List(SmartListView):
-        default_order = ("-created_on",)
-        fields = ("created_on", "email")
-
-
-class VideoCRUDL(SmartCRUDL):
-    actions = ("create", "read", "delete", "list", "update")
-    permissions = True
-    model = Video
-
-    class List(SmartListView):
-        default_order = "order"
-        permission = None
-
-        def get_context_data(self, **kwargs):
-            context = super().get_context_data(**kwargs)
-            return context
-
-    class Read(SmartReadView):
-        permission = None
-
-        def get_context_data(self, **kwargs):
-            context = super().get_context_data(**kwargs)
-            context["videos"] = Video.objects.exclude(pk=self.get_object().pk).order_by("order")
-            return context
-
-
-class LeadCRUDL(SmartCRUDL):
-    actions = ("create",)
-    model = Lead
-    permissions = False
-
-    class Create(SmartFormView, SmartCreateView):
-        fields = ("email",)
-        title = _("Register for public beta")
-
-        @csrf_exempt
-        def dispatch(self, request, *args, **kwargs):
-            return super().dispatch(request, *args, **kwargs)
-
-        def get_success_url(self):
-            return reverse("orgs.org_signup") + "?%s" % urlencode({"email": self.form.cleaned_data["email"]})
-
-        def form_invalid(self, form):
-            url = reverse("public.public_index")
-            email = ", ".join(form.errors["email"])
-
-            if "from_url" in form.data:  # pragma: needs cover
-                url = reverse(form.data["from_url"])
-
-            return HttpResponseRedirect(url + "?errors=%s" % email)
-
-        def pre_save(self, obj):
-            anon = get_anonymous_user()
-            obj = super().pre_save(obj)
-            obj.created_by = anon
-            obj.modified_by = anon
-            return obj
 
 
 class DemoGenerateCoupon(View):
