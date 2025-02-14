@@ -9,14 +9,16 @@ def populate_channel_events_uuid(apps, schema_editor):
     ChannelEvent = apps.get_model("channels", "ChannelEvent")
 
     num_updated = 0
-    for event in ChannelEvent.objects.all():
-        if not event.uuid:
+    while True:
+        batch = list(ChannelEvent.objects.filter(uuid=None)[:100])
+        if not batch:
+            return
+
+        for event in batch:
             event.uuid = uuid4()
             event.save(update_fields=("uuid",))
 
-            num_updated += 1
-
-    if num_updated:
+        num_updated += len(batch)
         print(f"Updated {num_updated} channel events")
 
 
