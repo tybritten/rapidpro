@@ -5,7 +5,7 @@ from django.db import migrations, transaction
 from temba.utils.uuid import uuid4
 
 
-def populate_channel_events_uuid(apps, schema_editor):
+def populate_channel_events_uuid(apps, schema_editor):  # pragma: no cover
     ChannelEvent = apps.get_model("channels", "ChannelEvent")
 
     num_updated = 0
