@@ -9,7 +9,6 @@ from uuid import uuid4
 import phonenumbers
 from django_countries.fields import CountryField
 from phonenumbers import NumberParseException
-from smartmin.models import SmartModel
 from twilio.base.exceptions import TwilioRestException
 
 from django.contrib.postgres.fields import ArrayField
@@ -25,7 +24,7 @@ from django.utils.translation import gettext_lazy as _
 
 from temba import mailroom
 from temba.orgs.models import DependencyMixin, Org
-from temba.utils import analytics, dynamo, get_anonymous_user, on_transaction_commit, redact
+from temba.utils import analytics, dynamo, on_transaction_commit, redact
 from temba.utils.models import (
     JSONAsTextField,
     LegacyUUIDMixin,
@@ -993,7 +992,7 @@ class ChannelLog(models.Model):
         indexes = [models.Index(name="channellogs_by_channel", fields=("channel", "-created_on"))]
 
 
-class SyncEvent(SmartModel):
+class SyncEvent(models.Model):
     """
     A record of a sync from an Android channel
     """
@@ -1038,6 +1037,8 @@ class SyncEvent(SmartModel):
     incoming_command_count = models.IntegerField(default=0)
     outgoing_command_count = models.IntegerField(default=0)
 
+    created_on = models.DateTimeField(default=timezone.now)
+
     @classmethod
     def create(cls, channel, cmd, incoming_commands):
         # update country, device and OS on our channel
@@ -1050,24 +1051,17 @@ class SyncEvent(SmartModel):
             channel.os = os
             channel.save(update_fields=["device", "os"])
 
-        args = dict()
+        sync_event = SyncEvent.objects.create(
+            channel=channel,
+            power_source=cmd.get("p_src", cmd.get("power_source")),
+            power_status=cmd.get("p_sts", cmd.get("power_status")),
+            power_level=cmd.get("p_lvl", cmd.get("power_level")),
+            network_type=cmd.get("net", cmd.get("network_type")),
+            pending_message_count=len(cmd.get("pending", cmd.get("pending_messages"))),
+            retry_message_count=len(cmd.get("retry", cmd.get("retry_messages"))),
+            incoming_command_count=max(len(incoming_commands) - 2, 0),
+        )
 
-        args["power_source"] = cmd.get("p_src", cmd.get("power_source"))
-        args["power_status"] = cmd.get("p_sts", cmd.get("power_status"))
-        args["power_level"] = cmd.get("p_lvl", cmd.get("power_level"))
-
-        args["network_type"] = cmd.get("net", cmd.get("network_type"))
-
-        args["pending_message_count"] = len(cmd.get("pending", cmd.get("pending_messages")))
-        args["retry_message_count"] = len(cmd.get("retry", cmd.get("retry_messages")))
-        args["incoming_command_count"] = max(len(incoming_commands) - 2, 0)
-
-        anon_user = get_anonymous_user()
-        args["channel"] = channel
-        args["created_by"] = anon_user
-        args["modified_by"] = anon_user
-
-        sync_event = SyncEvent.objects.create(**args)
         sync_event.pending_messages = cmd.get("pending", cmd.get("pending_messages"))
         sync_event.retry_messages = cmd.get("retry", cmd.get("retry_messages"))
 
