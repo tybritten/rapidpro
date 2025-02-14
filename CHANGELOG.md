@@ -1,3 +1,9 @@
+v10.1.54 (2025-02-14)
+-------------------------
+ * Data migration to backfill Contact.current_session_uuid
+ * Data migration to populate ChannelEvent.uuid
+ * Add support for quick replies on broadcasts and msgs API endpoints
+
 v10.1.53 (2025-02-13)
 -------------------------
  * Add Contact.current_session_uuid
