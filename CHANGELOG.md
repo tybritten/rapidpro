@@ -1,3 +1,9 @@
+v10.1.55 (2025-02-17)
+-------------------------
+ * Update to latest editor
+ * Remove no longer used lead and video models/crudls
+ * Remove smart model fields on SyncEvent
+
 v10.1.54 (2025-02-14)
 -------------------------
  * Data migration to backfill Contact.current_session_uuid
