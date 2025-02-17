@@ -1,3 +1,7 @@
+v10.1.57 (2025-02-17)
+-------------------------
+ * More logging in data migration
+
 v10.1.56 (2025-02-17)
 -------------------------
  * Make channel event uuid field not null
