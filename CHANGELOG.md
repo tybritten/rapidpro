@@ -1,3 +1,9 @@
+v10.1.56 (2025-02-17)
+-------------------------
+ * Make channel event uuid field not null
+ * Add post migrate signal to create system user
+ * Remove AnonymousUser
+
 v10.1.55 (2025-02-17)
 -------------------------
  * Update to latest editor
