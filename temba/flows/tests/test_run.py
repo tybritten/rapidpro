@@ -19,7 +19,6 @@ class FlowRunTest(TembaTest):
         flow = self.create_flow("Test")
         session = FlowSession.objects.create(
             uuid=uuid4(),
-            org=self.org,
             contact=self.contact,
             status=FlowSession.STATUS_COMPLETED,
             output_url="http://sessions.com/123.json",
@@ -179,7 +178,6 @@ class FlowRunTest(TembaTest):
         session = FlowSession.objects.create(
             id=3_000_000_000,
             uuid=uuid4(),
-            org=self.org,
             contact=self.contact,
             status=FlowSession.STATUS_WAITING,
             output_url="http://sessions.com/123.json",

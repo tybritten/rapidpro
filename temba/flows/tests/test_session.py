@@ -16,7 +16,6 @@ class FlowSessionTest(TembaTest):
         def create_session(org, created_on: datetime):
             return FlowSession.objects.create(
                 uuid=uuid4(),
-                org=org,
                 contact=contact,
                 created_on=created_on,
                 output_url="http://sessions.com/123.json",
