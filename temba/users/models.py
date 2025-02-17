@@ -56,7 +56,7 @@ class UserManager(AuthUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    SYSTEM_USER_USERNAME = "system"
+    SYSTEM = {"username": "system", "first_name": "System"}
 
     STATUS_UNVERIFIED = "U"
     STATUS_VERIFIED = "V"
@@ -157,10 +157,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @classmethod
     def get_system_user(cls):
-        user = cls.objects.filter(username=cls.SYSTEM_USER_USERNAME).first()
-        if not user:
-            user = cls.objects.create_user(cls.SYSTEM_USER_USERNAME, first_name="System", last_name="Update")
-        return user
+        """
+        Gets the system user
+        """
+        return cls.objects.get(username=cls.SYSTEM["username"])
+
+    @classmethod
+    def _create_system_user(cls):
+        """
+        Creates the system user
+        """
+        cls.objects.create_user(cls.SYSTEM["username"], first_name=cls.SYSTEM["first_name"], is_system=True)
 
     @property
     def name(self) -> str:
