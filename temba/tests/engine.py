@@ -282,7 +282,6 @@ class MockSessionWriter:
         else:
             self.session = FlowSession.objects.create(
                 uuid=self.output["uuid"],
-                org=self.org,
                 contact=self.contact,
                 session_type=db_flow_types[self.output["type"]],
                 output=self.output,
