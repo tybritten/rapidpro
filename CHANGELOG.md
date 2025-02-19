@@ -1,3 +1,12 @@
+v10.1.60 (2025-02-19)
+-------------------------
+ * Add channel is_enabled field
+
+v10.1.59 (2025-02-18)
+-------------------------
+ * Update org deletion to delete sessions via contacts
+ * Drop FlowSession.org
+
 v10.1.58 (2025-02-17)
 -------------------------
  * Make FlowSession.org nullable
