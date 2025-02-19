@@ -1,3 +1,8 @@
+v10.1.61 (2025-02-19)
+-------------------------
+ * Add data migration to reduce expires_after to 2 weeks on all flows
+ * Remove 30 days as option for flow expiry
+
 v10.1.60 (2025-02-19)
 -------------------------
  * Add channel is_enabled field
