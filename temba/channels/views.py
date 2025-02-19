@@ -449,9 +449,9 @@ class UpdateChannelForm(forms.ModelForm):
 
     class Meta:
         model = Channel
-        fields = ("name", "log_policy")
+        fields = ("name", "is_enabled", "log_policy")
         readonly = ()
-        labels = {}
+        labels = {"is_enabled": _("Enabled")}
         helps = {}
 
 
