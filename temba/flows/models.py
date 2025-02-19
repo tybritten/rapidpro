@@ -133,7 +133,6 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
             (60 * 24 * 3, _("After 3 days")),
             (60 * 24 * 7, _("After 1 week")),
             (60 * 24 * 14, _("After 2 weeks")),
-            (60 * 24 * 30, _("After 30 days")),
         ),
         TYPE_VOICE: (
             (1, _("After 1 minute")),
