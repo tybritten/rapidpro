@@ -145,7 +145,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         ),
     }
     EXPIRES_DEFAULTS = {
-        TYPE_MESSAGE: 60 * 24 * 7,  # 1 week
+        TYPE_MESSAGE: 60 * 24 * 3,  # 3 days
         TYPE_VOICE: 5,  # 5 minutes
         TYPE_BACKGROUND: 0,
         TYPE_SURVEY: 0,
