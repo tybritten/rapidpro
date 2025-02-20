@@ -1097,7 +1097,7 @@ class ResultsExportTest(TembaTest):
         today = timezone.now().astimezone(self.org.timezone).date()
         flow = self.create_flow("Test")
 
-        self.assertEqual(flow.get_run_stats()["total"], 0)
+        self.assertEqual(sum(flow.get_run_counts().values()), 0)
 
         workbook = self._export(flow, start_date=today - timedelta(days=7), end_date=today, has_results=False)
 
