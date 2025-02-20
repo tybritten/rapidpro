@@ -1,3 +1,9 @@
+v10.1.64 (2025-02-20)
+-------------------------
+ * Add index to flow runs to support interrupting by session
+ * Drop ContactFire.extra
+ * Add number of ongoing runs to the flow list view
+
 v10.1.63 (2025-02-20)
 -------------------------
  * Add apply_manual hook to migration
