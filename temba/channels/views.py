@@ -724,7 +724,7 @@ class ChannelCRUDL(SmartCRUDL):
     class Update(ComponentFormMixin, ModalFormMixin, OrgObjPermsMixin, SmartUpdateView):
         field_config = {
             "is_enabled": {
-                "help": _("Makes channel available for sending. Incoming messages will be received regardless.")
+                "help": _("Makes channel available for sending. Incoming messages will be archived if not enabled.")
             }
         }
 
