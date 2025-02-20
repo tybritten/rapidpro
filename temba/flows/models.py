@@ -588,32 +588,24 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         self.save_revision(user, definition)
 
     @classmethod
-    def prefetch_run_stats(cls, flows, *, using="default"):
+    def prefetch_run_counts(cls, flows, *, using="default"):
+        """
+        Prefetches the counts required by get_run_counts
+        """
+
         FlowActivityCount.prefetch_by_scope(flows, prefix="status:", to_attr="_status_counts", using=using)
 
-    def get_run_stats(self):
+    def get_run_counts(self) -> dict[str, int]:
+        """
+        Gets the counts of runs by status
+        """
+
         if hasattr(self, "_status_counts"):
             counts = self._status_counts
         else:
             counts = self.counts.prefix("status:").scope_totals()
 
-        by_status = {scope[7:]: count for scope, count in counts.items()}
-
-        total_runs = sum(by_status.values())
-        completed = by_status.get(FlowRun.STATUS_COMPLETED, 0)
-
-        return {
-            "total": total_runs,
-            "status": {
-                "active": by_status.get(FlowRun.STATUS_ACTIVE, 0),
-                "waiting": by_status.get(FlowRun.STATUS_WAITING, 0),
-                "completed": completed,
-                "expired": by_status.get(FlowRun.STATUS_EXPIRED, 0),
-                "interrupted": by_status.get(FlowRun.STATUS_INTERRUPTED, 0),
-                "failed": by_status.get(FlowRun.STATUS_FAILED, 0),
-            },
-            "completion": int(completed * 100 // total_runs) if total_runs else 0,
-        }
+        return defaultdict(int, {scope[7:]: count for scope, count in counts.items()})
 
     def get_recent_contacts(self, exit_uuid: str, dest_uuid: str) -> list[dict]:
         r = get_redis_connection()
