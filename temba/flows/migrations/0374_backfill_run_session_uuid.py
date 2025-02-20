@@ -25,6 +25,12 @@ def backfill_run_session_uuid(apps, schema_editor):
         print(f"Updated {num_updated} runs")
 
 
+def apply_manual():  # pragma: no cover
+    from django.apps import apps
+
+    backfill_run_session_uuid(apps, None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
