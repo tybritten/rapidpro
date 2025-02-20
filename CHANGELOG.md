@@ -1,3 +1,8 @@
+v10.1.63 (2025-02-20)
+-------------------------
+ * Add apply_manual hook to migration
+ * Update is_enabled help text
+
 v10.1.62 (2025-02-20)
 -------------------------
  * Use default of 3 days for flow expiry
