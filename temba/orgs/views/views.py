@@ -1165,14 +1165,14 @@ class OrgCRUDL(SmartCRUDL):
                             self.create_menu_item(name=_("New Channel"), href="channels.channel_claim", icon="add")
                         )
 
-                    channels = org.channels.filter(is_active=True).order_by(Lower("name"))
+                    channels = org.channels.filter(is_active=True).order_by("-is_enabled", Lower("name"))
                     for channel in channels:
                         items.append(
                             self.create_menu_item(
                                 menu_id=str(channel.uuid),
                                 name=channel.name,
                                 href=get_channel_read_url(channel),
-                                icon=channel.type.icon,
+                                icon=channel.type.icon if channel.is_enabled else "slash-circle-01",
                             )
                         )
 
