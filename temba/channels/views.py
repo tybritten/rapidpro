@@ -457,14 +457,6 @@ class UpdateChannelForm(forms.ModelForm):
         labels = {"is_enabled": _("Enabled")}
 
 
-class UpdateTelChannelForm(UpdateChannelForm):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if "address" in self.fields:
-            self.fields["address"].help_text = _("Phone number of this channel")
-
-
 class ChannelCRUDL(SmartCRUDL):
     model = Channel
     actions = (
