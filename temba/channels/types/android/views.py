@@ -107,4 +107,3 @@ class ClaimView(ClaimViewMixin, SmartFormView):
 class UpdateForm(UpdateTelChannelForm):
     class Meta(UpdateTelChannelForm.Meta):
         readonly = []
-        helps = {"address": _("Phone number of this device")}

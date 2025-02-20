@@ -411,6 +411,9 @@ class UpdateChannelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["is_enabled"].help_text = _(
+            "Makes channel available for sending. Incoming messages will be received regardless."
+        )
 
         self.config_fields = []
 
@@ -452,12 +455,14 @@ class UpdateChannelForm(forms.ModelForm):
         fields = ("name", "is_enabled", "log_policy")
         readonly = ()
         labels = {"is_enabled": _("Enabled")}
-        helps = {}
 
 
 class UpdateTelChannelForm(UpdateChannelForm):
-    class Meta(UpdateChannelForm.Meta):
-        helps = {"address": _("Phone number of this channel")}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "address" in self.fields:
+            self.fields["address"].help_text = _("Phone number of this channel")
 
 
 class ChannelCRUDL(SmartCRUDL):
