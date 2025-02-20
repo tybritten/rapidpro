@@ -1217,6 +1217,8 @@ class FlowRun(models.Model):
             ),
             # for indexing contacts with their flow history
             models.Index(name="flows_flowrun_contact_inc_flow", fields=("contact",), include=("flow",)),
+            # for interrupts
+            models.Index(name="flowruns_by_session", fields=("session_uuid",), condition=Q(status__in=("A", "W"))),
         ]
         constraints = [
             # all active/waiting runs must have a session
