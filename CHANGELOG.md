@@ -1,3 +1,9 @@
+v10.1.62 (2025-02-20)
+-------------------------
+ * Use default of 3 days for flow expiry
+ * Data migration to backfill FlowRun.session_uuid
+ * Add is_enabled field to the update form
+
 v10.1.61 (2025-02-19)
 -------------------------
  * Add data migration to reduce expires_after to 2 weeks on all flows
