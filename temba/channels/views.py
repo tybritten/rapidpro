@@ -411,9 +411,6 @@ class UpdateChannelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["is_enabled"].help_text = _(
-            "Makes channel available for sending. Incoming messages will be received regardless."
-        )
 
         self.config_fields = []
 
@@ -725,6 +722,12 @@ class ChannelCRUDL(SmartCRUDL):
             return response
 
     class Update(ComponentFormMixin, ModalFormMixin, OrgObjPermsMixin, SmartUpdateView):
+        field_config = {
+            "is_enabled": {
+                "help": _("Makes channel available for sending. Incoming messages will be received regardless.")
+            }
+        }
+
         def derive_title(self):
             return _("%s Channel") % self.object.type.name
 
