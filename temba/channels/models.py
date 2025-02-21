@@ -336,6 +336,7 @@ class Channel(LegacyUUIDMixin, TembaModel, DependencyMixin):
     role = models.CharField(max_length=4, default=DEFAULT_ROLE)
     log_policy = models.CharField(max_length=1, default=LOG_POLICY_ALL, choices=LOG_POLICY_CHOICES)
     tps = models.IntegerField(null=True)
+    is_enabled = models.BooleanField(default=True)
 
     # Android relayer specific fields
     claim_code = models.CharField(max_length=16, blank=True, null=True, unique=True)
@@ -817,8 +818,6 @@ class ChannelEvent(TembaUUIDMixin, models.Model):
     STATUS_PENDING = "P"
     STATUS_HANDLED = "H"
     STATUS_CHOICES = ((STATUS_PENDING, "Pending"), (STATUS_HANDLED, "Handled"))
-
-    uuid = models.UUIDField(unique=True, null=True)
 
     org = models.ForeignKey(Org, on_delete=models.PROTECT)
     channel = models.ForeignKey(Channel, on_delete=models.PROTECT)

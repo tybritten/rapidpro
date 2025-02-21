@@ -573,7 +573,6 @@ class TembaTest(SmartminTest):
         )
         session = FlowSession.objects.create(
             uuid=uuid4(),
-            org=contact.org,
             contact=contact,
             status=FlowSession.STATUS_COMPLETED,
             output_url="http://sessions.com/123.json",
