@@ -18,10 +18,10 @@
         <tr>
           {% if org_perms.flows.flow_update %}<th></th>{% endif %}
           <th></th>
+          <th style="text-align: right" class="whitespace-nowrap">{% trans "Runs" %}</th>
           {% if not object.is_archived %}
             <th style="text-align: right" class="whitespace-nowrap">{% trans "Ongoing" %}</th>
           {% endif %}
-          <th style="text-align: right" class="whitespace-nowrap">{% trans "Total Runs" %}</th>
           <th style="text-align: right" class="whitespace-nowrap">{% trans "Completion" %}</th>
         </tr>
       </thead>
@@ -79,10 +79,28 @@
               </div>
             </div>
           </td>
-          {% if not object.is_archived %}<td class="whitespace-nowrap text-right">{{ object.num_runs_ongoing|intcomma }}</td>{% endif %}
-          <td class="whitespace-nowrap text-right">{{ object.num_runs_total|intcomma }}</td>
           <td class="whitespace-nowrap text-right">
-            <a href="{% url "flows.flow_results" object.id %}">{{ object.completion_pct }}%</a>
+            {% if object.num_runs_total %}
+              {{ object.num_runs_total|intcomma }}
+            {% else %}
+              --
+            {% endif %}
+          </td>
+          {% if not object.is_archived %}
+            <td class="whitespace-nowrap text-right">
+              {% if object.num_runs_total %}
+                {{ object.num_runs_ongoing|intcomma }}
+              {% else %}
+                --
+              {% endif %}
+            </td>
+          {% endif %}
+          <td class="whitespace-nowrap text-right">
+            {% if object.num_runs_total %}
+              <a href="{% url "flows.flow_results" object.id %}">{{ object.completion_pct }}%</a>
+            {% else %}
+              --
+            {% endif %}
           </td>
         </tr>
       {% empty %}
