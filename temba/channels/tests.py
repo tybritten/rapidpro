@@ -6,7 +6,6 @@ from datetime import date, datetime, timedelta, timezone as tzone
 from unittest.mock import patch
 from urllib.parse import quote
 
-
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core import mail

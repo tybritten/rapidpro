@@ -69,7 +69,7 @@ class UserManager(AuthUserManager):
         """
         Creates the system user
         """
-        user = self.model(email=User.SYSTEM["email"], is_system=True)
+        user = self.model(email=User.SYSTEM["email"], first_name=User.SYSTEM["first_name"], is_system=True)
         user.save()
         return user
 
