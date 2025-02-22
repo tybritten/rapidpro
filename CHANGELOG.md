@@ -1,3 +1,7 @@
+v10.1.67 (2025-02-21)
+-------------------------
+ * Tweak display of flow stats
+
 v10.1.64 (2025-02-20)
 -------------------------
  * Add index to flow runs to support interrupting by session

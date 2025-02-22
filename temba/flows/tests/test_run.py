@@ -116,7 +116,7 @@ class FlowRunTest(TembaTest):
             .visit(color_split)
             .wait()
             .save()
-        ).session.runs.get()
+        )[0]
 
         run_json = run.as_archive_json()
 
