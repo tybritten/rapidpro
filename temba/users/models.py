@@ -277,7 +277,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         self.first_name = ""
         self.last_name = ""
-        self.email = f"{str(uuid4())}@rapidpro.io"
+        self.email = str(uuid4())
         self.password = ""
         self.is_active = False
         self.save()
