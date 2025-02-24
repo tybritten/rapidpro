@@ -145,7 +145,7 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         ),
     }
     EXPIRES_DEFAULTS = {
-        TYPE_MESSAGE: 60 * 24 * 7,  # 1 week
+        TYPE_MESSAGE: 60 * 24 * 3,  # 3 days
         TYPE_VOICE: 5,  # 5 minutes
         TYPE_BACKGROUND: 0,
         TYPE_SURVEY: 0,
@@ -588,32 +588,24 @@ class Flow(LegacyUUIDMixin, TembaModel, DependencyMixin):
         self.save_revision(user, definition)
 
     @classmethod
-    def prefetch_run_stats(cls, flows, *, using="default"):
+    def prefetch_run_counts(cls, flows, *, using="default"):
+        """
+        Prefetches the counts required by get_run_counts
+        """
+
         FlowActivityCount.prefetch_by_scope(flows, prefix="status:", to_attr="_status_counts", using=using)
 
-    def get_run_stats(self):
+    def get_run_counts(self) -> dict[str, int]:
+        """
+        Gets the counts of runs by status
+        """
+
         if hasattr(self, "_status_counts"):
             counts = self._status_counts
         else:
             counts = self.counts.prefix("status:").scope_totals()
 
-        by_status = {scope[7:]: count for scope, count in counts.items()}
-
-        total_runs = sum(by_status.values())
-        completed = by_status.get(FlowRun.STATUS_COMPLETED, 0)
-
-        return {
-            "total": total_runs,
-            "status": {
-                "active": by_status.get(FlowRun.STATUS_ACTIVE, 0),
-                "waiting": by_status.get(FlowRun.STATUS_WAITING, 0),
-                "completed": completed,
-                "expired": by_status.get(FlowRun.STATUS_EXPIRED, 0),
-                "interrupted": by_status.get(FlowRun.STATUS_INTERRUPTED, 0),
-                "failed": by_status.get(FlowRun.STATUS_FAILED, 0),
-            },
-            "completion": int(completed * 100 // total_runs) if total_runs else 0,
-        }
+        return defaultdict(int, {scope[7:]: count for scope, count in counts.items()})
 
     def get_recent_contacts(self, exit_uuid: str, dest_uuid: str) -> list[dict]:
         r = get_redis_connection()
@@ -1211,6 +1203,8 @@ class FlowRun(models.Model):
             ),
             # for indexing contacts with their flow history
             models.Index(name="flows_flowrun_contact_inc_flow", fields=("contact",), include=("flow",)),
+            # for interrupts
+            models.Index(name="flowruns_by_session", fields=("session_uuid",), condition=Q(status__in=("A", "W"))),
         ]
         constraints = [
             # all active/waiting runs must have a session
