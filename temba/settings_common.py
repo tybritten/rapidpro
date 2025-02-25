@@ -39,23 +39,6 @@ else:
     _dynamo_host = "localhost"
 
 # -----------------------------------------------------------------------------------
-# Email
-# -----------------------------------------------------------------------------------
-
-SEND_EMAILS = TESTING  # enable sending emails in tests
-
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_HOST_USER = "server@temba.io"
-DEFAULT_FROM_EMAIL = "server@temba.io"
-EMAIL_HOST_PASSWORD = "mypassword"
-EMAIL_USE_TLS = True
-EMAIL_TIMEOUT = 10
-
-# Used when sending email from within a flow and the user hasn't configured
-# their own SMTP server.
-FLOW_FROM_EMAIL = "no-reply@temba.io"
-
-# -----------------------------------------------------------------------------------
 # AWS
 # -----------------------------------------------------------------------------------
 
@@ -163,6 +146,20 @@ STATIC_URL = "/sitestatic/"
 COMPRESS_ROOT = os.path.join(PROJECT_DIR, "../sitestatic")
 MEDIA_ROOT = os.path.join(PROJECT_DIR, "../media")
 MEDIA_URL = "/media/"
+
+# -----------------------------------------------------------------------------------
+# Email
+# -----------------------------------------------------------------------------------
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = "server@temba.io"
+DEFAULT_FROM_EMAIL = "server@temba.io"
+EMAIL_HOST_PASSWORD = "mypassword"
+EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 10
+
+# Used when sending email from within a flow and the user hasn't configured
+# their own SMTP server.
+FLOW_FROM_EMAIL = "no-reply@temba.io"
 
 # -----------------------------------------------------------------------------------
 # Templates
